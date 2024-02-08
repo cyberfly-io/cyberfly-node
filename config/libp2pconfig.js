@@ -19,6 +19,6 @@ export const libp2pOptions = {
     streamMuxers: [yamux()],
     services: {
       identify: identify(),
-      pubsub: gossipsub({ allowPublishToZeroPeers: true })
+      pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })
     }
   }
