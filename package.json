@@ -1,0 +1,25 @@
+{
+  "name": "orbitdb-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@chainsafe/libp2p-gossipsub": "^11.1.0",
+    "@orbitdb/core": "^2.0.1",
+    "@orbitdb/identity-provider-ethereum": "^1.0.2",
+    "blockstore-level": "^1.1.7",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "helia": "^4.0.0",
+    "http": "^0.0.1-security",
+    "nanoid": "^5.0.5",
+    "pact-lang-api": "^4.3.6",
+    "socket.io": "^4.7.4"
+  }
+}
