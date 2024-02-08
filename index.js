@@ -10,7 +10,6 @@ import { LevelBlockstore } from 'blockstore-level'
 const blockstore = new LevelBlockstore('./ipfs')
 
 const ipfs = await createHelia({ libp2p: libp2pOptions, blockstore })
-const libp2p = ipfs.libp2p
 const pubsub = ipfs.libp2p.services.pubsub
 useAccessController(CyberflyAccessController)
 const orbitdb = await createOrbitDB({ipfs})
@@ -88,7 +87,7 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("publish", async(topic ,message)=>{
-   pubsub.publish(topic, message);
+   await pubsub.publish(topic, message);
   })
   socket.on("disconnect", () => {
     if (subscribedSockets[socket.id]) {
