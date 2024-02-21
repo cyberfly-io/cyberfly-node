@@ -1,25 +1,25 @@
-import { createOrbitDB, useAccessController  } from '@orbitdb/core'
-import { createHelia } from 'helia'
+import {useAccessController  } from '@orbitdb/core'
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { nanoid } from 'nanoid'
-import { libp2pOptions } from './config/libp2pconfig.js'
 import http from "http";
 import cors from 'cors';
 import { Server } from "socket.io";
-import { LevelBlockstore } from 'blockstore-level'
-const blockstore = new LevelBlockstore('./ipfs')
+import { startOrbitDB } from './db-service.js';
 
-const ipfs = await createHelia({ libp2p: libp2pOptions, blockstore })
-const pubsub = ipfs.libp2p.services.pubsub
+
+
+
+
 useAccessController(CyberflyAccessController)
-const orbitdb = await createOrbitDB({ipfs})
+const orbitdb = await startOrbitDB()
+const pubsub = orbitdb.ipfs.libp2p.services.pubsub
 import express from 'express';
 const port = 3000;
 
 const updateData = async (data, sig, pubkey)=>{
    
     try{
-      const db = await orbitdb.open('/orbitdb/zdpuAysDkhm9hQTbZdfFvNA1rdqwYFcJfyZ98gQwwJSJds6h7')
+      const db = await orbitdb.open('cyberfly-d04bbd8f403e583248aa461896bd7518113f89b85c98f3d9596bbfbf30df0bcb', {type:'documents', AccessController:CyberflyAccessController(), })
       var id = nanoid()
       const r = await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       console.log(db.address)
