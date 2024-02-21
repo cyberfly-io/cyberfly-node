@@ -17,7 +17,7 @@ const port = 3000;
 const updateData = async (data, sig, pubkey)=>{
    
     try{
-      const db = await orbitdb.open('cyberfly-d04bbd8f403e583248aa461896bd7518113f89b85c98f3d9596bbfbf30df0bcb', {type:'documents', AccessController:CyberflyAccessController(), })
+      const db = await orbitdb.open(`cyberfly-${pubkey}`, {type:'documents', AccessController:CyberflyAccessController(), })
       var id = nanoid()
       const r = await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       console.log(db.address)
