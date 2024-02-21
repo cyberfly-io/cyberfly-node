@@ -5,10 +5,8 @@ import http from "http";
 import cors from 'cors';
 import { Server } from "socket.io";
 import { startOrbitDB } from './db-service.js';
-
-
-
-
+import { config } from 'dotenv';
+config();
 
 useAccessController(CyberflyAccessController)
 const orbitdb = await startOrbitDB()
