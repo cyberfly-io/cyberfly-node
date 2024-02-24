@@ -14,17 +14,30 @@ const pubsub = orbitdb.ipfs.libp2p.services.pubsub
 import express from 'express';
 const port = 3000;
 
-const updateData = async (data, sig, pubkey)=>{
+const updateData = async (data, sig, pubkey, dbtype, key='')=>{
    
     try{
-      const db = await orbitdb.open(`cyberfly-${pubkey}`, {type:'documents', AccessController:CyberflyAccessController(), })
+      const db = await orbitdb.open(`cyberfly-${pubkey}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController(), })
       var id = nanoid()
-      const r = await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
+      if(dbtype=='events'){
+        await db.add({publicKey:pubkey, data:data, sig:sig});
+      }
+      else if(dbtype=='keyvalue'){
+        await db.put(key,{publicKey:pubkey, data:data, sig:sig});
+      }
+      else{
+        await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
+      }
       console.log(db.address)
     }
     catch(e) {
      console.log(e)
     }
+}
+
+const getAllData = async (dbaddress)=>{
+   const db = await orbitdb.open(dbaddress);
+   return await db.all();
 }
 
 const app = express();
@@ -42,9 +55,27 @@ app.get("/", async(req, res)=>{
 });
 
 app.post("/data", async(req, res)=>{
-   await updateData(req.body.data, req.body.sig, req.body.publicKey)
-   res.send("success")
+  if(req.body.dbtype==null){
+    req.body.dbtype = 'documents'
+  }
+  if(req.body.dbtype=='keyvalue' && !req.body.key){
+    res.send("Need key for keyvalue store")
+  }
+  else if (req.body.dbtype=='keyvalue' && req.body.key){
+    await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype, req.body.key)
+   res.json({"info":"success"})
+  }
+  else{
+    await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
+    res.send("success")
+  }
+
 });
+
+app.post("/read", async(req, res)=>{
+  const data = await getAllData(req.body.dbaddress);
+  res.json(data);
+})
 
 
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
