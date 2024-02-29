@@ -67,7 +67,7 @@ app.post("/data", async(req, res)=>{
   }
   else{
     await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
-    res.send("success")
+    res.json({"info":"success"})
   }
 
 });
