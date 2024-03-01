@@ -16,7 +16,7 @@ const body = {sig:sig, data:data, publicKey:keypair['publicKey']}
 
 
 const postdata = async ()=>{
-  const d = await fetch("http://181.43.103.98:31000/data", {method:'POST', body:JSON.stringify(body), headers: {
+  const d = await fetch("http://85.2.21.29:31000/data", {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json'
   },});
   const j = await d.json()

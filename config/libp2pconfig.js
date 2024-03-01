@@ -10,10 +10,10 @@ import { bootstrap } from '@libp2p/bootstrap'
 
 export const libp2pOptions = {
     peerDiscovery: [
-      bootstrap({list:["/ip4/170.187.249.181/tcp/4001/p2p/12D3KooWN6UaUYr5QUmQo17KeaPvNBLtdw4irYDt9JYFGRgwGHUn"]})
+      bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/12D3KooWN6UaUYr5QUmQo17KeaPvNBLtdw4irYDt9JYFGRgwGHUn"]})
     ],
     addresses: {
-      listen: ['/ip4/0.0.0.0/tcp/4001'] //change this port for flux node like 31001
+      listen: ['/ip4/0.0.0.0/tcp/31001'] //change this port for flux node like 31001
     },
     transports: [
       tcp()
