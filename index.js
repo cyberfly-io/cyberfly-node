@@ -6,12 +6,14 @@ import cors from 'cors';
 import { Server } from "socket.io";
 import { startOrbitDB } from './db-service.js';
 import { config } from 'dotenv';
+import express from 'express';
 config();
 
 useAccessController(CyberflyAccessController)
 const orbitdb = await startOrbitDB()
+const libp2p = orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
-import express from 'express';
+
 const port = 3000;
 
 const updateData = async (data, sig, pubkey, dbtype, key='')=>{
@@ -29,15 +31,25 @@ const updateData = async (data, sig, pubkey, dbtype, key='')=>{
         await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       }
       console.log(db.address)
+      await pubsub.publish("dbupdate", db.address);
+      return db.address
+      
     }
     catch(e) {
      console.log(e)
+     return "something went wrong"
     }
 }
 
 const getAllData = async (dbaddress)=>{
-   const db = await orbitdb.open(dbaddress);
-   return await db.all();
+  try{
+    const db = await orbitdb.open(dbaddress);
+    return await db.all();
+  }
+   catch(e){
+    console.log(e)
+    return []
+   }
 }
 
 const app = express();
@@ -54,6 +66,13 @@ app.get("/", async(req, res)=>{
     res.send("hello world")
 });
 
+
+app.get("/nodeinfo", async(req, res)=>{
+  const peerId = libp2p.peerId
+  const info = {peerId:peerId, health:"ok"}
+  res.json(info)
+});
+
 app.post("/data", async(req, res)=>{
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
@@ -62,12 +81,12 @@ app.post("/data", async(req, res)=>{
     res.send("Need key for keyvalue store")
   }
   else if (req.body.dbtype=='keyvalue' && req.body.key){
-    await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype, req.body.key)
-   res.json({"info":"success"})
+    const dbaddr = await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype, req.body.key)
+   res.json({"info":"success", "dbAddr":dbaddr})
   }
   else{
-    await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
-    res.json({"info":"success"})
+    const dbaddr = await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
+    res.json({"info":"success", "dbAddr":dbaddr})
   }
 
 });
@@ -77,6 +96,15 @@ app.post("/read", async(req, res)=>{
   res.json(data);
 })
 
+
+await pubsub.subscribe("dbupdate");
+
+pubsub.addEventListener("message", async(message)=>{
+  const { topic, data } = message.detail
+  if(topic=='dbupdate'){
+    await orbitdb.open(data)
+  }
+})
 
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
 const deviceSockets = {}; // Store user sockets

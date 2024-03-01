@@ -13,7 +13,14 @@ const sig = getSig(data, keypair);
 
 const body = {sig:sig, data:data, publicKey:keypair['publicKey']}
 
-fetch("https://ripdb.cyberfly.io/data", {method:'POST', body:JSON.stringify(body), headers: {
-    'Content-Type': 'application/json'
-  },}).then(res => console.log(res.text()));
 
+
+const postdata = async ()=>{
+  const d = await fetch("http://181.43.103.98:31000/data", {method:'POST', body:JSON.stringify(body), headers: {
+    'Content-Type': 'application/json'
+  },});
+  const j = await d.json()
+  console.log(j)
+}
+
+postdata();
