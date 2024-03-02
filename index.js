@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import { startOrbitDB } from './db-service.js';
 import { config } from 'dotenv';
 import express from 'express';
+import { toString } from 'uint8arrays/to-string'
 config();
 
 useAccessController(CyberflyAccessController)
@@ -105,7 +106,7 @@ pubsub.addEventListener("message", async(message)=>{
     console.log("dbname")
     console.log(typeof data)
     console.log(data)
-    const dat = JSON.parse(data)
+    const dat = JSON.parse(toString(data))
     const db = await orbitdb.open(dat.dbAddr)
     await db.all()
   }
