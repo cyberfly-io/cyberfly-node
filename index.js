@@ -8,6 +8,8 @@ import { startOrbitDB } from './db-service.js';
 import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
+import { fromString } from 'uint8arrays/from-string'
+
 config();
 
 useAccessController(CyberflyAccessController)
@@ -32,7 +34,7 @@ const updateData = async (data, sig, pubkey, dbtype, key='')=>{
         await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      await pubsub.publish("dbupdate", JSON.stringify(msg));
+      await pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return db.address
       
     }
