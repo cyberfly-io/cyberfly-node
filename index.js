@@ -103,8 +103,9 @@ pubsub.addEventListener("message", async(message)=>{
   const { topic, data } = message.detail
   if(topic=='dbupdate'){
     console.log("dbname")
-    console.log(data)
-    await orbitdb.open(data.toString())
+    console.log(data.toString())
+    const db = await orbitdb.open(data.toString())
+    await db.all()
   }
 })
 
