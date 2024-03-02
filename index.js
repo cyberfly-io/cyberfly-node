@@ -72,7 +72,7 @@ app.get("/", async(req, res)=>{
 
 app.get("/nodeinfo", async(req, res)=>{
   const peerId = libp2p.peerId
-  const info = {peerId:peerId, health:"ok"}
+  const info = {peerId:peerId, health:"ok", version:"0.1"}
   res.json(info)
 });
 
