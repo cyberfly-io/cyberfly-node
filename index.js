@@ -19,6 +19,17 @@ const pubsub = orbitdb.ipfs.libp2p.services.pubsub
 
 const port = 3000;
 
+libp2p.addEventListener('peer:connect', (evt) => {
+  const peerId = evt.detail
+  console.log('Connection established to:', peerId.toString()) // Emitted when a peer has been found
+})
+
+libp2p.addEventListener('peer:discovery', (evt) => {
+  const peerInfo = evt.detail
+
+  console.log('Discovered:', peerInfo.id.toString())
+})
+
 const updateData = async (data, sig, pubkey, dbtype, key='')=>{
    
     try{
