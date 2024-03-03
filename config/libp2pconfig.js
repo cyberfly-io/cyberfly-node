@@ -3,7 +3,7 @@ import { identify } from '@libp2p/identify'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import { kadDHT } from '@libp2p/kad-dht'
+import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { bootstrap } from '@libp2p/bootstrap'
 
 
@@ -21,15 +21,9 @@ export const libp2pOptions = {
     connectionEncryption: [noise()],
     streamMuxers: [yamux()],
     services: {
-      kadDHT: kadDHT({
-        kBucketSize: 20,
-        clientMode: false,
-        enabled: true,
-        randomWalk: {
-          enabled: true,            // Allows to disable discovery (enabled by default)
-          interval: 300e3,
-          timeout: 10e3
-        }
+      aminoDHT: kadDHT({
+        protocol: '/ipfs/kad/1.0.0',
+        peerInfoMapper: removePrivateAddressesMapper
       }),
       identify: identify(),
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })
