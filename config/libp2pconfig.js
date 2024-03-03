@@ -21,9 +21,16 @@ export const libp2pOptions = {
     connectionEncryption: [noise()],
     streamMuxers: [yamux()],
     services: {
-      aminoDHT: kadDHT({
-        protocol: '/ipfs/kad/1.0.0',
-        peerInfoMapper: removePrivateAddressesMapper
+      kadDHT: kadDHT({
+        kBucketSize: 20,
+        clientMode: true,
+        enabled: true,
+        allowQueryWithZeroPeers: true,
+        randomWalk: {
+          enabled: true,            // Allows to disable discovery (enabled by default)
+          interval: 300e3,
+          timeout: 10e3
+        }
       }),
       identify: identify(),
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })

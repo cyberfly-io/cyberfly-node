@@ -30,6 +30,7 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   console.log('Discovered:', peerInfo.id.toString())
 })
 
+
 const updateData = async (data, sig, pubkey, dbtype, key='')=>{
    
     try{
