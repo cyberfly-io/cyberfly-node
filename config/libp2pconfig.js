@@ -20,13 +20,11 @@ export const libp2pOptions = {
     ],
     connectionEncryption: [noise()],
     streamMuxers: [yamux()],
+    dht :kadDHT({
+      kBucketSize: 20,
+      clientMode: false,
+    }),
     services: {
-      kadDHT: kadDHT({
-        kBucketSize: 20,
-        clientMode: true,
-        enabled: true,
-        allowQueryWithZeroPeers: true,
-      }),
       identify: identify(),
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })
     }
