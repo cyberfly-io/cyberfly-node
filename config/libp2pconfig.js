@@ -3,7 +3,7 @@ import { identify } from '@libp2p/identify'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { kadDHT } from '@libp2p/kad-dht'
 import { bootstrap } from '@libp2p/bootstrap'
 
 
@@ -26,11 +26,6 @@ export const libp2pOptions = {
         clientMode: true,
         enabled: true,
         allowQueryWithZeroPeers: true,
-        randomWalk: {
-          enabled: true,            // Allows to disable discovery (enabled by default)
-          interval: 300e3,
-          timeout: 10e3
-        }
       }),
       identify: identify(),
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })
