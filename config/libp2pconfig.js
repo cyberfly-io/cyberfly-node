@@ -11,7 +11,6 @@ import { bootstrap } from '@libp2p/bootstrap'
 export const libp2pOptions = {
     peerDiscovery: [
       bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/12D3KooWN6UaUYr5QUmQo17KeaPvNBLtdw4irYDt9JYFGRgwGHUn",
-      "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
       "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
 
 
