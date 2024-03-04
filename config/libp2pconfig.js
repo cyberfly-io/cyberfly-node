@@ -11,7 +11,7 @@ import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 
 export const libp2pOptions = {
     peerDiscovery: [
-      bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/12D3KooWMWc3jVBkuQxeFJAUQ42HRiEq1yWSZLPx82TDMyjE1Uco",
+      bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/12D3KooWAwctiANsPDMSfGkFav5QGQ97ffGUc1U5FjZwaESF4Tad",
     ]}),
     pubsubPeerDiscovery({
       interval: 1000,
