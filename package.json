@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@chainsafe/libp2p-gossipsub": "^11.1.0",
-    "@orbitdb/core": "^2.0.1",
+    "@orbitdb/core": "2.1.0",
     "@orbitdb/identity-provider-ethereum": "^1.0.2",
     "blockstore-level": "^1.1.7",
     "cors": "^2.8.5",
