@@ -28,6 +28,7 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   const peerInfo = evt.detail
 
   console.log('Discovered:', peerInfo.id.toString())
+  console.log(peerInfo)
 })
 
 

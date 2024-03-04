@@ -5,6 +5,7 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { kadDHT } from '@libp2p/kad-dht'
 import { bootstrap } from '@libp2p/bootstrap'
+import { autoNAT } from "@libp2p/autonat";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 
 
@@ -27,12 +28,16 @@ export const libp2pOptions = {
     ],
     connectionEncryption: [noise()],
     streamMuxers: [yamux()],
+    connectionGater: {
+      denyDialMultiaddr: () => false,
+    },
     services: {
       dht: kadDHT({
         kBucketSize: 20,
         clientMode: false,
         enabled: true,      
       }),
+      autoNAT: autoNAT(),
       identify: identify(),
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })
     }
