@@ -10,7 +10,10 @@ import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 
 
 
-export const libp2pOptions = {
+
+
+export const getLibp2pOptions = (ip, peerId)=> {
+  return {
     peerDiscovery: [
       bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/12D3KooWAwctiANsPDMSfGkFav5QGQ97ffGUc1U5FjZwaESF4Tad",
     ]}),
@@ -21,7 +24,8 @@ export const libp2pOptions = {
     }),
     ],
     addresses: {
-      listen: ['/ip4/0.0.0.0/tcp/31001']
+      listen: ['/ip4/0.0.0.0/tcp/31001'],
+      announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`]
     },
     transports: [
       tcp()
@@ -42,3 +46,4 @@ export const libp2pOptions = {
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })
     }
   }
+}

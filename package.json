@@ -21,6 +21,7 @@
     "helia": "^4.0.0",
     "http": "^0.0.1-security",
     "nanoid": "^5.0.5",
+    "node-fetch": "^3.3.2",
     "pact-lang-api": "^4.3.6",
     "socket.io": "^4.7.4"
   }

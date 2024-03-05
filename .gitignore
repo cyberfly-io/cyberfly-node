@@ -27,7 +27,7 @@ coverage
 .env
 # nyc test coverage
 .nyc_output
-
+peer-id.json
 # Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
