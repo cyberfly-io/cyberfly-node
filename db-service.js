@@ -5,10 +5,7 @@ import { LevelBlockstore } from 'blockstore-level'
 import { bitswap } from '@helia/block-brokers'
 import { getLibp2pOptions } from './config/libp2pconfig.js'
 import { getIp, loadOrCreatePeerId } from './config/utils.js'
-import {
-    toString as uint8ArrayToString,
-  } from "uint8arrays";
-import fs from "fs";
+
 
 
 
@@ -16,7 +13,6 @@ const startOrbitDB = async ({ id, identity, identities, directory } = {}) => {
   const ip = await getIp()
   const peerId = await loadOrCreatePeerId('./peer-id.json')
   const options =  getLibp2pOptions(ip, peerId.toString())
-  console.log(options)
   const libp2p = await createLibp2p({peerId, ...options })
   console.log(libp2p.peerId.toString())
   directory = directory || '.'

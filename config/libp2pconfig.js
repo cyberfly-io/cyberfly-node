@@ -3,14 +3,19 @@ import { identify } from '@libp2p/identify'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
+import {mplex} from "@libp2p/mplex";
 import { kadDHT } from '@libp2p/kad-dht'
 import { bootstrap } from '@libp2p/bootstrap'
 import { autoNAT } from "@libp2p/autonat";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
-
-
-
-
+import {circuitRelayServer, circuitRelayTransport} from "@libp2p/circuit-relay-v2";
+import {webRTC, webRTCDirect} from "@libp2p/webrtc";
+import {webSockets} from "@libp2p/websockets";
+import {dcutr} from "@libp2p/dcutr";
+import {ipnsValidator} from "ipns/validator";
+import {ipnsSelector} from "ipns/selector";
+import {ping} from "@libp2p/ping";
+import {uPnPNAT} from "@libp2p/upnp-nat";
 
 export const getLibp2pOptions = (ip, peerId)=> {
   return {
@@ -24,14 +29,24 @@ export const getLibp2pOptions = (ip, peerId)=> {
     }),
     ],
     addresses: {
-      listen: ['/ip4/0.0.0.0/tcp/31001'],
+      listen: ['/ip4/0.0.0.0/tcp/31001',
+      '/ip4/0.0.0.0/tcp/31001/ws',
+      '/webrtc'
+    ],
       announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`]
     },
     transports: [
-      tcp()
+      circuitRelayTransport({
+        discoverRelays: 1
+    }),
+    tcp(),
+    webRTC(),
+    webRTCDirect(),
+    webSockets()
     ],
     connectionEncryption: [noise()],
-    streamMuxers: [yamux()],
+    streamMuxers: [yamux(),  
+      mplex()],
     connectionGater: {
       denyDialMultiaddr: () => false,
     },
@@ -39,10 +54,22 @@ export const getLibp2pOptions = (ip, peerId)=> {
       dht: kadDHT({
         kBucketSize: 20,
         clientMode: false,
-        enabled: true,      
+        enabled: true,
+        validators: {
+          ipns: ipnsValidator
+      },
+      selectors: {
+          ipns: ipnsSelector
+      }     
       }),
       autoNAT: autoNAT(),
+      dcutr: dcutr(),
       identify: identify(),
+      ping: ping(),
+      relay: circuitRelayServer({
+          advertise: true
+      }),
+      upnp: uPnPNAT(),
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true })
     }
   }
