@@ -30,7 +30,7 @@ export const getLibp2pOptions = (ip, peerId)=> {
     ],
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
-      '/ip4/0.0.0.0/tcp/31001/ws',
+      '/ip4/0.0.0.0/tcp/31002/ws',
       '/webrtc'
     ],
       announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`]
