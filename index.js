@@ -151,7 +151,7 @@ io.on("connection", (socket) => {
       const { topic, data } = message.detail
 
       if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
-        io.to(socket.id).emit("onmessage", { topic: topic, message: data });
+        io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
       }
     })
     await pubsub.subscribe(topic)
@@ -166,7 +166,7 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("publish", async(topic ,message)=>{
-   await pubsub.publish(topic, message);
+   await pubsub.publish(topic, fromString(JSON.stringify(message)));
   })
   socket.on("disconnect", () => {
     if (subscribedSockets[socket.id]) {
