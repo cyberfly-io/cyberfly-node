@@ -19,4 +19,4 @@ EXPOSE 31001
 
 
 # Command to run your application
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
