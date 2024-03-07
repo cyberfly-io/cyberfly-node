@@ -9,8 +9,6 @@ import { bootstrap } from '@libp2p/bootstrap'
 import { autoNAT } from "@libp2p/autonat";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import {circuitRelayServer, circuitRelayTransport} from "@libp2p/circuit-relay-v2";
-import {webRTC, webRTCDirect} from "@libp2p/webrtc";
-import {webSockets} from "@libp2p/websockets";
 import {dcutr} from "@libp2p/dcutr";
 import {ipnsValidator} from "ipns/validator";
 import {ipnsSelector} from "ipns/selector";
@@ -21,17 +19,16 @@ export const getLibp2pOptions = (ip, peerId)=> {
   return {
     peerDiscovery: [
       bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/QmXwf2mBsniQ25zK5ezCH2WQtjn3NbtFLyc6D1S5uhtSFV",
+      "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
     ]}),
-    pubsubPeerDiscovery({
+   /* pubsubPeerDiscovery({
       interval: 1000,
       topics: ["cyberfly._peer-discovery._p2p._pubsub"],
       listenOnly: false,
-    }),
+    }),*/
     ],
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
-      '/ip4/0.0.0.0/tcp/31002/ws',
-      '/webrtc'
     ],
       announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`]
     },
@@ -40,9 +37,6 @@ export const getLibp2pOptions = (ip, peerId)=> {
         discoverRelays: 1
     }),
     tcp(),
-    webRTC(),
-    webRTCDirect(),
-    webSockets()
     ],
     connectionEncryption: [noise()],
     streamMuxers: [yamux(),  
