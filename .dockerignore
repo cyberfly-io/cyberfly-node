@@ -13,6 +13,7 @@
 # production
 /build
 peer-id.json
+config.json
 # misc
 .DS_Store
 .env

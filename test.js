@@ -16,7 +16,7 @@ const body = {sig:sig, data:data, publicKey:keypair['publicKey']}
 
 
 const postdata = async ()=>{
-  const d = await fetch("http://185.185.169.105:31000/data", {method:'POST', body:JSON.stringify(body), headers: {
+  const d = await fetch("http://node.cyberfly.io:3000/data", {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json'
   },});
   const j = await d.json()

@@ -1,6 +1,11 @@
 import fs from 'fs';
 import { peerIdFromKeys } from '@libp2p/peer-id';
 import * as crypto from '@libp2p/crypto'; // Assuming this or a similar module for key generation
+import { genKeyPair} from '@kadena/cryptography-utils';
+import { createClient, Pact, createSignWithKeypair } from '@kadena/client';
+
+
+const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact',)
 
 
   function uint8ArrayToBase64(bytes) {
@@ -11,7 +16,7 @@ function base64ToUint8Array(base64) {
     return new Uint8Array(Buffer.from(base64, 'base64'));
 }
 
-  export async function loadOrCreatePeerId(filePath) {
+  export async function loadOrCreatePeerIdAndKeyPair(filePath) {
     try {
         if (fs.existsSync(filePath)) {
             const keyJson = fs.readFileSync(filePath, 'utf-8');
@@ -19,20 +24,25 @@ function base64ToUint8Array(base64) {
             // Convert base64 strings back to Uint8Array for privateKey and publicKey
             const privateKeyBytes = base64ToUint8Array(keyData.privateKey);
             const publicKeyBytes = base64ToUint8Array(keyData.publicKey);
-            return await peerIdFromKeys(publicKeyBytes, privateKeyBytes);
+            const peerId =  await peerIdFromKeys(publicKeyBytes, privateKeyBytes)
+            return {kadenaPub:keyData.kadenaPub, kadenaSec:keyData.kadenaSec, peerId:peerId};
         } else {
             const privateKey = await crypto.keys.generateKeyPair('RSA', 2048);
+            const kadenaKP = genKeyPair()
             const peerId = await peerIdFromKeys(privateKey.public.bytes, privateKey.bytes);
 
             // Save keys to file, converting Uint8Array to base64 for JSON serialization
             const keyData = {
                 publicKey: uint8ArrayToBase64(privateKey.public.bytes),
                 privateKey: uint8ArrayToBase64(privateKey.bytes),
+                kadenaPub: kadenaKP.publicKey,
+                kadenaSec: kadenaKP.secretKey
             };
             fs.writeFileSync(filePath, JSON.stringify(keyData));
 
             console.log(`Generated and saved a new PeerId to ${filePath}`);
-            return peerId;
+            
+            return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId};
         }
     } catch (error) {
         console.error('Error in loadOrCreatePeerId:', error);
@@ -51,4 +61,61 @@ function base64ToUint8Array(base64) {
       
     }
 
+  }
+
+
+  const getGuard = (account, pubkey)=>{
+    return {pred:"keys-any", keys:[account.split(':')[1], pubkey]}
+  }
+
+
+  const createNode = async (peerId, multiaddr, account, pubkey, seckey)=>{
+  const utxn = Pact.builder.execution(`(free.cyberfly_node.new-node "${peerId}" "active" "${multiaddr}" "${account}" (read-keyset "ks"))`)
+  .addData("ks",getGuard(account, pubkey))
+  .addSigner(pubkey, (withCapability)=>[
+    withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
+  ])
+  .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001})
+  .setNetworkId("testnet04")
+  .createTransaction();
+  const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
+  const signedTx = await signTransaction(utxn)
+  const res = await client.local(signedTx)
+  if(res.result.status=="success"){
+    const txn = await client.submit(signedTx)
+    console.log(txn)
+  }
+}
+
+
+  export const addNodeToContract = async (peerId, multiaddr, account, pubkey, seckey)=>{
+  
+    const nodeinfo = await getNodeInfo(peerId, pubkey, seckey)
+    if(nodeinfo.result.status == "failure" && nodeinfo.result.error.message.includes("row not found")){
+      //add to contract
+      await createNode(peerId, multiaddr, account, pubkey, seckey)
+    }
+  }
+
+
+  const getNodeInfo = async (peerId, pubkey, seckey) =>{
+    const unsignedTransaction = Pact.builder
+    .execution(`(free.cyberfly_node.get-node "${peerId}")`)
+    .addSigner(pubkey)
+    .setMeta({
+      chainId: '1',
+      senderAccount: 'cyberfly-account-gas',
+      gasLimit: 2000,
+      gasPrice: 0.0000001
+    })
+    .addSigner(pubkey)
+    // set networkId
+    .setNetworkId('testnet04')
+    // create transaction with hash
+    .createTransaction();
+    const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
+    const signedTx = await signTransaction(unsignedTransaction)
+  // Send it or local it
+  const res = await client.local(signedTx, { signatureVerification:false, preflight:false});
+  return res
   }

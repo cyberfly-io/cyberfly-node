@@ -9,14 +9,16 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
+import { addNodeToContract} from './config/utils.js'
 
 config();
 
 useAccessController(CyberflyAccessController)
-const orbitdb = await startOrbitDB()
-const libp2p = orbitdb.ipfs.libp2p
+const nodeConfig = await startOrbitDB()
+const orbitdb = nodeConfig.orbitdb
+const libp2p = await orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
-
+addNodeToContract(libp2p.peerId.toString(), libp2p.getMultiaddrs()[0].toString(), process.env.ACCOUNT, nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 const port = 3000;
 
 libp2p.addEventListener('peer:connect', (evt) => {

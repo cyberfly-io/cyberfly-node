@@ -11,7 +11,6 @@ export const getLibp2pOptions = (ip, peerId)=> {
   return {
     peerDiscovery: [
       bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/QmXwf2mBsniQ25zK5ezCH2WQtjn3NbtFLyc6D1S5uhtSFV",
-      "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
     ]}),
     pubsubPeerDiscovery({
       interval: 1000,
