@@ -1,4 +1,4 @@
-import {useAccessController  } from '@orbitdb/core'
+import {isValidAddress, useAccessController  } from '@orbitdb/core'
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { nanoid } from 'nanoid'
 import http from "http";
@@ -9,7 +9,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { addNodeToContract} from './config/utils.js'
+import { addNodeToContract, selectFields} from './config/utils.js'
 
 config();
 
@@ -81,7 +81,7 @@ const io = new Server(server, {
 });
 
 app.get("/", async(req, res)=>{
-    res.send("hello world")
+    res.send("Cyberfly Node")
 });
 
 
@@ -110,8 +110,45 @@ app.post("/data", async(req, res)=>{
 });
 
 app.post("/read", async(req, res)=>{
-  const data = await getAllData(req.body.dbaddress);
-  res.json(data);
+  if(!isValidAddress(req.body.dbaddress)){
+    res.json({"error":"Invalid db address"})
+
+  }
+  else{
+    try{
+      const data = await getAllData(req.body.dbaddress);
+      res.json(data);
+    }
+    catch(e){
+      console.log(e)
+    }
+   
+  }
+  
+})
+
+app.get('/peers', async(req, res)=>{
+
+  const peers =await libp2p.peerStore.all()
+  const peer_and_multiaddr = selectFields(peers, ["id", "addresses"])
+res.json(peer_and_multiaddr)
+})
+
+app.post("/dbinfo", async(req, res)=>{
+  if(!isValidAddress(req.body.dbaddress)){
+    res.json({"error":"Invalid db address"})
+  }
+  else{
+    try{
+      const dbinfo = await orbitdb.open(req.body.dbaddress)
+    res.json({dbaddress:dbinfo.address, name:dbinfo.name});
+    }
+    catch(e){
+  console.log(e)
+  res.json({"error":"Invalid db address"})
+    }
+  }
+
 })
 
 

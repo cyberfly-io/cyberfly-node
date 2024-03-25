@@ -119,3 +119,13 @@ function base64ToUint8Array(base64) {
   const res = await client.local(signedTx, { signatureVerification:false, preflight:false});
   return res
   }
+
+  export function selectFields(objects, fields) {
+    return objects.map(obj => {
+      const newObj = {};
+      fields.forEach(field => {
+        newObj[field] = obj[field];
+      });
+      return newObj;
+    });
+  }
