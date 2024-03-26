@@ -18,7 +18,7 @@ const nodeConfig = await startOrbitDB()
 const orbitdb = nodeConfig.orbitdb
 const libp2p = await orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
-addNodeToContract(libp2p.peerId.toString(), libp2p.getMultiaddrs()[0].toString(), process.env.ACCOUNT, nodeConfig.kadenaPub, nodeConfig.kadenaSec)
+//addNodeToContract(libp2p.peerId.toString(), libp2p.getMultiaddrs()[0].toString(), process.env.ACCOUNT, nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 const port = 3000;
 
 libp2p.addEventListener('peer:connect', (evt) => {
@@ -87,7 +87,7 @@ app.get("/", async(req, res)=>{
 
 app.get("/nodeinfo", async(req, res)=>{
   const peerId = libp2p.peerId
-  const info = {peerId:peerId, health:"ok", version:"0.1"}
+  const info = {peerId:peerId, health:"ok", version:"0.1", multiAddr:libp2p.getMultiaddrs()[0].toString(), publicKey:nodeConfig.kadenaPub}
   res.json(info)
 });
 
@@ -110,7 +110,7 @@ app.post("/data", async(req, res)=>{
 });
 
 app.post("/read", async(req, res)=>{
-  if(!isValidAddress(req.body.dbaddress)){
+  if( !req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
     res.json({"error":"Invalid db address"})
 
   }
@@ -135,7 +135,7 @@ res.json(peer_and_multiaddr)
 })
 
 app.post("/dbinfo", async(req, res)=>{
-  if(!isValidAddress(req.body.dbaddress)){
+  if(!req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
     res.json({"error":"Invalid db address"})
   }
   else{
