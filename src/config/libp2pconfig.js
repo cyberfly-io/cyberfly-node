@@ -6,9 +6,6 @@ import { yamux } from '@chainsafe/libp2p-yamux'
 import {mplex} from "@libp2p/mplex";
 import { bootstrap } from '@libp2p/bootstrap'
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
-import { webSockets } from '@libp2p/websockets'
-import * as filters from '@libp2p/websockets/filters'
-import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 
 
 export const getLibp2pOptions = (ip, peerId)=> {
@@ -24,15 +21,11 @@ export const getLibp2pOptions = (ip, peerId)=> {
     ],
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
-      '/ip4/0.0.0.0/tcp/31001/ws'
     ],
-      announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`, `/ip4/${ip}/tcp/31001/p2p/${peerId}/ws`]
+      announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,]
     },
     transports: [
     tcp(),
-    webSockets({
-      filter: filters.all
-    })
     ],
     connectionEncryption: [noise()],
     streamMuxers: [yamux(),mplex()],
@@ -42,11 +35,6 @@ export const getLibp2pOptions = (ip, peerId)=> {
     services: {
       identify: identify(),
       pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true }),
-      relay: circuitRelayServer({
-        reservations: {
-          maxReservations: Infinity
-        }
-      })
     },
     connectionManager: {
       minConnections: 0
