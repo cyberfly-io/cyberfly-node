@@ -21,14 +21,18 @@ const pubsub = orbitdb.ipfs.libp2p.services.pubsub
 //addNodeToContract(libp2p.peerId.toString(), libp2p.getMultiaddrs()[0].toString(), process.env.ACCOUNT, nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 const port = 3000;
 
+const discovered = []
+const connected = []
+
 libp2p.addEventListener('peer:connect', (evt) => {
   const peerId = evt.detail
+  connected.push(peerId.toString())
   console.log('Connection established to:', peerId.toString()) // Emitted when a peer has been found
 })
 
 libp2p.addEventListener('peer:discovery', (evt) => {
   const peerInfo = evt.detail
-
+  discovered.push(peerInfo.id.toString())
   console.log('Discovered:', peerInfo.id.toString())
   console.log(peerInfo)
 })
@@ -87,7 +91,9 @@ app.get("/", async(req, res)=>{
 
 app.get("/nodeinfo", async(req, res)=>{
   const peerId = libp2p.peerId
-  const info = {peerId:peerId, health:"ok", version:"0.1", multiAddr:libp2p.getMultiaddrs()[0].toString(), publicKey:nodeConfig.kadenaPub}
+  const info = {peerId:peerId, health:"ok", version:"0.1", 
+  multiAddr:libp2p.getMultiaddrs()[0].toString(), 
+  publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:connected.length}
   res.json(info)
 });
 
