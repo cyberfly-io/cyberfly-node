@@ -37,6 +37,15 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   console.log(peerInfo)
 })
 
+libp2p.addEventListener('peer:disconnect', (evt) => {
+  const peerId = evt.detail
+  const index = connected.indexOf(peerId.toString())
+  if (index !== -1) {
+    connected.splice(index, 1)
+    console.log('Disconnected from peer:', peerId.toString())
+  }
+})
+
 
 const updateData = async (data, sig, pubkey, dbtype, key='')=>{
    

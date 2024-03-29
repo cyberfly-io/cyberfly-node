@@ -40,7 +40,7 @@ export const getLibp2pOptions = (ip, peerId)=> {
     },
     services: {
       identify: identify(),
-      pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true }),
+      pubsub: gossipsub({ allowPublishToZeroTopicPeers: true, emitSelf: true }),
       relay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
