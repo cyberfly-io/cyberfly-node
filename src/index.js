@@ -9,18 +9,16 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { addNodeToContract, selectFields} from './config/utils.js'
+import { selectFields} from './config/utils.js'
+
 
 config();
-
 useAccessController(CyberflyAccessController)
 const nodeConfig = await startOrbitDB()
 const orbitdb = nodeConfig.orbitdb
 const libp2p = await orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
-//addNodeToContract(libp2p.peerId.toString(), libp2p.getMultiaddrs()[0].toString(), process.env.ACCOUNT, nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 const port = 3000;
-
 const discovered = []
 const connected = []
 
@@ -143,9 +141,8 @@ app.post("/read", async(req, res)=>{
 })
 
 app.get('/peers', async(req, res)=>{
-
-  const peers =await libp2p.peerStore.all()
-  const peer_and_multiaddr = selectFields(peers, ["id", "addresses"])
+  const con = libp2p.getConnections()
+ const peer_and_multiaddr = selectFields(con, ["remoteAddr", "remotePeer"])
 res.json(peer_and_multiaddr)
 })
 
@@ -156,6 +153,7 @@ app.post("/dbinfo", async(req, res)=>{
   else{
     try{
       const dbinfo = await orbitdb.open(req.body.dbaddress)
+      
     res.json({dbaddress:dbinfo.address, name:dbinfo.name});
     }
     catch(e){
