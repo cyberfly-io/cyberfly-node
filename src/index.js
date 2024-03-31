@@ -60,7 +60,7 @@ const updateData = async (data, sig, pubkey, dbtype, key='')=>{
         await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      await pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return db.address
       
     }
@@ -171,6 +171,7 @@ pubsub.addEventListener("message", async(message)=>{
   const { topic, data } = message.detail
   if(topic=='dbupdate'){
     try{
+      console.log('dbupdate called')
     const dat = JSON.parse(toString(data))
     await orbitdb.open(dat.dbAddr)
   }

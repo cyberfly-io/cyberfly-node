@@ -7,7 +7,7 @@ function randomIntFromInterval(min, max) {
 
 const keypair = Pact.crypto.genKeyPair()
   
-const data = {"temp": randomIntFromInterval(20, 35)}
+const data = {"temp": randomIntFromInterval(20, 35), "timestamp":new Date().toISOString()}
 
 const sig = getSig(data, keypair);
 
