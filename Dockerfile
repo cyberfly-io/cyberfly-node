@@ -14,9 +14,9 @@ RUN yarn install --ignore-engines
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 3000
 EXPOSE 31001
-
+EXPOSE 31002
+EXPOSE 31003
 
 # Command to run your application
 CMD ["node", "src/index.js"]
