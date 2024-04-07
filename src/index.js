@@ -18,7 +18,7 @@ const nodeConfig = await startOrbitDB()
 const orbitdb = nodeConfig.orbitdb
 const libp2p = await orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
-const port = 3000;
+const port = 31003;
 const discovered = []
 const connected = []
 
@@ -81,6 +81,17 @@ const getAllData = async (dbaddress)=>{
    }
 }
 
+const getData = async (dbaddress, key)=>{
+  try{
+    const db = await orbitdb.open(dbaddress);
+    return await db.get(key);
+  }
+   catch(e){
+    console.log(e)
+    return []
+   }
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -118,6 +129,17 @@ app.post("/data", async(req, res)=>{
   else{
     const dbaddr = await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
     res.json({"info":"success", "dbAddr":dbaddr})
+  }
+
+});
+
+app.post("/getdata", async(req, res)=>{
+  if(req.body.dbaddress==null || req.body.key==null ){
+    res.json({"error":"dbaddress and key is required"})
+  }
+  else{
+    const data = await getData(req.body.dbaddress, req.body.key);
+    res.json(data)
   }
 
 });
@@ -171,7 +193,6 @@ pubsub.addEventListener("message", async(message)=>{
   const { topic, data } = message.detail
   if(topic=='dbupdate'){
     try{
-      console.log('dbupdate called')
     const dat = JSON.parse(toString(data))
     await orbitdb.open(dat.dbAddr)
   }
