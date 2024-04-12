@@ -9,7 +9,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { selectFields} from './config/utils.js'
+import { addNodeToContract, selectFields} from './config/utils.js'
 
 
 config();
@@ -18,10 +18,15 @@ const nodeConfig = await startOrbitDB()
 const orbitdb = nodeConfig.orbitdb
 const libp2p = await orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
+const account = process.env.KADENA_ACCOUNT
+if(!account){
+  console.log("KADENA_ACCOUNT environment variable is required")
+  process.exit(1)
+}
 const port = 31003;
 const discovered = []
 const connected = []
-
+addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 libp2p.addEventListener('peer:connect', (evt) => {
   const peerId = evt.detail
   connected.push(peerId.toString())
