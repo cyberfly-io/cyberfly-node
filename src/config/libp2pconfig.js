@@ -13,11 +13,11 @@ import { kadDHT } from '@libp2p/kad-dht'
 import { webTransport } from '@libp2p/webtransport'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 
-export const getLibp2pOptions = (ip, peerId)=> {
+
+export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
   return {
     peerDiscovery: [
-      bootstrap({list:["/ip4/170.187.249.181/tcp/31001/p2p/QmVydtrKsPcLdscLP9YMSynmc7GCNA7ZeUE9ViALuWijqV",
-    ]}),
+      bootstrap({list:bootstrap_nodes}),
     pubsubPeerDiscovery({
       interval: 1000,
       topics: ["cyberfly._peer-discovery._p2p._pubsub"],

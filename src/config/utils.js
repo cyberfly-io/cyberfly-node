@@ -120,6 +120,26 @@ function base64ToUint8Array(base64) {
   return res
   }
 
+
+  export const getNodes = async () =>{
+    const unsignedTransaction = Pact.builder
+    .execution(`(free.cyberfly_node.get-all-nodes)`)
+    .setMeta({
+      chainId: '1',
+      senderAccount: 'cyberfly-account-gas',
+      gasLimit: 55000,
+      gasPrice: 0.0000001
+    })
+    // set networkId
+    .setNetworkId('testnet04')
+    // create transaction with hash
+    .createTransaction();
+
+  // Send it or local it
+  const res = await client.local(unsignedTransaction, { signatureVerification:false, preflight:false});
+  return res
+  }
+
   export function selectFields(objects, fields) {
     return objects.map(obj => {
       const newObj = {};
