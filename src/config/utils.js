@@ -92,31 +92,30 @@ function base64ToUint8Array(base64) {
   
     const nodeinfo = await getNodeInfo(peerId, pubkey, seckey)
     if(nodeinfo.result.status == "failure" && nodeinfo.result.error.message.includes("row not found")){
-      //add to contract
       await createNode(peerId, multiaddr, account, pubkey, seckey)
     }
+    
+    setInterval(()=>{checkNodeStatus(peerId, multiaddr, account, pubkey, seckey)}, 10000)
+
   }
 
 
-  const getNodeInfo = async (peerId, pubkey, seckey) =>{
+  const getNodeInfo = async (peerId) =>{
     const unsignedTransaction = Pact.builder
     .execution(`(free.cyberfly_node.get-node "${peerId}")`)
-    .addSigner(pubkey)
     .setMeta({
       chainId: '1',
       senderAccount: 'cyberfly-account-gas',
       gasLimit: 2000,
       gasPrice: 0.0000001
     })
-    .addSigner(pubkey)
     // set networkId
     .setNetworkId('testnet04')
     // create transaction with hash
     .createTransaction();
-    const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
-    const signedTx = await signTransaction(unsignedTransaction)
+    
   // Send it or local it
-  const res = await client.local(signedTx, { signatureVerification:false, preflight:false});
+  const res = await client.local(unsignedTransaction, { signatureVerification:false, preflight:false});
   return res
   }
 
@@ -148,4 +147,39 @@ function base64ToUint8Array(base64) {
       });
       return newObj;
     });
+  }
+
+  const activateNode = async(peerId, multiaddr, account, pubkey, seckey)=>{
+
+    const utxn = Pact.builder.execution(`(free.cyberfly_node.update-node "${peerId}" "${multiaddr}" "${account}" "active")`)
+    .addSigner(pubkey, (withCapability)=>[
+      withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
+    ])
+    .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001})
+    .setNetworkId("testnet04")
+    .createTransaction();
+    const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
+    const signedTx = await signTransaction(utxn)
+    const res = await client.local(signedTx)
+    if(res.result.status=="success"){
+      const txn = await client.submit(signedTx)
+      console.log(txn)
+    }
+     
+  }
+
+  const  checkNodeStatus = async (peerId, multiaddr, account, pubkey, seckey)=>{
+    try{
+
+
+     const result = await getNodeInfo(peerId)
+     if(result.result.status==="success"){
+      if(result.result.data.status!=='active'){
+         activateNode(peerId, multiaddr, account, pubkey, seckey)
+      }
+     }
+    }
+    catch(e){
+     console.log(e)
+    }
   }

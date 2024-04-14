@@ -29,6 +29,7 @@ const connected = []
 addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 libp2p.addEventListener('peer:connect', (evt) => {
   const peerId = evt.detail
+  console.log(peerId)
   connected.push(peerId.toString())
   console.log('Connection established to:', peerId.toString()) // Emitted when a peer has been found
 })
@@ -168,9 +169,8 @@ app.post("/read", async(req, res)=>{
 })
 
 app.get('/peers', async(req, res)=>{
-  const con = libp2p.getConnections()
- const peer_and_multiaddr = selectFields(con, ["remoteAddr", "remotePeer"])
-res.json(peer_and_multiaddr)
+const con = libp2p.getPeers()
+res.json(con)
 })
 
 app.post("/dbinfo", async(req, res)=>{
