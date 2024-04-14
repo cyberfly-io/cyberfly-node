@@ -115,9 +115,10 @@ app.get("/", async(req, res)=>{
 
 app.get("/nodeinfo", async(req, res)=>{
   const peerId = libp2p.peerId
+  const con = libp2p.getPeers()
   const info = {peerId:peerId, health:"ok", version:"0.1", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
-  publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:connected.length}
+  publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:con.length}
   res.json(info)
 });
 
