@@ -9,7 +9,9 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { addNodeToContract, selectFields} from './config/utils.js'
+import { addNodeToContract} from './config/utils.js'
+import si from 'systeminformation'
+import { multiaddr } from '@multiformats/multiaddr'
 
 
 config();
@@ -122,6 +124,14 @@ app.get("/nodeinfo", async(req, res)=>{
   res.json(info)
 });
 
+app.get("/sysinfo", async(req, res)=>{
+  const cpu = await si.cpu()
+  const os = await si.osInfo()
+  const disk = await si.diskLayout()
+  const memory = await si.mem()
+  res.json({cpu:cpu, memory:memory, os:os, storage:disk})
+});
+
 app.post("/data", async(req, res)=>{
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
@@ -173,6 +183,23 @@ app.get('/peers', async(req, res)=>{
 const con = libp2p.getPeers()
 res.json(con)
 })
+
+app.post('/dial', async(req, res)=>{
+  if(req.body.multiAddr){
+   try{
+    const ma = multiaddr(req.body.multiAddr)
+    const d = await libp2p.dial(ma)
+    console.log(d)
+    res.json({"info":"success"})
+   }
+   catch{
+    res.json({"info":"Failed to dial"})
+   }
+  }
+  else{
+    res.json({"info":"multiAddr is required"})
+  }
+  })
 
 app.post("/dbinfo", async(req, res)=>{
   if(!req.body.dbaddress || !isValidAddress(req.body.dbaddress)){

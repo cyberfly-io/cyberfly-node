@@ -13,7 +13,7 @@ const startOrbitDB = async ({ id, identity, identities, directory } = {}) => {
   const ip = await getIp()
   const config = await loadOrCreatePeerIdAndKeyPair('./config.json')
 
-  let bootstrap_nodes = ["/ip4/170.187.249.181/tcp/31001/p2p/QmVydtrKsPcLdscLP9YMSynmc7GCNA7ZeUE9ViALuWijqV"]
+  let bootstrap_nodes = ["/dns4/node.cyberfly.io/tcp/31001/p2p/QmVydtrKsPcLdscLP9YMSynmc7GCNA7ZeUE9ViALuWijqV"]
 
 try{
   const data =  await getNodes()
