@@ -10,8 +10,6 @@ import { webSockets } from '@libp2p/websockets'
 import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { kadDHT } from '@libp2p/kad-dht'
-import { webTransport } from '@libp2p/webtransport'
-import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { autoNAT } from "@libp2p/autonat";
 import { dcutr } from "@libp2p/dcutr";
 
@@ -29,29 +27,14 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/wss',
-      '/webrtc',
-      '/webtransport',
-      '/webrtc-direct'
     ],
-      announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/dns4/node.cyberfly.io/tcp/443/wss/p2p/${peerId}`]
+      announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`]
     },
     transports: [
     tcp(),
-    webTransport(),
     webSockets({
       filter: filters.all
     }),
-    webRTC({
-      rtcConfiguration: {
-        iceServers: [{
-          urls: [
-            'stun:stun.l.google.com:19302',
-            'stun:global.stun.twilio.com:3478'
-          ]
-        }]
-      }
-    }),
-    webRTCDirect(),
     circuitRelayTransport({
       discoverRelays: 1,
     })
@@ -68,8 +51,6 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
       pubsub: gossipsub({ allowPublishToZeroTopicPeers: true, emitSelf: true }),
       dht: kadDHT({
         protocol: "/cyberfly-connectivity/kad/1.0.0",
-        maxInboundStreams: 5000,
-        maxOutboundStreams: 5000,
         clientMode: false,
       }),
       relay: circuitRelayServer({
