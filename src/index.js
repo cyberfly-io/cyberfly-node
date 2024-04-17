@@ -111,16 +111,11 @@ const io = new Server(server, {
 });
 
 app.get("/", async(req, res)=>{
-    res.send("Cyberfly Node")
-});
-
-
-app.get("/nodeinfo", async(req, res)=>{
   const peerId = libp2p.peerId
   const con = libp2p.getPeers()
   const info = {peerId:peerId, health:"ok", version:"0.1", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
-  publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:con.length}
+  publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:con.length, peers:con}
   res.json(info)
 });
 
@@ -177,11 +172,6 @@ app.post("/read", async(req, res)=>{
    
   }
   
-})
-
-app.get('/peers', async(req, res)=>{
-const con = libp2p.getPeers()
-res.json(con)
 })
 
 app.post('/dial', async(req, res)=>{
