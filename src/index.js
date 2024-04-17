@@ -275,7 +275,13 @@ io.on("connection", (socket) => {
   socket.on("publish", async(topic ,message)=>{
    await pubsub.publish(topic, fromString(JSON.stringify(message)));
   })
+
+
+
+
+
   socket.on("disconnect", () => {
+
     if (subscribedSockets[socket.id]) {
       delete subscribedSockets[socket.id];
     }

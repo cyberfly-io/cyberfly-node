@@ -12,12 +12,14 @@ import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay
 import { kadDHT } from '@libp2p/kad-dht'
 import { webTransport } from '@libp2p/webtransport'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
+import { autoNAT } from "@libp2p/autonat";
+import { dcutr } from "@libp2p/dcutr";
 
 
 export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
   return {
     peerDiscovery: [
-      bootstrap({list:bootstrap_nodes}),
+      bootstrap({list:bootstrap_nodes, timeout:0}),
     pubsubPeerDiscovery({
       interval: 1000,
       topics: ["cyberfly._peer-discovery._p2p._pubsub"],
@@ -27,12 +29,11 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/wss',
-      '/webrtc'
+      '/webrtc',
+      '/webtransport',
+      '/webrtc-direct'
     ],
       announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/dns4/node.cyberfly.io/tcp/443/wss/p2p/${peerId}`]
-    },
-    connectionGater: {
-      denyDialMultiaddr: async () => false,
     },
     transports: [
     tcp(),
@@ -62,6 +63,8 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
     },
     services: {
       identify: identify(),
+      autoNAT: autoNAT(),
+      dcutr: dcutr(),
       pubsub: gossipsub({ allowPublishToZeroTopicPeers: true, emitSelf: true }),
       dht: kadDHT({
         protocol: "/cyberfly-connectivity/kad/1.0.0",
