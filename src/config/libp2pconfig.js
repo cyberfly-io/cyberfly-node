@@ -9,7 +9,6 @@ import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { webSockets } from '@libp2p/websockets'
 import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { kadDHT } from '@libp2p/kad-dht'
 import { autoNAT } from "@libp2p/autonat";
 import { dcutr } from "@libp2p/dcutr";
 
@@ -49,10 +48,6 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
       autoNAT: autoNAT(),
       dcutr: dcutr(),
       pubsub: gossipsub({ allowPublishToZeroTopicPeers: true, emitSelf: true }),
-      dht: kadDHT({
-        protocol: "/cyberfly-connectivity/kad/1.0.0",
-        clientMode: false,
-      }),
       relay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
