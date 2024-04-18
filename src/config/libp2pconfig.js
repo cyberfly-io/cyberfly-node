@@ -12,6 +12,13 @@ import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay
 import { autoNAT } from "@libp2p/autonat";
 import { dcutr } from "@libp2p/dcutr";
 
+let scoreThresholds = {
+	gossipThreshold: -Infinity,
+	publishThreshold: -Infinity,
+	graylistThreshold: -Infinity,
+	// acceptPXThreshold: 10,
+	// opportunisticGraftThreshold: 20
+}
 
 export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
   return {
@@ -47,7 +54,7 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
       identify: identify(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
-      pubsub: gossipsub({ allowPublishToZeroTopicPeers: true, emitSelf: true }),
+      pubsub: gossipsub({ allowPublishToZeroTopicPeers: true, emitSelf: true, canRelayMessage: true, scoreThresholds }),
       relay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
