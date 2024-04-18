@@ -234,36 +234,57 @@ app.get('/chat/onlinedevices', async(req, res)=>{
 });
 io.on("connection", (socket) => {
   socket.on('online', (account) => {
-    userSockets[account] = socket; // Associate the socket with the account
+    try{
+      userSockets[account] = socket; // Associate the socket with the account
     io.emit('onlineDevices', Object.keys(deviceSockets));
+    }
+    catch(e){
+      console.log(e)
+    }
   });
 
   socket.on("subscribe", async (topic) => {
-    if (!subscribedSockets[socket.id]) {
-      subscribedSockets[socket.id] = new Set();
-    }
-    subscribedSockets[socket.id].add(topic);
-    
-    pubsub.addEventListener('message', async (message) => {
-      const { topic, data } = message.detail
-
-      if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
-        io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
+    try{
+      if (!subscribedSockets[socket.id]) {
+        subscribedSockets[socket.id] = new Set();
       }
-    })
-    await pubsub.subscribe(topic)
+      subscribedSockets[socket.id].add(topic);
+      
+      pubsub.addEventListener('message', async (message) => {
+        const { topic, data } = message.detail
+  
+        if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
+          io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
+        }
+      })
+      await pubsub.subscribe(topic)
+    }
+    catch(e){
+      console.log(e)
+    }
   });
 
   socket.on("unsubscribe", async (topic) => {
+  try{
     if (subscribedSockets[socket.id]) {
       subscribedSockets[socket.id].delete(topic);
       if (subscribedSockets[socket.id].size === 0) {
         delete subscribedSockets[socket.id];
       }
     }
+  }
+  catch(e){
+    console.log(e)
+  }
   });
-  socket.on("publish", async(topic ,message)=>{
-   await pubsub.publish(topic, fromString(JSON.stringify(message)));
+  socket.on("publish", async(data)=>{
+    try{
+      const { topic, message } = data
+      await pubsub.publish(topic, fromString(JSON.stringify(message)));
+    }
+    catch(e){
+      console.log(e)
+    }
   })
 
 
