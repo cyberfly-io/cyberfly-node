@@ -43,6 +43,7 @@ if(!account){
 
 
 mqtt_client.on('message', async(topic, payload) => {
+  
   if(!payload.toString().startsWith('"'))
      {
     await pubsub.publish(topic, fromString(JSON.stringify(payload.toString())))
@@ -280,6 +281,12 @@ io.on("connection", (socket) => {
           console.log(toString(data))
           let j = JSON.parse(toString(data))
           console.log(typeof j)
+          mqtt_client.publish(topic, JSON.stringify(toString(data)), {qos:0, retain:false}, (error)=>{
+            if(error){
+              console.log("mqtt_error")
+              console.log(error)
+            }
+          })
         }
         if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
           io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
