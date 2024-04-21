@@ -54,7 +54,7 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
       identify: identify(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
-      pubsub: gossipsub({ allowPublishToZeroTopicPeers: true, emitSelf: true, canRelayMessage: true, scoreThresholds }),
+      pubsub: gossipsub({ allowPublishToZeroPeers:true ,allowPublishToZeroTopicPeers: true, emitSelf: true, canRelayMessage: true, scoreThresholds }),
       relay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
