@@ -273,7 +273,11 @@ io.on("connection", (socket) => {
       
       pubsub.addEventListener('message', async (message) => {
         const { topic, data } = message.detail
-        console.log(toString(data))
+        if(!topic.includes("cyberfly")){
+          console.log(toString(data))
+          let j = JSON.parse(toString(data))
+          console.log(typeof j)
+        }
         if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
           io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
         }
