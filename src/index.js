@@ -281,7 +281,7 @@ io.on("connection", (socket) => {
           console.log(toString(data))
           let j = JSON.parse(toString(data))
           console.log(typeof j)
-          mqtt_client.publish(topic, JSON.stringify(toString(data)), {qos:0, retain:false}, (error)=>{
+          mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
             if(error){
               console.log("mqtt_error")
               console.log(error)
