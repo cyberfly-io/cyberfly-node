@@ -40,7 +40,7 @@ if(!account){
 
 
 mqtt_client.on('message', async(topic, payload) => {
-  await pubsub(topic, fromString(JSON.stringify(payload)))
+  await pubsub.publish(topic, fromString(JSON.stringify(payload)))
 })
 
 const port = 31003;
