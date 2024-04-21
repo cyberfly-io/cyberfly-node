@@ -12,7 +12,19 @@ import { fromString } from 'uint8arrays/from-string'
 import { addNodeToContract} from './config/utils.js'
 import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
+import mqtt from 'mqtt';
 
+const mqttUrl = "mqtt://localhost:1883"
+const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
+const mqtt_client = mqtt.connect(mqttUrl, {
+  clientId,
+  clean: true,
+  connectTimeout: 4000,
+  reconnectPeriod: 1000,
+})
+mqtt_client.on('connect', () => {
+  console.log('Mqtt connection Established')
+})
 
 config();
 useAccessController(CyberflyAccessController)
@@ -25,6 +37,12 @@ if(!account){
   console.log("KADENA_ACCOUNT environment variable is required")
   process.exit(1)
 }
+
+
+mqtt_client.on('message', async(topic, payload) => {
+  await pubsub(topic, fromString(JSON.stringify(payload)))
+})
+
 const port = 31003;
 const discovered = []
 const connected = []
@@ -252,12 +270,14 @@ io.on("connection", (socket) => {
       
       pubsub.addEventListener('message', async (message) => {
         const { topic, data } = message.detail
-  
         if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
           io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
         }
       })
       await pubsub.subscribe(topic)
+      mqtt_client.subscribe([topic], ()=>{
+        console.log(`Subscribed to topic '${topic}'`)
+      })
     }
     catch(e){
       console.log(e)
@@ -281,6 +301,12 @@ io.on("connection", (socket) => {
     try{
       const { topic, message } = data
       await pubsub.publish(topic, fromString(JSON.stringify(message)));
+      mqtt_client.publish(topic, JSON.stringify(message), {qos:0, retain:false}, (error)=>{
+        if(error){
+          console.log("mqtt_error")
+          console.log(error)
+        }
+      })
     }
     catch(e){
       console.log(e)
