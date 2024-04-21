@@ -40,7 +40,10 @@ if(!account){
 
 
 mqtt_client.on('message', async(topic, payload) => {
-  await pubsub.publish(topic, fromString(JSON.stringify(payload)))
+  if(!payload.toString().startsWith('"'))
+     {
+    await pubsub.publish(topic, fromString(JSON.stringify(payload.toString())))
+  }
 })
 
 const port = 31003;
@@ -270,6 +273,7 @@ io.on("connection", (socket) => {
       
       pubsub.addEventListener('message', async (message) => {
         const { topic, data } = message.detail
+        console.log(toString(data))
         if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
           io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
         }
