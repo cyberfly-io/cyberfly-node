@@ -249,7 +249,7 @@ app.post("/dbinfo", async(req, res)=>{
 await pubsub.subscribe("dbupdate");
 
 pubsub.addEventListener("message", async(message)=>{
-  const { topic, data } = message.detail
+  const { topic, data, from } = message.detail
   if(topic=='dbupdate'){
     try{
     const dat = JSON.parse(toString(data))
@@ -260,12 +260,15 @@ pubsub.addEventListener("message", async(message)=>{
   }
   }
   if(!topic.includes("_peer-discovery")){
+   if(libp2p.peerId.toString()!==from.toString()){
     mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
       if(error){
         console.log("mqtt_error")
         console.log(error)
       }
     })
+
+   }
   }
 })
 
