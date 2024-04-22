@@ -43,7 +43,7 @@ if(!account){
 
 
 mqtt_client.on('message', async(topic, payload) => {
-  
+  console.log(payload.toString())
   if(!payload.toString().startsWith('"'))
      {
     await pubsub.publish(topic, fromString(JSON.stringify(payload.toString())))
