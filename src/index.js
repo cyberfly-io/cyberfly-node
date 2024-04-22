@@ -24,9 +24,6 @@ const mqtt_client = mqtt.connect(mqttUrl, {
 })
 mqtt_client.on('connect', () => {
   console.log('Mqtt connection Established')
-  mqtt_client.subscribe('#', ()=>{
-    console.log("Subscribed to wildcard topics")
-  })
 })
 
 config();
@@ -332,12 +329,6 @@ io.on("connection", (socket) => {
     try{
       const { topic, message } = data
       await pubsub.publish(topic, fromString(JSON.stringify(message)));
-      mqtt_client.publish(topic, JSON.stringify(message), {qos:0, retain:false}, (error)=>{
-        if(error){
-          console.log("mqtt_error")
-          console.log(error)
-        }
-      })
     }
     catch(e){
       console.log(e)
