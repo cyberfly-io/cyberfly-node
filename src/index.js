@@ -41,7 +41,7 @@ if(!account){
 
 
 mqtt_client.on('message', async(topic, payload) => {
-  console.log(payload.toString())
+
   if(!payload.toString().startsWith('"'))
      {
     await pubsub.publish(topic, fromString(JSON.stringify(payload.toString())))
@@ -155,9 +155,6 @@ app.get("/subscribe", async(req, res)=>{
   const topic = req.query.topic
   if(topic){
     await pubsub.subscribe(topic)
-    mqtt_client.subscribe(topic, ()=>{
-      console.log(`Subscribed to ${topic}`)
-    })
     res.json({"info":"success"})
   }
   else{
