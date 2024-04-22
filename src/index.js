@@ -24,6 +24,7 @@ const mqtt_client = mqtt.connect(mqttUrl, {
 })
 mqtt_client.on('connect', () => {
   console.log('Mqtt connection Established')
+  mqtt_client.subscribe('#')
 })
 
 config();
