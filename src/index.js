@@ -248,6 +248,17 @@ pubsub.addEventListener("message", async(message)=>{
    console.log(e)
   }
   }
+  if(!topic.includes("cyberfly")){
+    console.log(toString(data))
+    let j = JSON.parse(toString(data))
+    console.log(typeof j)
+    mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
+      if(error){
+        console.log("mqtt_error")
+        console.log(error)
+      }
+    })
+  }
 })
 
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
@@ -277,17 +288,6 @@ io.on("connection", (socket) => {
       
       pubsub.addEventListener('message', async (message) => {
         const { topic, data } = message.detail
-        if(!topic.includes("cyberfly")){
-          console.log(toString(data))
-          let j = JSON.parse(toString(data))
-          console.log(typeof j)
-          mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
-            if(error){
-              console.log("mqtt_error")
-              console.log(error)
-            }
-          })
-        }
         if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
           io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
         }
