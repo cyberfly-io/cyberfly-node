@@ -152,6 +152,22 @@ app.get("/sysinfo", async(req, res)=>{
   res.json({cpu:cpu, memory:memory, os:os, storage:disk})
 });
 
+app.get("/subscribe", async(req, res)=>{
+
+  const topic = req.query.topic
+  if(topic){
+    await pubsub.subscribe(topic)
+    mqtt_client.subscribe(topic, ()=>{
+      console.log(`Subscribed to ${topic}`)
+    })
+    res.json({"info":"success"})
+  }
+  else{
+    res.json({"info":"topic required"})
+  }
+
+})
+
 app.post("/data", async(req, res)=>{
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
@@ -248,10 +264,7 @@ pubsub.addEventListener("message", async(message)=>{
    console.log(e)
   }
   }
-  if(!topic.includes("cyberfly")){
-    console.log(toString(data))
-    let j = JSON.parse(toString(data))
-    console.log(typeof j)
+  if(!topic.includes("_peer-discovery")){
     mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
       if(error){
         console.log("mqtt_error")
@@ -319,12 +332,12 @@ io.on("connection", (socket) => {
     try{
       const { topic, message } = data
       await pubsub.publish(topic, fromString(JSON.stringify(message)));
-      /*mqtt_client.publish(topic, JSON.stringify(message), {qos:0, retain:false}, (error)=>{
+      mqtt_client.publish(topic, JSON.stringify(message), {qos:0, retain:false}, (error)=>{
         if(error){
           console.log("mqtt_error")
           console.log(error)
         }
-      })*/
+      })
     }
     catch(e){
       console.log(e)
