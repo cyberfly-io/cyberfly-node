@@ -260,7 +260,6 @@ pubsub.addEventListener("message", async(message)=>{
   }
   }
   if(!topic.includes("_peer-discovery")){
-   //if(libp2p.peerId.toString()!==from.toString()){
     console.log(libp2p.peerId.toString())
     console.log(from.toString())
 
@@ -271,7 +270,6 @@ pubsub.addEventListener("message", async(message)=>{
       }
     })
 
-   //}
   }
 })
 
