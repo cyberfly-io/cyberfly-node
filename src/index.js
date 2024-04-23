@@ -6,7 +6,7 @@ import cors from 'cors';
 import { Server } from "socket.io";
 import { startOrbitDB } from './db-service.js';
 import { config } from 'dotenv';
-import express from 'express';
+import express, { json } from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
 import { addNodeToContract} from './config/utils.js'
@@ -260,7 +260,10 @@ pubsub.addEventListener("message", async(message)=>{
   }
   }
   if(!topic.includes("_peer-discovery")){
-   if(libp2p.peerId.toString()!==from.toString()){
+   //if(libp2p.peerId.toString()!==from.toString()){
+    console.log(libp2p.peerId.toString())
+    console.log(from.toString())
+
     mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
       if(error){
         console.log("mqtt_error")
@@ -268,7 +271,7 @@ pubsub.addEventListener("message", async(message)=>{
       }
     })
 
-   }
+   //}
   }
 })
 

@@ -11,7 +11,6 @@ import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { autoNAT } from "@libp2p/autonat";
 import { dcutr } from "@libp2p/dcutr";
-import { floodsub } from '@libp2p/floodsub'
 
 let scoreThresholds = {
 	gossipThreshold: -Infinity,
@@ -55,7 +54,8 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
       identify: identify(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
-      pubsub: gossipsub({ allowPublishToZeroPeers:true ,allowPublishToZeroTopicPeers: true, emitSelf: true, canRelayMessage: true, scoreThresholds }),
+      pubsub: gossipsub({ ignoreDuplicatePublishError:true,allowPublishToZeroPeers:true ,allowPublishToZeroTopicPeers: true, emitSelf: true, 
+        canRelayMessage: true, scoreThresholds }),
       relay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
