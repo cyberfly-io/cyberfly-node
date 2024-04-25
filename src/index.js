@@ -6,7 +6,7 @@ import cors from 'cors';
 import { Server } from "socket.io";
 import { startOrbitDB } from './db-service.js';
 import { config } from 'dotenv';
-import express, { json } from 'express';
+import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
 import { addNodeToContract} from './config/utils.js'
@@ -14,9 +14,11 @@ import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
 
-const mqttUrl = "mqtt://localhost:1883"
+const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
+const mqtt_port = 1883
+const mqtt_host = `${mqttUrl}:${mqtt_port}`
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
-const mqtt_client = mqtt.connect(mqttUrl, {
+const mqtt_client = mqtt.connect(mqtt_host, {
   clientId,
   clean: true,
   connectTimeout: 4000,
