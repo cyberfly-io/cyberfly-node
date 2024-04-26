@@ -1,2 +1,1 @@
-docker buildx build --platform linux/amd64,linux/arm64 -t cyberfly/cyberfly_node:latest . --push
-
+docker buildx build --no-cache --progress=plain  --platform linux/amd64,linux/arm64 -t cyberfly/cyberfly_node:latest . --push
