@@ -135,7 +135,7 @@ const io = new Server(server, {
   },
 });
 
-app.get("/", async(req, res)=>{
+app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
   const con = libp2p.getPeers()
   const info = {peerId:peerId, health:"ok", version:"0.1", 
@@ -144,7 +144,7 @@ app.get("/", async(req, res)=>{
   res.json(info)
 });
 
-app.get("/sysinfo", async(req, res)=>{
+app.get("/api/sysinfo", async(req, res)=>{
   const cpu = await si.cpu()
   const os = await si.osInfo()
   const disk = await si.diskLayout()
@@ -152,7 +152,7 @@ app.get("/sysinfo", async(req, res)=>{
   res.json({cpu:cpu, memory:memory, os:os, storage:disk})
 });
 
-app.get("/subscribe", async(req, res)=>{
+app.get("/api/subscribe", async(req, res)=>{
 
   const topic = req.query.topic
   if(topic){
@@ -165,7 +165,7 @@ app.get("/subscribe", async(req, res)=>{
 
 })
 
-app.post("/data", async(req, res)=>{
+app.post("/api/data", async(req, res)=>{
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
   }
@@ -183,7 +183,7 @@ app.post("/data", async(req, res)=>{
 
 });
 
-app.post("/getdata", async(req, res)=>{
+app.post("/api/getdata", async(req, res)=>{
   if(req.body.dbaddress==null || req.body.key==null ){
     res.json({"error":"dbaddress and key is required"})
   }
@@ -194,7 +194,7 @@ app.post("/getdata", async(req, res)=>{
 
 });
 
-app.post("/read", async(req, res)=>{
+app.post("/api/read", async(req, res)=>{
   if( !req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
     res.json({"error":"Invalid db address"})
 
@@ -212,7 +212,7 @@ app.post("/read", async(req, res)=>{
   
 })
 
-app.post('/dial', async(req, res)=>{
+app.post('/api/dial', async(req, res)=>{
   if(req.body.multiAddr){
    try{
     const ma = multiaddr(req.body.multiAddr)
@@ -229,7 +229,7 @@ app.post('/dial', async(req, res)=>{
   }
   })
 
-app.post("/dbinfo", async(req, res)=>{
+app.post("/api/dbinfo", async(req, res)=>{
   if(!req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
     res.json({"error":"Invalid db address"})
   }
@@ -278,7 +278,7 @@ pubsub.addEventListener("message", async(message)=>{
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
 const deviceSockets = {}; // Store user sockets
 
-app.get('/chat/onlinedevices', async(req, res)=>{
+app.get('/api/onlinedevices', async(req, res)=>{
   const onlineusers = Object.keys(deviceSockets)
    res.json(onlineusers)
 });
