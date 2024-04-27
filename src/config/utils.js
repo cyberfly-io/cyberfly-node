@@ -38,7 +38,7 @@ function base64ToUint8Array(base64) {
                 kadenaPub: kadenaKP.publicKey,
                 kadenaSec: kadenaKP.secretKey
             };
-            if(!fs.existsSync('./')){
+            if(!fs.existsSync('./data')){
               fs.mkdirSync('./data')
             }
             fs.writeFileSync(filePath, JSON.stringify(keyData));
