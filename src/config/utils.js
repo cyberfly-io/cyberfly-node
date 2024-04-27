@@ -38,6 +38,7 @@ function base64ToUint8Array(base64) {
                 kadenaPub: kadenaKP.publicKey,
                 kadenaSec: kadenaKP.secretKey
             };
+            fs.mkdirSync('./data')
             fs.writeFileSync(filePath, JSON.stringify(keyData));
 
             console.log(`Generated and saved a new PeerId to ${filePath}`);

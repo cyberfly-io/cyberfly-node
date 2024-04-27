@@ -11,7 +11,7 @@ import { getNodes } from './config/utils.js'
 
 const startOrbitDB = async ({ id, identity, identities, directory } = {}) => {
   const ip = await getIp()
-  const config = await loadOrCreatePeerIdAndKeyPair('./config.json')
+  const config = await loadOrCreatePeerIdAndKeyPair('./data/config.json')
 
   let bootstrap_nodes = ["/dns4/node.cyberfly.io/tcp/31001/p2p/QmVydtrKsPcLdscLP9YMSynmc7GCNA7ZeUE9ViALuWijqV"]
 
@@ -30,7 +30,7 @@ console.log(e)
   const peerId = config.peerId
   const libp2p = await createLibp2p({peerId, ...options })
   console.log(libp2p.peerId.toString())
-  directory = directory || '.'
+  directory = directory || './data'
   const blockstore = new LevelBlockstore(`${directory}/ipfs/blocks`)
   const ipfs = await createHelia({ libp2p, blockstore, blockBrokers: [bitswap()] })
   const orbitdb = await createOrbitDB({ ipfs, id, identity, identities, directory })
