@@ -9,7 +9,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { addNodeToContract} from './config/utils.js'
+import { addNodeToContract, getDevice} from './config/utils.js'
 import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
@@ -149,7 +149,20 @@ app.get("/api/sysinfo", async(req, res)=>{
   const os = await si.osInfo()
   const disk = await si.diskLayout()
   const memory = await si.mem()
-  res.json({cpu:cpu, memory:memory, os:os, storage:disk})
+  res.json({cpu,memory, os, storage:disk})
+});
+
+app.get("/api/device/:deviceId", async(req, res)=>{
+  try{
+
+  
+  const data = await getDevice(req.params.deviceId)
+  const deviceData = data.result.data
+  res.json(deviceData)
+}
+catch(e){
+res.json({"info":"something went wrong"})
+}
 });
 
 app.get("/api/subscribe", async(req, res)=>{

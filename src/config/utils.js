@@ -120,6 +120,26 @@ function base64ToUint8Array(base64) {
   }
 
 
+  export const getDevice = async (deviceId) =>{
+    const unsignedTransaction = Pact.builder
+    .execution(`(free.cyberfly_devices.get-device "${deviceId}")`)
+    .setMeta({
+      chainId: '1',
+      senderAccount: 'cyberfly-account-gas',
+      gasLimit: 2000,
+      gasPrice: 0.0000001
+    })
+    // set networkId
+    .setNetworkId('testnet04')
+    // create transaction with hash
+    .createTransaction();
+    
+  // Send it or local it
+  const res = await client.local(unsignedTransaction, { signatureVerification:false, preflight:false});
+  return res
+  }
+
+
   export const getNodes = async () =>{
     const unsignedTransaction = Pact.builder
     .execution(`(free.cyberfly_node.get-all-nodes)`)
