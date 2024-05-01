@@ -197,7 +197,7 @@ function base64ToUint8Array(base64) {
 
      const result = await getNodeInfo(peerId)
      if(result.result.status==="success"){
-      if(result.result.data.status!=='active' || result.result.data.multiaddr!==multiaddr){
+      if(result.result.data.status!=='active'){
          activateNode(peerId, multiaddr, account, pubkey, seckey)
       }
      }
