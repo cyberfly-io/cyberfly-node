@@ -230,7 +230,6 @@ app.post('/api/dial', async(req, res)=>{
    try{
     const ma = multiaddr(req.body.multiAddr)
     const d = await libp2p.dial(ma)
-    console.log(d)
     res.json({"info":"success"})
    }
    catch{
@@ -257,7 +256,6 @@ app.post("/api/dbinfo", async(req, res)=>{
   res.json({"error":"Invalid db address"})
     }
   }
-
 })
 
 

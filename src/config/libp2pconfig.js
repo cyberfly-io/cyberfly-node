@@ -3,7 +3,6 @@ import { identify } from '@libp2p/identify'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
-import {mplex} from "@libp2p/mplex";
 import { bootstrap } from '@libp2p/bootstrap'
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { webSockets } from '@libp2p/websockets'
@@ -23,9 +22,9 @@ let scoreThresholds = {
 export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
   return {
     peerDiscovery: [
-      bootstrap({list:bootstrap_nodes, timeout:0}),
+      bootstrap({list:bootstrap_nodes}),
     pubsubPeerDiscovery({
-      interval: 1000,
+      interval: 10000,
       topics: ["cyberfly._peer-discovery._p2p._pubsub"],
       listenOnly: false,
     }),
@@ -46,7 +45,7 @@ export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
     })
     ],
     connectionEncryption: [noise()],
-    streamMuxers: [yamux(),mplex()],
+    streamMuxers: [yamux()],
     connectionGater: {
       denyDialMultiaddr: () => false,
     },

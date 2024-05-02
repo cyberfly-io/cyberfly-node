@@ -10,6 +10,7 @@
 /ipfs
 /keystore
 /orbitdb
+/data
 # production
 /build
 peer-id.json
