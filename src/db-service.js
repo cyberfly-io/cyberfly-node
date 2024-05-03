@@ -9,14 +9,12 @@ import { getNodes } from './config/utils.js'
 
 
 
-const startOrbitDB = async ({ id, identity, identities, directory } = {}) => {
-  const isBootstrapNode = process.env.BOOTSTRAP_NODE || false;
+const startOrbitDB = async ({ id, identity, identities, directory, isBootstrapNode } = {}) => {
 
   const ip = await getIp()
   const config = await loadOrCreatePeerIdAndKeyPair('./data/config.json')
-if(isBootstrapNode!=="true"){
   let bootstrap_nodes = ["/dns4/node.cyberfly.io/tcp/31001/p2p/QmSbaexTeVSBTjhFwJRZpvCc7PqPs84pBHysgvWUz5DeW6"]
-
+if(isBootstrapNode!=="true"){
   try{
     const data =  await getNodes()
     if(data.result.status==='success'){
@@ -29,9 +27,7 @@ if(isBootstrapNode!=="true"){
   console.log(e)
   }
 }
-else{
-  let bootstrap_nodes = []
-}
+
 
   const options =  getLibp2pOptions(ip, config.peerId.toString(), bootstrap_nodes)
   const peerId = config.peerId

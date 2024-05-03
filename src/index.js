@@ -15,6 +15,8 @@ import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
+const isBootstrapNode = process.env.BOOTSTRAP_NODE || false;
+
 const mqtt_port = 1883
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
@@ -31,7 +33,7 @@ mqtt_client.on('connect', () => {
 
 config();
 useAccessController(CyberflyAccessController)
-const nodeConfig = await startOrbitDB()
+const nodeConfig = await startOrbitDB({isBootstrapNode:isBootstrapNode})
 const orbitdb = nodeConfig.orbitdb
 const libp2p = await orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
