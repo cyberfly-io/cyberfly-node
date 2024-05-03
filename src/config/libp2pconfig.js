@@ -19,10 +19,10 @@ let scoreThresholds = {
 	// opportunisticGraftThreshold: 20
 }
 
-export const getLibp2pOptions = (ip, peerId, bootstrap_nodes)=> {
+export const getLibp2pOptions = (ip, peerId)=> {
   return {
     peerDiscovery: [
-      bootstrap({list:bootstrap_nodes}),
+      bootstrap({list:["/dns4/node.cyberfly.io/tcp/31001/p2p/QmSbaexTeVSBTjhFwJRZpvCc7PqPs84pBHysgvWUz5DeW6"]}),
     pubsubPeerDiscovery({
       interval: 10000,
       topics: ["cyberfly._peer-discovery._p2p._pubsub"],
