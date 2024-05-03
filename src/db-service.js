@@ -10,22 +10,29 @@ import { getNodes } from './config/utils.js'
 
 
 const startOrbitDB = async ({ id, identity, identities, directory } = {}) => {
+  const isBootstrapNode = process.env.BOOTSTRAP_NODE || false;
+
   const ip = await getIp()
   const config = await loadOrCreatePeerIdAndKeyPair('./data/config.json')
+if(isBootstrapNode!=="true"){
+  let bootstrap_nodes = ["/dns4/node.cyberfly.io/tcp/31001/p2p/QmSbaexTeVSBTjhFwJRZpvCc7PqPs84pBHysgvWUz5DeW6"]
 
-  let bootstrap_nodes = ["/dns4/node.cyberfly.io/tcp/31001/p2p/QmVydtrKsPcLdscLP9YMSynmc7GCNA7ZeUE9ViALuWijqV"]
-
-try{
-  const data =  await getNodes()
-  if(data.result.status==='success'){
-    data.result.data.forEach(element => {
-      bootstrap_nodes.push(element['multiaddr'])
-    });
+  try{
+    const data =  await getNodes()
+    if(data.result.status==='success'){
+      data.result.data.forEach(element => {
+        bootstrap_nodes.push(element['multiaddr'])
+      });
+    }
+  }
+  catch(e){
+  console.log(e)
   }
 }
-catch(e){
-console.log(e)
+else{
+  let bootstrap_nodes = []
 }
+
   const options =  getLibp2pOptions(ip, config.peerId.toString(), bootstrap_nodes)
   const peerId = config.peerId
   const libp2p = await createLibp2p({peerId, ...options })
