@@ -140,7 +140,7 @@ const io = new Server(server, {
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
   const con = libp2p.getPeers()
-  const info = {peerId:peerId, health:"ok", version:"0.1", 
+  const info = {peerId:peerId, health:"ok", version:"0.1.1", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:con.length, peers:con}
   res.json(info)
@@ -156,8 +156,6 @@ app.get("/api/sysinfo", async(req, res)=>{
 
 app.get("/api/device/:deviceId", async(req, res)=>{
   try{
-
-  
   const data = await getDevice(req.params.deviceId)
   const deviceData = data.result.data
   res.json(deviceData)
@@ -200,7 +198,7 @@ app.post("/api/data", async(req, res)=>{
 
 app.post("/api/getdata", async(req, res)=>{
   if(req.body.dbaddress==null || req.body.key==null ){
-    res.json({"error":"dbaddress and key is required"})
+    res.json({"error":"dbaddress and key are required"})
   }
   else{
     const data = await getData(req.body.dbaddress, req.body.key);

@@ -177,6 +177,7 @@ function base64ToUint8Array(base64) {
     const utxn = Pact.builder.execution(`(free.cyberfly_node.update-node "${peerId}" "${multiaddr}" "${account}" "active")`)
     .addSigner(pubkey, (withCapability)=>[
       withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
+      withCapability("free.cyberfly_node.NODE_GUARD", peerId)
     ])
     .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001})
     .setNetworkId("testnet04")
