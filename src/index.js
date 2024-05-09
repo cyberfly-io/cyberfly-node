@@ -9,7 +9,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { addNodeToContract, getDevice} from './config/utils.js'
+import { addNodeToContract, extractFields, getDevice} from './config/utils.js'
 import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
@@ -139,11 +139,16 @@ const io = new Server(server, {
 
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
-  const con = libp2p.getPeers()
-  const info = {peerId:peerId, health:"ok", version:"0.1.1", 
+  const peers = extractFields(libp2p.getConnections(), "remoteAddr", "remotePeer")
+  const info = {peerId:peerId, health:"ok", version:"0.1.2", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
-  publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:con.length, peers:con}
+  publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:peers.length, peers:peers}
   res.json(info)
+});
+
+app.get("/api/location/:ip", async(req, res)=>{
+  const loc =await fetch(`http://ip-api.com/json/${req.params.ip}`)
+  res.json(await loc.json())
 });
 
 app.get("/api/sysinfo", async(req, res)=>{

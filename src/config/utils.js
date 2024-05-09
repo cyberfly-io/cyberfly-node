@@ -207,3 +207,10 @@ function base64ToUint8Array(base64) {
      console.log(e)
     }
   }
+
+  export function extractFields(array, field1, field2) {
+    return array.map(obj => ({
+      [field1]: obj[field1],
+      [field2]: obj[field2]
+    }));
+  }
