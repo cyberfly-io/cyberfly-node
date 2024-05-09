@@ -139,7 +139,7 @@ const io = new Server(server, {
 
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
-  const peers = extractFields(libp2p.getConnections(), "remoteAddr", "remotePeer")
+  const peers = libp2p.getPeers()
   const info = {peerId:peerId, health:"ok", version:"0.1.2", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, connected:peers.length, peers:peers}
@@ -147,8 +147,13 @@ app.get("/api", async(req, res)=>{
 });
 
 app.get("/api/location/:ip", async(req, res)=>{
+try{
   const loc =await fetch(`http://ip-api.com/json/${req.params.ip}`)
   res.json(await loc.json())
+}
+catch{
+res.json({info:"Something went wrong"})
+}
 });
 
 app.get("/api/sysinfo", async(req, res)=>{
