@@ -242,7 +242,8 @@ app.post('/api/dial', async(req, res)=>{
     const d = await libp2p.dial(ma)
     res.json({"info":"success"})
    }
-   catch{
+   catch(e){
+    console.log(e)
     res.json({"info":"Failed to dial"})
    }
   }
