@@ -38,6 +38,11 @@ const orbitdb = nodeConfig.orbitdb
 const libp2p = await orbitdb.ipfs.libp2p
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
 const account = process.env.KADENA_ACCOUNT
+// Print out listening addresses
+console.log('libp2p listening on addresses:');
+libp2p.getMultiaddrs().forEach((addr) => {
+  console.log(addr.toString());
+});
 if(!account){
   console.log("KADENA_ACCOUNT environment variable is required")
   process.exit(1)
@@ -140,10 +145,14 @@ const io = new Server(server, {
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
   const peers = libp2p.getPeers()
+  const conn = libp2p.getConnections()
+  const filteredConn = conn.filter(obj => obj.status==="open");
   const info = {peerId:peerId, health:"ok", version:"0.1.2", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
-  connected:peers.length, peers:peers, account:account}
+  connected:filteredConn.length, peers:peers, account:account, 
+  connections:extractFields(filteredConn, 'remotePeer', 'remoteAddr')
+}
   res.json(info)
 });
 
@@ -184,7 +193,7 @@ app.get("/api/subscribe", async(req, res)=>{
     res.json({"info":"success"})
   }
   else{
-    res.json({"info":"topic required"})
+    res.json({"info":"topic is required"})
   }
 
 })
