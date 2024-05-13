@@ -61,29 +61,16 @@ const port = 31003;
 const discovered = []
 const connected = []
 addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
-libp2p.addEventListener('peer:connect', (evt) => {
-  const peerId = evt.detail
-  console.log(peerId)
-  connected.push(peerId.toString())
-  console.log('Connection established to:', peerId.toString()) // Emitted when a peer has been found
-})
 
 libp2p.addEventListener('peer:discovery', (evt) => {
   const peerInfo = evt.detail
-  discovered.push(peerInfo.id.toString())
+  if (!discovered.includes(peerInfo.id.toString())) {
+    discovered.push(peerInfo.id.toString());
+}
+
   console.log('Discovered:', peerInfo.id.toString())
   console.log(peerInfo)
 })
-
-libp2p.addEventListener('peer:disconnect', (evt) => {
-  const peerId = evt.detail
-  const index = connected.indexOf(peerId.toString())
-  if (index !== -1) {
-    connected.splice(index, 1)
-    console.log('Disconnected from peer:', peerId.toString())
-  }
-})
-
 
 const updateData = async (data, sig, pubkey, dbtype, key='')=>{
    
@@ -185,17 +172,10 @@ res.json({"info":"something went wrong"})
 }
 });
 
-app.get("/api/subscribe", async(req, res)=>{
-
-  const topic = req.query.topic
-  if(topic){
+app.get("/api/subscribe/:topic", async(req, res)=>{
+  const topic = req.params.topic
     await pubsub.subscribe(topic)
     res.json({"info":"success"})
-  }
-  else{
-    res.json({"info":"topic is required"})
-  }
-
 })
 
 app.post("/api/data", async(req, res)=>{
