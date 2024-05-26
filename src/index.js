@@ -13,6 +13,7 @@ import { addNodeToContract, extractFields, getDevice} from './config/utils.js'
 import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
+import { bsNode } from './config/libp2pconfig.js';
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
 
@@ -47,6 +48,20 @@ if(!account){
   console.log("KADENA_ACCOUNT environment variable is required")
   process.exit(1)
 }
+
+
+const dialBootstrap = async()=>{
+  try{
+    const ma = multiaddr(bsNode)
+    const d = await libp2p.dial(ma)
+    console.log("connected to bootstrap node")
+   }
+   catch(e){
+    console.log(e)
+   }
+}
+
+setInterval(dialBootstrap, 100000)
 
 
 mqtt_client.on('message', async(topic, payload) => {

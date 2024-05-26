@@ -19,10 +19,12 @@ let scoreThresholds = {
 	// opportunisticGraftThreshold: 20
 }
 
+export const bsNode = "/dns4/node.cyberfly.io/tcp/31001/p2p/QmSbaexTeVSBTjhFwJRZpvCc7PqPs84pBHysgvWUz5DeW6"
+
 export const getLibp2pOptions = (ip, peerId)=> {
   return {
     peerDiscovery: [
-      bootstrap({list:["/dns4/node.cyberfly.io/tcp/31001/p2p/QmSbaexTeVSBTjhFwJRZpvCc7PqPs84pBHysgvWUz5DeW6"]}),
+      bootstrap({list:[bsNode]}),
     pubsubPeerDiscovery({
       interval: 10000,
       topics: ["cyberfly._peer-discovery._p2p._pubsub"],
