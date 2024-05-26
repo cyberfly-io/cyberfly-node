@@ -53,8 +53,12 @@ if(!account){
 const dialBootstrap = async()=>{
   try{
     const ma = multiaddr(bsNode)
-    const d = await libp2p.dial(ma)
-    console.log("connected to bootstrap node")
+    const bs_peer_id = ma.getPeerId()
+    const connected_peers = libp2p.getPeers()
+    if(!connected_peers.includes(bs_peer_id)){
+      const d = await libp2p.dial(ma)
+      console.log("connected to bootstrap node")
+    }
    }
    catch(e){
     console.log(e)
