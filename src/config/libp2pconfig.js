@@ -38,7 +38,7 @@ export const getLibp2pOptions = (ip, peerId)=> {
       announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`]
     },
     connectionManager: {
-      minConnections: 1,
+      minConnections: 0,
       maxConnections: Infinity
     },
     transports: [
