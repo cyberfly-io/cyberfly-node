@@ -24,7 +24,7 @@ export const bsNode = "/dns4/node.cyberfly.io/tcp/31001/p2p/QmSbaexTeVSBTjhFwJRZ
 export const getLibp2pOptions = (ip, peerId)=> {
   return {
     peerDiscovery: [
-      bootstrap({list:[bsNode]}),
+    bootstrap({list:[bsNode]}),
     pubsubPeerDiscovery({
       interval: 10000,
       topics: ["cyberfly._peer-discovery._p2p._pubsub"],

@@ -65,7 +65,7 @@ const dialBootstrap = async()=>{
    }
 }
 
-setInterval(dialBootstrap, 100000)
+//setInterval(dialBootstrap, 100000)
 
 
 mqtt_client.on('message', async(topic, payload) => {
