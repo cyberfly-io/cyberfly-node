@@ -9,7 +9,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { addNodeToContract, extractFields, getDevice} from './config/utils.js'
+import { addNodeToContract, extractFields, getDevice, verify} from './config/utils.js'
 import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
@@ -91,10 +91,10 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   console.log(peerInfo)
 })
 
-const updateData = async (data, sig, pubkey, dbtype, key='')=>{
+const updateData = async (addr, data, sig, pubkey, dbtype, key='')=>{
    
     try{
-      const db = await orbitdb.open(`cyberfly-${pubkey}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController(), })
+      const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController()})
       var id = nanoid()
       if(dbtype=='events'){
         await db.add({publicKey:pubkey, data:data, sig:sig});
@@ -107,13 +107,18 @@ const updateData = async (data, sig, pubkey, dbtype, key='')=>{
       }
       const msg = {dbAddr:db.address}
       pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
-      return db.address
-      
+      db.close()
+      return msg.dbAddr
     }
     catch(e) {
      console.log(e)
      return "something went wrong"
     }
+}
+
+const newDb = async (name, pubkey, dbtype)=>{
+  const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController()})
+  return db.address
 }
 
 const getAllData = async (dbaddress)=>{
@@ -198,6 +203,9 @@ app.get("/api/subscribe/:topic", async(req, res)=>{
 })
 
 app.post("/api/data", async(req, res)=>{
+  if(req.body.dbaddr==null){
+    res.json({"info":"dbaddr is required"})
+  }
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
   }
@@ -205,15 +213,36 @@ app.post("/api/data", async(req, res)=>{
     res.send("Need key for keyvalue store")
   }
   else if (req.body.dbtype=='keyvalue' && req.body.key){
-    const dbaddr = await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype, req.body.key)
+    const dbaddr = await updateData(req.body.dbaddr, req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype, req.body.key)
    res.json({"info":"success", "dbAddr":dbaddr})
   }
   else{
-    const dbaddr = await updateData(req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
+    const dbaddr = await updateData(req.body.dbaddr,req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
     res.json({"info":"success", "dbAddr":dbaddr})
   }
 
 });
+
+app.post("/api/createdb", async(req, res)=>{
+
+  if(req.body.dbinfo==null){
+    res.json({"info":"dbinfo is required"});
+  }
+
+  try{
+     if(verify(req.body.dbinfo, req.body.sig, req.body.pubkey)){
+      if(req.body.dbinfo.dbtype == null || req.body.dbinfo.name == null){
+        res.json({info:"dbtype and name are required"})
+      }
+      const address = await newDb(req.body.dbinfo.name,req.body.pubkey, req.body.dbinfo.dbtype)
+      res.json({dbaddress:address})
+     }
+  }
+  catch(e){
+    console.log(e)
+    res.json({info:"something went wrong"})
+  }
+})
 
 app.post("/api/getdata", async(req, res)=>{
   if(req.body.dbaddress==null || req.body.key==null ){
@@ -268,11 +297,9 @@ app.post("/api/dbinfo", async(req, res)=>{
   else{
     try{
       const dbinfo = await orbitdb.open(req.body.dbaddress)
-      
     res.json({dbaddress:dbinfo.address, name:dbinfo.name});
     }
     catch(e){
-  console.log(e)
   res.json({"error":"Invalid db address"})
     }
   }
@@ -285,7 +312,10 @@ pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
   if(topic=='dbupdate'){
     try{
-    const dat = JSON.parse(toString(data))
+    let dat = JSON.parse(toString(data))
+    if(typeof dat == "string"){
+      dat = JSON.parse(dat)
+    }
     await orbitdb.open(dat.dbAddr)
   }
   catch(e) {

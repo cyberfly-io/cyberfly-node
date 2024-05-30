@@ -3,6 +3,7 @@ import { peerIdFromKeys } from '@libp2p/peer-id';
 import * as crypto from '@libp2p/crypto'; // Assuming this or a similar module for key generation
 import { genKeyPair} from '@kadena/cryptography-utils';
 import { createClient, Pact, createSignWithKeypair } from '@kadena/client';
+import pact from 'pact-lang-api'
 
 
 const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact',)
@@ -213,4 +214,10 @@ function base64ToUint8Array(base64) {
       [field1]: obj[field1],
       [field2]: obj[field2]
     }));
+  }
+
+
+  export const verify = (data, sig, pubkey)=>{
+    const verify = pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
+    return verify
   }
