@@ -56,9 +56,9 @@ function base64ToUint8Array(base64) {
 
   export const getIp = async ()=>{
     try{
-      const data = await fetch('http://ipv4.iplocation.net/')
+      const data = await fetch('http://ip-api.com/json/')
       const json = await  data.json()
-      return json.ip
+      return json.query
     }
     catch(e){
       throw new Error("check your internet connection and try again")
