@@ -78,7 +78,6 @@ mqtt_client.on('message', async(topic, payload) => {
 
 const port = 31003;
 const discovered = []
-const connected = []
 addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 
 libp2p.addEventListener('peer:discovery', (evt) => {
@@ -106,7 +105,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='')=>{
         await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       db.close()
       return msg.dbAddr
     }
@@ -310,7 +309,7 @@ await pubsub.subscribe("dbupdate");
 
 pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
-  if(topic=='dbupdate'){
+  if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
     let dat = JSON.parse(toString(data))
     if(typeof dat == "string"){
@@ -322,10 +321,7 @@ pubsub.addEventListener("message", async(message)=>{
    console.log(e)
   }
   }
-  if(!topic.includes("_peer-discovery")){
-    console.log(libp2p.peerId.toString())
-    console.log(from.toString())
-
+  if(!topic.includes("_peer-discovery") && !topic.includes("dbupdate")){
     mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
       if(error){
         console.log("mqtt_error")
