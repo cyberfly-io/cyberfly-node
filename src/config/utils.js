@@ -56,7 +56,7 @@ function base64ToUint8Array(base64) {
 
   export const getIp = async ()=>{
     try{
-      const data = await fetch('https://api.ipify.org?format=json')
+      const data = await fetch('http://ipv4.iplocation.net/')
       const json = await  data.json()
       return json.ip
     }
