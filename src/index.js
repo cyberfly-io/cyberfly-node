@@ -14,6 +14,8 @@ import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
 import { bsNode } from './config/libp2pconfig.js';
+import ManifestStore from '@orbitdb/core/src/manifest-store.js'
+import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
 
@@ -36,7 +38,10 @@ config();
 useAccessController(CyberflyAccessController)
 const nodeConfig = await startOrbitDB()
 const orbitdb = nodeConfig.orbitdb
+const ipfs = orbitdb.ipfs
 const libp2p = await orbitdb.ipfs.libp2p
+const manifestStore = await ManifestStore({ ipfs })
+
 const pubsub = orbitdb.ipfs.libp2p.services.pubsub
 const account = process.env.KADENA_ACCOUNT
 // Print out listening addresses
@@ -105,7 +110,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='')=>{
         await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       db.close()
       return msg.dbAddr
     }
@@ -317,6 +322,9 @@ pubsub.addEventListener("message", async(message)=>{
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
     }
+    const addr = OrbitDBAddress(dat.dbAddr)
+    const manifest = await manifestStore.get(addr.hash)
+    console.log(manifest)
     await orbitdb.open(dat.dbAddr)
   }
   catch(e) {
