@@ -105,7 +105,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='')=>{
         await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       db.close()
       return msg.dbAddr
     }
@@ -311,6 +311,8 @@ pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
   if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
+      console.log(from.toString())
+      console.log(data)
     let dat = JSON.parse(toString(data))
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
