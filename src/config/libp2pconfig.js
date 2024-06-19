@@ -39,7 +39,8 @@ export const getLibp2pOptions = (ip, peerId)=> {
     },
     connectionManager: {
       minConnections: 1,
-      maxConnections: Infinity
+      maxConnections: Infinity,
+      autoDialConcurrency: 5,
     },
     transports: [
     tcp(),

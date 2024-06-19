@@ -22,20 +22,16 @@ function base64ToUint8Array(base64) {
         if (fs.existsSync(filePath)) {
             const keyJson = fs.readFileSync(filePath, 'utf-8');
             const keyData = JSON.parse(keyJson);
-            // Convert base64 strings back to Uint8Array for privateKey and publicKey
-            const privateKeyBytes = base64ToUint8Array(keyData.privateKey);
-            const publicKeyBytes = base64ToUint8Array(keyData.publicKey);
-            const peerId =  await peerIdFromKeys(publicKeyBytes, privateKeyBytes)
+            const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(keyData.kadenaSec))
+            const peerId =  await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes)
             return {kadenaPub:keyData.kadenaPub, kadenaSec:keyData.kadenaSec, peerId:peerId};
         } else {
-            const privateKey = await crypto.keys.generateKeyPair('RSA', 2048);
             const kadenaKP = genKeyPair()
-            const peerId = await peerIdFromKeys(privateKey.public.bytes, privateKey.bytes);
+            const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(kadenaKP.secretKey))
+            const peerId = await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes);
 
             // Save keys to file, converting Uint8Array to base64 for JSON serialization
             const keyData = {
-                publicKey: uint8ArrayToBase64(privateKey.public.bytes),
-                privateKey: uint8ArrayToBase64(privateKey.bytes),
                 kadenaPub: kadenaKP.publicKey,
                 kadenaSec: kadenaKP.secretKey
             };
