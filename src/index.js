@@ -125,10 +125,14 @@ const newDb = async (name, pubkey, dbtype)=>{
   return db.address
 }
 
-const getAllData = async (dbaddress)=>{
+const getAllData = async (dbaddress, amount=20)=>{
   try{
     const db = await orbitdb.open(dbaddress);
-    return await db.all();
+    const values = []
+    for await (const entry of db.iterator({amount:amount})) {
+      values.unshift(entry)
+    }
+    return values
   }
    catch(e){
     console.log(e)
@@ -266,7 +270,7 @@ app.post("/api/read", async(req, res)=>{
   }
   else{
     try{
-      const data = await getAllData(req.body.dbaddress);
+      const data = await getAllData(req.body.dbaddress, req.body.count);
       res.json(data);
     }
     catch(e){
