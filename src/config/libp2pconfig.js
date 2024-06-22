@@ -19,7 +19,7 @@ let scoreThresholds = {
 	// opportunisticGraftThreshold: 20
 }
 
-export const bsNode = "/dns4/node.cyberfly.io/tcp/31001/p2p/QmSbaexTeVSBTjhFwJRZpvCc7PqPs84pBHysgvWUz5DeW6"
+export const bsNode = "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"
 
 export const getLibp2pOptions = (ip, peerId)=> {
   return {
