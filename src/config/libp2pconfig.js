@@ -20,21 +20,22 @@ let scoreThresholds = {
 }
 
 export const bsNode = "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"
-let bsNodes = []
 
 export const getLibp2pOptions = (ip, peerId)=> {
+ 
+
+let peerDiscovery = [
+  pubsubPeerDiscovery({
+    interval: 10000,
+    topics: ["cyberfly._peer-discovery._p2p._pubsub"],
+    listenOnly: false,
+  }),
+  ]
   if(bsNode.split("/").slice(-1)[0]!==peerId){
-    bsNodes.push(bsNode)
+    peerDiscovery.push(bootstrap({list:[bsNode]}))
   }
   return {
-    peerDiscovery: [
-    bootstrap({list:bsNodes}),
-    pubsubPeerDiscovery({
-      interval: 10000,
-      topics: ["cyberfly._peer-discovery._p2p._pubsub"],
-      listenOnly: false,
-    }),
-    ],
+    peerDiscovery: peerDiscovery,
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/wss',
