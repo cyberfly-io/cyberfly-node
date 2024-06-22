@@ -101,13 +101,13 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='')=>{
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController()})
       var id = nanoid()
       if(dbtype=='events'){
-        await db.add({publicKey:pubkey, data:data, sig:sig});
+         db.add({publicKey:pubkey, data:data, sig:sig});
       }
       else if(dbtype=='keyvalue'){
-        await db.put(key,{publicKey:pubkey, data:data, sig:sig});
+         db.put(key,{publicKey:pubkey, data:data, sig:sig});
       }
       else{
-        await db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
+         db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
       //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
