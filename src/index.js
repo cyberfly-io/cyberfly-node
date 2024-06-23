@@ -17,6 +17,7 @@ import { bsNode } from './config/libp2pconfig.js';
 import ManifestStore from '@orbitdb/core/src/manifest-store.js'
 import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
 
+
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
 
 
@@ -160,6 +161,7 @@ const io = new Server(server, {
     origin: "*",
   },
 });
+
 
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
