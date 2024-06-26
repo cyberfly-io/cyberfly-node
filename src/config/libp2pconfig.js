@@ -19,23 +19,24 @@ let scoreThresholds = {
 	// opportunisticGraftThreshold: 20
 }
 
-export const bsNode = "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"
+
+
+let bsNodes = ["/dns4/vps-5b1e75a3.vps.ovh.ca/tcp/31001/p2p/12D3KooWCaTco8TYafHWko3bNryy2bmULfPvYMNVkYBvJZDXvqRj", 
+  "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
 
 export const getLibp2pOptions = (ip, peerId)=> {
- 
 
-let peerDiscovery = [
-  pubsubPeerDiscovery({
-    interval: 10000,
-    topics: ["cyberfly._peer-discovery._p2p._pubsub"],
-    listenOnly: false,
-  }),
-  ]
-  if(bsNode.split("/").slice(-1)[0]!==peerId){
-    peerDiscovery.push(bootstrap({list:[bsNode]}))
-  }
+let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
+
   return {
-    peerDiscovery: peerDiscovery,
+    peerDiscovery: [
+      pubsubPeerDiscovery({
+        interval: 10000,
+        topics: ["cyberfly._peer-discovery._p2p._pubsub"],
+        listenOnly: false,
+      }),
+      bootstrap({list:filteredBS})
+      ],
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/wss',

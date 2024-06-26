@@ -13,7 +13,6 @@ import { addNodeToContract, extractFields, getDevice, verify} from './config/uti
 import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
-import { bsNode } from './config/libp2pconfig.js';
 import ManifestStore from '@orbitdb/core/src/manifest-store.js'
 import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
 
@@ -55,23 +54,6 @@ if(!account){
   process.exit(1)
 }
 
-
-const dialBootstrap = async()=>{
-  try{
-    const ma = multiaddr(bsNode)
-    const bs_peer_id = ma.getPeerId()
-    const connected_peers = libp2p.getPeers()
-    if(!connected_peers.includes(bs_peer_id) && libp2p.peerId.toString()!==bs_peer_id){
-      const d = await libp2p.dial(ma)
-      console.log("connected to bootstrap node")
-    }
-   }
-   catch(e){
-    console.log(e)
-   }
-}
-
-//setInterval(dialBootstrap, 100000)
 
 
 mqtt_client.on('message', async(topic, payload) => {
