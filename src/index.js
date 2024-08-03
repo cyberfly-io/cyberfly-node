@@ -140,9 +140,20 @@ const getData = async (dbaddress, key)=>{
    }
 }
 
+
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204
+};
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.options('*', cors(corsOptions));
+
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
