@@ -8,7 +8,11 @@ POST /api/createdb
 
 ```json
 
-{"dbinfo":{"name":"dashboard", "dbtype":"documents"}, "sig":"signed signature", "pubkey":"pubkey used to sign the dbinfo"}
+{
+"dbinfo":{"name":"dashboard", "dbtype":"documents"}, 
+"sig":"signature", 
+"pubkey":"pubkey used to sign the dbinfo"
+}
 ```
 
 ### add data to db
@@ -17,7 +21,12 @@ POST /api/data
 
 ```json
 
-{"data":{"temp":25}, "sig":"signed signature", "publicKey":"pubkey used to sign the data", "dbaddr":"db address"}
+{
+"data":{"temp":25}, 
+"sig":"signature", 
+"publicKey":"pubkey used to sign the data", 
+"dbaddr":"db address"
+}
 ```
 
 
@@ -25,7 +34,13 @@ POST /api/data
 
 ```json
 
-{"_id":"id of existing data","data":{"temp":26}, "sig":"signed signature", "publicKey":"pubkey used to sign the data", "dbaddr":"db address"}
+{
+"_id":"id of existing data",
+"data":{"temp":26}, 
+"sig":"signature", 
+"publicKey":"pubkey used to sign the data", 
+"dbaddr":"db address"
+}
 ```
 
 ### read data from db
@@ -34,5 +49,7 @@ POST /api/read
 
 ```json
 
-{"dbaddress":"/orbitdb/address"}
+{
+"dbaddress":"/orbitdb/address"
+}
 ```
