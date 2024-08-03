@@ -13,6 +13,8 @@ POST /api/createdb
 
 ### add data to db
 
+POST /api/data
+
 ```javascript
 
 {"data":{}. "sig":"signed signature", "pubkey":"pubkey used to sign the data", "dbaddr":"db address"}
