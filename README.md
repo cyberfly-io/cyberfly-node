@@ -8,7 +8,7 @@ POST /api/createdb
 
 ```javascript
 
-{"dbinfo":{"name":"dashboard", "dbtype":"documents"}. "sig":"signed signature", "pubkey":"pubkey used to sign the dbinfo"}
+{"dbinfo":{"name":"dashboard", "dbtype":"documents"}, "sig":"signed signature", "pubkey":"pubkey used to sign the dbinfo"}
 ```
 
 ### add data to db
@@ -17,7 +17,7 @@ POST /api/data
 
 ```javascript
 
-{"data":{}. "sig":"signed signature", "pubkey":"pubkey used to sign the data", "dbaddr":"db address"}
+{"data":{"temp":25}, "sig":"signed signature", "publicKey":"pubkey used to sign the data", "dbaddr":"db address"}
 ```
 
 
@@ -25,5 +25,12 @@ POST /api/data
 
 ```javascript
 
-{"_id":"id of existing data","data":{}. "sig":"signed signature", "pubkey":"pubkey used to sign the data", "dbaddr":"db address"}
+{"_id":"id of existing data","data":{"temp":26}, "sig":"signed signature", "publicKey":"pubkey used to sign the data", "dbaddr":"db address"}
+```
+
+### read data from db
+
+```javascript
+
+{"dbaddress":"/orbitdb/address"}
 ```
