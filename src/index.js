@@ -78,11 +78,17 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   console.log(peerInfo)
 })
 
-const updateData = async (addr, data, sig, pubkey, dbtype, key='')=>{
+const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
    
     try{
+      var _id
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController()})
-      var id = nanoid()
+      if(id==''){
+         _id = nanoid()
+      }
+      else{
+       _id = id
+      }
       if(dbtype=='events'){
          db.add({publicKey:pubkey, data:data, sig:sig});
       }
@@ -90,7 +96,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='')=>{
          db.put(key,{publicKey:pubkey, data:data, sig:sig});
       }
       else{
-         db.put({_id:id, publicKey:pubkey, data:data, sig:sig});
+         db.put({_id:_id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
       //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
@@ -209,7 +215,7 @@ app.post("/api/data", async(req, res)=>{
    res.json({"info":"success", "dbAddr":dbaddr})
   }
   else{
-    const dbaddr = await updateData(req.body.dbaddr,req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype)
+    const dbaddr = await updateData(req.body.dbaddr,req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype,'',id=req.body._id)
     res.json({"info":"success", "dbAddr":dbaddr})
   }
 
