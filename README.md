@@ -6,7 +6,7 @@ Storage node for cyberfly IoT platform
 
 POST /api/createdb
 
-```javascript
+```json
 
 {"dbinfo":{"name":"dashboard", "dbtype":"documents"}, "sig":"signed signature", "pubkey":"pubkey used to sign the dbinfo"}
 ```
@@ -15,7 +15,7 @@ POST /api/createdb
 
 POST /api/data
 
-```javascript
+```json
 
 {"data":{"temp":25}, "sig":"signed signature", "publicKey":"pubkey used to sign the data", "dbaddr":"db address"}
 ```
@@ -23,14 +23,16 @@ POST /api/data
 
 ### update data to db
 
-```javascript
+```json
 
 {"_id":"id of existing data","data":{"temp":26}, "sig":"signed signature", "publicKey":"pubkey used to sign the data", "dbaddr":"db address"}
 ```
 
 ### read data from db
 
-```javascript
+POST /api/read
+
+```json
 
 {"dbaddress":"/orbitdb/address"}
 ```
