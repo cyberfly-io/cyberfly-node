@@ -151,7 +151,7 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
 
 const server = http.createServer(app);
