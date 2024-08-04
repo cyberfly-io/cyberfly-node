@@ -91,13 +91,13 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
        _id = id
       }
       if(dbtype=='events'){
-         db.add({publicKey:pubkey, data:data, sig:sig});
+        await db.add({publicKey:pubkey, data:data, sig:sig});
       }
       else if(dbtype=='keyvalue'){
-         db.put(key,{publicKey:pubkey, data:data, sig:sig});
+        await db.put(key,{publicKey:pubkey, data:data, sig:sig});
       }
       else{
-         db.put({_id:_id, publicKey:pubkey, data:data, sig:sig});
+        await db.put({_id:_id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
       //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
