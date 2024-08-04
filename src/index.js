@@ -148,10 +148,10 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 const app = express();
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
-app.options('*', cors(corsOptions));
+app.options('*', cors());
 
 
 const server = http.createServer(app);
