@@ -43,7 +43,7 @@ POST /api/data
 }
 ```
 
-### read data from db
+### read all data from db
 
 POST /api/read
 
@@ -51,5 +51,17 @@ POST /api/read
 
 {
 "dbaddress":"/orbitdb/address"
+}
+```
+
+### get a record from db
+
+POST /api/getdata
+
+```json
+
+{
+"dbaddress":"/orbitdb/address",
+"key":"valid key of the existing record"
 }
 ```
