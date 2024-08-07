@@ -54,7 +54,7 @@ let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
       filter: filters.all
     }),
     circuitRelayTransport({
-      discoverRelays: 1,
+      discoverRelays: 2,
     })
     ],
     connectionEncryption: [noise()],
