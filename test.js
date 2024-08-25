@@ -12,7 +12,7 @@ const keypair = {"publicKey": "d04bbd8f403e583248aa461896bd7518113f89b85c98f3d95
 //store data to localnode and check on other nodes
 const postdata = async ()=>{
     
-const data = {"temp": randomIntFromInterval(20, 35),hello:"123 world", "timestamp":new Date().toISOString()}
+const data = {"temp": randomIntFromInterval(20, 35),hello:"123 world neewww", "timestamp":new Date().toISOString()}
 
 const sig = getSig(data, keypair);
 

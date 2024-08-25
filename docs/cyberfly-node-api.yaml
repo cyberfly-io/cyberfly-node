@@ -1,0 +1,19 @@
+openapi: 3.0.0
+info:
+  title: Cyberfly Node API
+  description: A sample API to demonstrate the cyberfly node interaction
+  version: 1.0.0
+servers:
+  - url: https://node.cyberfly.io
+paths:
+  /api/:
+    get:
+      summary: Returns the node info
+      description: Optional extended description in Markdown
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:    
+              schema:
+                type: object
