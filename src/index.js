@@ -273,6 +273,21 @@ app.post("/api/getdata", async(req, res)=>{
 
 });
 
+
+app.post("/api/dropdb", async(req, res)=>{
+
+  if( !req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
+    res.json({"error":"Invalid db address"})
+
+  }
+  else{
+    const db = await orbitdb.open(req.body.dbaddress)
+    db.drop()
+    res.json({info:"success"})
+  }
+})
+
+
 app.post("/api/read", async(req, res)=>{
   if( !req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
     res.json({"error":"Invalid db address"})

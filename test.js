@@ -12,7 +12,7 @@ const keypair = {"publicKey": "d04bbd8f403e583248aa461896bd7518113f89b85c98f3d95
 //store data to localnode and check on other nodes
 const postdata = async ()=>{
     
-const data = {"temp": randomIntFromInterval(20, 35),hello:"123 world neewww", "timestamp":new Date().toISOString()}
+const data = {"temp": randomIntFromInterval(20, 35),hello:"123 world 527333", "timestamp":new Date().toISOString()}
 
 const sig = getSig(data, keypair);
 
@@ -21,7 +21,7 @@ const sig = getSig(data, keypair);
 const body = {dbaddr:"/orbitdb/zdpuAuK55h4CZee8dkA7sHuQSxidEWzNJcZXbWh2H713Sx15f" ,sig:sig, data:data, publicKey:keypair['publicKey']}
 
 console.log(body)
-const d = await fetch("http://localhost:31003/api/data", {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch("https://node.cyberfly.io/api/data", {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
