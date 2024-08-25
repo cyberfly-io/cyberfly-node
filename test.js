@@ -18,7 +18,7 @@ const sig = getSig(data, keypair);
 
 
 
-const body = {_id:"E-T4QPK1F3_zBPOZdl4oM",dbaddr:"/orbitdb/zdpuAuK55h4CZee8dkA7sHuQSxidEWzNJcZXbWh2H713Sx15f" ,sig:sig, data:data, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuAuK55h4CZee8dkA7sHuQSxidEWzNJcZXbWh2H713Sx15f" ,sig:sig, data:data, publicKey:keypair['publicKey']}
 
 console.log(body)
 const d = await fetch("http://localhost:31003/api/data", {method:'POST', body:JSON.stringify(body), headers: {

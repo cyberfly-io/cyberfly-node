@@ -112,7 +112,9 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
 
 const newDb = async (name, pubkey, dbtype)=>{
   const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController()})
-  return db.address
+  const addr = db.address
+  db.close()
+  return addr
 }
 
 const getAllData = async (dbaddress, amount=20)=>{
@@ -122,6 +124,7 @@ const getAllData = async (dbaddress, amount=20)=>{
     for await (const entry of db.iterator({amount:amount})) {
       values.unshift(entry)
     }
+    db.close()
     return values
   }
    catch(e){
@@ -133,7 +136,9 @@ const getAllData = async (dbaddress, amount=20)=>{
 const getData = async (dbaddress, key)=>{
   try{
     const db = await orbitdb.open(dbaddress);
-    return await db.get(key);
+    const data = await db.get(key)
+    db.close();
+    return data;
   }
    catch(e){
     console.log(e)
@@ -309,7 +314,9 @@ app.post("/api/dbinfo", async(req, res)=>{
   }
   else{
     try{
-      const dbinfo = await orbitdb.open(req.body.dbaddress)
+      const db = await orbitdb.open(req.body.dbaddress)
+      const dbinfo = db
+      db.close()
     res.json({dbaddress:dbinfo.address, name:dbinfo.name});
     }
     catch(e){
@@ -334,7 +341,8 @@ pubsub.addEventListener("message", async(message)=>{
     const addr = OrbitDBAddress(dat.dbAddr)
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
-    await orbitdb.open(dat.dbAddr)
+    const db = await orbitdb.open(dat.dbAddr)
+    db.close()
   }
   catch(e) {
    console.log(e)
