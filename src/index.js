@@ -282,7 +282,7 @@ app.post("/api/dropdb", async(req, res)=>{
   }
   else{
     const db = await orbitdb.open(req.body.dbaddress)
-    db.drop()
+    db.drop() //check authorization before perform this action
     res.json({info:"success"})
   }
 })

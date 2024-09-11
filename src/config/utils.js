@@ -169,9 +169,9 @@ function base64ToUint8Array(base64) {
     });
   }
 
-  const activateNode = async(peerId, multiaddr, account, pubkey, seckey)=>{
+  const activateNode = async(peerId, multiaddr, pubkey, seckey)=>{
 
-    const utxn = Pact.builder.execution(`(free.cyberfly_node.update-node "${peerId}" "${multiaddr}" "${account}" "active")`)
+    const utxn = Pact.builder.execution(`(free.cyberfly_node.update-node "${peerId}" "${multiaddr}" "active")`)
     .addSigner(pubkey, (withCapability)=>[
       withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
       withCapability("free.cyberfly_node.NODE_GUARD", peerId)
@@ -189,7 +189,7 @@ function base64ToUint8Array(base64) {
      
   }
 
-  const  checkNodeStatus = async (peerId, multiaddr, account, pubkey, seckey)=>{
+  const checkNodeStatus = async (peerId, multiaddr, account, pubkey, seckey)=>{
     try{
 
 
