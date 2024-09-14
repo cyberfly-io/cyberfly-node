@@ -17,33 +17,41 @@ function base64ToUint8Array(base64) {
     return new Uint8Array(Buffer.from(base64, 'base64'));
 }
 
-  export async function loadOrCreatePeerIdAndKeyPair(filePath) {
+  export async function loadOrCreatePeerIdAndKeyPair(filePath, sk) {
     try {
+      if(sk){
+        const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(sk))
+        const kadenaKP = pact.crypto.restoreKeyPairFromSecretKey(sk)
+        const peerId = await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes);
+        return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId};
+      }
+      else{
         if (fs.existsSync(filePath)) {
-            const keyJson = fs.readFileSync(filePath, 'utf-8');
-            const keyData = JSON.parse(keyJson);
-            const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(keyData.kadenaSec))
-            const peerId =  await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes)
-            return {kadenaPub:keyData.kadenaPub, kadenaSec:keyData.kadenaSec, peerId:peerId};
-        } else {
-            const kadenaKP = genKeyPair()
-            const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(kadenaKP.secretKey))
-            const peerId = await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes);
+          const keyJson = fs.readFileSync(filePath, 'utf-8');
+          const keyData = JSON.parse(keyJson);
+          const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(keyData.kadenaSec))
+          const peerId =  await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes)
+          return {kadenaPub:keyData.kadenaPub, kadenaSec:keyData.kadenaSec, peerId:peerId};
+      } else {
+          const kadenaKP = genKeyPair()
+          const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(kadenaKP.secretKey))
+          const peerId = await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes);
 
-            // Save keys to file, converting Uint8Array to base64 for JSON serialization
-            const keyData = {
-                kadenaPub: kadenaKP.publicKey,
-                kadenaSec: kadenaKP.secretKey
-            };
-            if(!fs.existsSync('./data')){
-              fs.mkdirSync('./data')
-            }
-            fs.writeFileSync(filePath, JSON.stringify(keyData));
+          // Save keys to file, converting Uint8Array to base64 for JSON serialization
+          const keyData = {
+              kadenaPub: kadenaKP.publicKey,
+              kadenaSec: kadenaKP.secretKey
+          };
+          if(!fs.existsSync('./data')){
+            fs.mkdirSync('./data')
+          }
+          fs.writeFileSync(filePath, JSON.stringify(keyData));
 
-            console.log(`Generated and saved a new PeerId to ${filePath}`);
-            
-            return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId};
-        }
+          console.log(`Generated and saved a new PeerId to ${filePath}`);
+          
+          return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId};
+      }
+      }
     } catch (error) {
         console.error('Error in loadOrCreatePeerId:', error);
         throw error;

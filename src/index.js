@@ -36,7 +36,8 @@ mqtt_client.on('connect', () => {
 
 config();
 useAccessController(CyberflyAccessController)
-const nodeConfig = await startOrbitDB()
+const node_priv_key = process.env.NODE_PRIV_KEY
+const nodeConfig = await startOrbitDB({sk:node_priv_key})
 const orbitdb = nodeConfig.orbitdb
 const ipfs = orbitdb.ipfs
 const libp2p = await orbitdb.ipfs.libp2p

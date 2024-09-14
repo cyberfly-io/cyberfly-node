@@ -8,10 +8,10 @@ import { getIp, loadOrCreatePeerIdAndKeyPair } from './config/utils.js'
 
 
 
-const startOrbitDB = async ({ id, identity, identities, directory } = {}) => {
+const startOrbitDB = async ({ id, identity, identities, directory, sk } = {}) => {
 
   const ip = await getIp()
-  const config = await loadOrCreatePeerIdAndKeyPair('./data/config.json')
+  const config = await loadOrCreatePeerIdAndKeyPair('./data/config.json', sk)
 
   const options =  getLibp2pOptions(ip, config.peerId.toString())
   const peerId = config.peerId
