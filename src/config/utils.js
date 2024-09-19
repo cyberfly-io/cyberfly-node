@@ -19,6 +19,9 @@ function base64ToUint8Array(base64) {
 
   export async function loadOrCreatePeerIdAndKeyPair(filePath, sk) {
     try {
+      if(!fs.existsSync('./data')){
+        fs.mkdirSync('./data')
+      }
       if(sk){
         const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(sk))
         const kadenaKP = pact.crypto.restoreKeyPairFromSecretKey(sk)
@@ -42,9 +45,6 @@ function base64ToUint8Array(base64) {
               kadenaPub: kadenaKP.publicKey,
               kadenaSec: kadenaKP.secretKey
           };
-          if(!fs.existsSync('./data')){
-            fs.mkdirSync('./data')
-          }
           fs.writeFileSync(filePath, JSON.stringify(keyData));
 
           console.log(`Generated and saved a new PeerId to ${filePath}`);
@@ -204,7 +204,7 @@ function base64ToUint8Array(base64) {
      const result = await getNodeInfo(peerId)
      if(result.result.status==="success"){
       if(result.result.data.status!=='active'){
-         activateNode(peerId, multiaddr, account, pubkey, seckey)
+         activateNode(peerId, multiaddr, pubkey, seckey)
       }
      }
     }
