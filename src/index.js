@@ -82,7 +82,6 @@ libp2p.addEventListener('peer:discovery', (evt) => {
 const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
    
     try{
-      console.log(id)
       let _id
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController()})
       if(id==''){
@@ -344,13 +343,16 @@ app.post("/api/dbinfo", async(req, res)=>{
 
 await pubsub.subscribe("dbupdate");
 
+
+
 pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
   if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
-      console.log(from.toString())
-      console.log(data)
+    console.log(from.toString())
     let dat = JSON.parse(toString(data))
+    console.log(dat)
+
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
     }
@@ -358,7 +360,6 @@ pubsub.addEventListener("message", async(message)=>{
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
     const db = await orbitdb.open(dat.dbAddr)
-    db.close()
   }
   catch(e) {
    console.log(e)

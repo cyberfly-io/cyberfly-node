@@ -1,9 +1,9 @@
 import { getSig } from "../utils.js"
 
-const kp = {"publicKey": "d04bbd8f403e583248aa461896bd7518113f89b85c98f3d9596bbfbf30df0bcb",
-"secretKey": "a0ec3175c6c80e60bc8ef18bd7b73a631c507b9f0a42c973036c7f96d21b047a"}
+const kp = {"publicKey": "e98491755d82bde4c7f4fa22d6bb96d5b22a05d3d74c84ab90de836781524c63",
+  "secretKey": "ba0df5cd73a197011ec02d8a9939e8738be87d7807958b3ceeaacdc0bc8190e0"}
 
-const dbinfo = {name:"contacts-1", dbtype:"documents"}
+const dbinfo = {name:"contacts", dbtype:"documents"}
 
 
 const sig = getSig(dbinfo, kp);

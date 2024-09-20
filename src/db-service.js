@@ -2,9 +2,9 @@ import { createHelia } from 'helia'
 import { createLibp2p } from 'libp2p'
 import { createOrbitDB } from '@orbitdb/core'
 import { LevelBlockstore } from 'blockstore-level'
-import { bitswap } from '@helia/block-brokers'
 import { getLibp2pOptions } from './config/libp2pconfig.js'
 import { getIp, loadOrCreatePeerIdAndKeyPair } from './config/utils.js'
+import { LevelDatastore } from 'datastore-level' 
 
 
 
@@ -19,7 +19,9 @@ const startOrbitDB = async ({ id, identity, identities, directory, sk } = {}) =>
   console.log(libp2p.peerId.toString())
   directory = directory || './data'
   const blockstore = new LevelBlockstore(`${directory}/ipfs/blocks`)
-  const ipfs = await createHelia({ libp2p, blockstore, blockBrokers: [bitswap()] })
+  const datastore = new LevelDatastore(`${directory}/ipfs/blocks`)
+
+  const ipfs = await createHelia({ libp2p, blockstore, datastore })
   const orbitdb = await createOrbitDB({ ipfs, id, identity, identities, directory })
   return {orbitdb, ...config}
 }

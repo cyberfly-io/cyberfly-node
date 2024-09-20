@@ -4,8 +4,8 @@ function randomIntFromInterval(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
 
-const keypair = {"publicKey": "d04bbd8f403e583248aa461896bd7518113f89b85c98f3d9596bbfbf30df0bcb",
-"secretKey": "a0ec3175c6c80e60bc8ef18bd7b73a631c507b9f0a42c973036c7f96d21b047a"}
+const keypair = {"publicKey": "e98491755d82bde4c7f4fa22d6bb96d5b22a05d3d74c84ab90de836781524c63",
+"secretKey": "ba0df5cd73a197011ec02d8a9939e8738be87d7807958b3ceeaacdc0bc8190e0"}
 
 
 //going to test data replication across nodes
@@ -18,7 +18,7 @@ const sig = getSig(data, keypair);
 
 
 
-const body = {dbaddr:"/orbitdb/zdpuAuK55h4CZee8dkA7sHuQSxidEWzNJcZXbWh2H713Sx15f" ,sig:sig, data:data, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuAnL8pQ4aQ9L2AJtf5BPWba1Wa4tLef2yQq2rSg5di5pRJ" ,sig:sig, data:data, publicKey:keypair['publicKey']}
 
 console.log(body)
 const d = await fetch("https://node.cyberfly.io/api/data", {method:'POST', body:JSON.stringify(body), headers: {
