@@ -1,8 +1,8 @@
 import Redis from 'ioredis-rejson'
 import Entry from '@orbitdb/core/src/oplog/entry.js'
 
-const RedisStorage = async () => {
-  let redis = new Redis();
+const RedisStorage = async (options) => {
+  let redis = new Redis(options.redis_host);
   const prefix = 'orbitdb';
   
   redis.on("connect", ()=>{

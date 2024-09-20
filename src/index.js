@@ -20,11 +20,17 @@ import { RedisStorage } from './redis-storage.js';
 
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
+const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
 
-const entryStorage =  await RedisStorage()
+
 
 const mqtt_port = 1883
+const redis_port = 6379
+
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
+const redis_host = `${redis_ip}:${redis_port}`
+const entryStorage =  await RedisStorage({redis_host})
+
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const mqtt_client = mqtt.connect(mqtt_host, {
   clientId,

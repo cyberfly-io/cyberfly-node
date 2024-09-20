@@ -11,7 +11,7 @@ const sig = getSig(dbinfo, kp);
 const body = {sig:sig, dbinfo:dbinfo, pubkey:kp['publicKey']}
 
 const postdata = async ()=>{
-    const d = await fetch("http://localhost:31003/api/createdb", {method:'POST', body:JSON.stringify(body), headers: {
+    const d = await fetch("http://139.99.91.128:31003/api/createdb", {method:'POST', body:JSON.stringify(body), headers: {
       'Content-Type': 'application/json',
       'Accept':'application/json'
     },});
