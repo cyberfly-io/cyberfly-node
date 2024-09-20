@@ -16,12 +16,10 @@ const data = {"temp": randomIntFromInterval(20, 35),hello:"123 world love", "tim
 
 const sig = getSig(data, keypair);
 
-
-
-const body = {dbaddr:"/orbitdb/zdpuAnL8pQ4aQ9L2AJtf5BPWba1Wa4tLef2yQq2rSg5di5pRJ" ,sig:sig, data:data, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuAm5SknkaLJJjR3hBCLkVUCquraBCZMd9kaJ3z3kdA35un" ,sig:sig, data:data, publicKey:keypair['publicKey']}
 
 console.log(body)
-const d = await fetch("https://node.cyberfly.io/api/data", {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch("http://localhost:31003/api/data", {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});

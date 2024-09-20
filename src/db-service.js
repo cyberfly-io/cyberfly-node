@@ -19,9 +19,8 @@ const startOrbitDB = async ({ id, identity, identities, directory, sk } = {}) =>
   console.log(libp2p.peerId.toString())
   directory = directory || './data'
   const blockstore = new LevelBlockstore(`${directory}/ipfs/blocks`)
-  const datastore = new LevelDatastore(`${directory}/ipfs/blocks`)
-
-  const ipfs = await createHelia({ libp2p, blockstore, datastore })
+  //const datastore = new LevelDatastore(`${directory}/ipfs/blocks`)
+  const ipfs = await createHelia({ libp2p, blockstore  })
   const orbitdb = await createOrbitDB({ ipfs, id, identity, identities, directory })
   return {orbitdb, ...config}
 }

@@ -16,9 +16,12 @@ import mqtt from 'mqtt';
 import ManifestStore from '@orbitdb/core/src/manifest-store.js'
 import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
 
+import { RedisStorage } from './redis-storage.js';
+
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
 
+const entryStorage =  await RedisStorage()
 
 const mqtt_port = 1883
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
@@ -83,7 +86,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
    
     try{
       let _id
-      const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController()})
+      const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
       if(id==''){
          _id = nanoid()
       }
@@ -111,7 +114,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
 }
 
 const newDb = async (name, pubkey, dbtype)=>{
-  const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController()})
+  const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
   const addr = db.address
   db.close()
   return addr
@@ -119,7 +122,7 @@ const newDb = async (name, pubkey, dbtype)=>{
 
 const getAllData = async (dbaddress, amount=20)=>{
   try{
-    const db = await orbitdb.open(dbaddress);
+    const db = await orbitdb.open(dbaddress, {entryStorage});
     const values = []
     for await (const entry of db.iterator({amount:amount})) {
       values.unshift(entry)
@@ -137,7 +140,6 @@ const getData = async (dbaddress, key)=>{
   try{
     const db = await orbitdb.open(dbaddress);
     const data = await db.get(key)
-    db.close();
     return data;
   }
    catch(e){
@@ -268,7 +270,13 @@ app.post("/api/getdata", async(req, res)=>{
   }
   else{
     const data = await getData(req.body.dbaddress, req.body.key);
-    res.json(data)
+    if(data){
+      res.json(data)
+
+    }
+    else {
+      res.json({info:"Data not found for key"})
+    }
   }
 
 });
@@ -281,7 +289,7 @@ app.post("/api/dropdb", async(req, res)=>{
 
   }
   else{
-    const db = await orbitdb.open(req.body.dbaddress)
+    const db = await orbitdb.open(req.body.dbaddress, {entryStorage, headsStorage, indexStorage})
     db.drop() //check authorization before perform this action
     res.json({info:"success"})
   }
@@ -359,7 +367,7 @@ pubsub.addEventListener("message", async(message)=>{
     const addr = OrbitDBAddress(dat.dbAddr)
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
-    const db = await orbitdb.open(dat.dbAddr)
+    const db = await orbitdb.open(dat.dbAddr, {entryStorage, headsStorage, indexStorage})
   }
   catch(e) {
    console.log(e)
