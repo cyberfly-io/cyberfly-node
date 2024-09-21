@@ -15,6 +15,7 @@ import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
 import ManifestStore from '@orbitdb/core/src/manifest-store.js'
 import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
+import { ComposedStorage, IPFSBlockStorage } from '@orbitdb/core';
 
 import { RedisStorage } from './redis-storage.js';
 
@@ -29,7 +30,7 @@ const redis_port = 6379
 
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
 const redis_host = `${redis_ip}:${redis_port}`
-const entryStorage =  await RedisStorage({redis_host})
+
 
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const mqtt_client = mqtt.connect(mqtt_host, {
@@ -64,7 +65,10 @@ if(!account){
   process.exit(1)
 }
 
-
+const entryStorage =  await ComposedStorage(
+  await IPFSBlockStorage({ ipfs, pin: true }),
+  await RedisStorage({redis_host})
+)
 
 mqtt_client.on('message', async(topic, payload) => {
 
@@ -84,8 +88,8 @@ libp2p.addEventListener('peer:discovery', (evt) => {
     discovered.push(peerInfo.id.toString());
 }
 
-  console.log('Discovered:', peerInfo.id.toString())
-  console.log(peerInfo)
+  //console.log('Discovered:', peerInfo.id.toString())
+  //console.log(peerInfo)
 })
 
 const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{

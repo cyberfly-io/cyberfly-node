@@ -18,16 +18,17 @@ console.log(error)
   })
 
   const put = async (hash, data) => {
-    let entry = await Entry.decode(data)
-    delete entry['hash']
-    delete entry['bytes']
-    await redis.json_set(`${prefix}:${hash}`, '.',entry,"NX");
+    const decoded = await Entry.decode(data)
+    delete decoded['hash']
+    delete decoded['bytes']
+    await redis.json_set(`${prefix}:${hash}`, '.',decoded,"NX");
   }
 
   const get = async (hash) => {
     const data = await redis.json_get(`${prefix}:${hash}`, '.');
-    const bytes = await Entry.encode(data)
-    return data ? bytes : null;
+    const encoded = await Entry.encode(data)
+    console.log(encoded)
+    return encoded
   }
 
   const del = async (hash) => {

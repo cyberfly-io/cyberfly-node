@@ -1,7 +1,7 @@
 import { getSig } from "../utils.js"
 
-const kp = {"publicKey": "e98491755d82bde4c7f4fa22d6bb96d5b22a05d3d74c84ab90de836781524c63",
-  "secretKey": "ba0df5cd73a197011ec02d8a9939e8738be87d7807958b3ceeaacdc0bc8190e0"}
+const kp = {"publicKey": "a8c77a2236af3053e2b6ccb09b3ef8675f621cdcb79128a8f53163a9c8ef412b",
+  "secretKey": "318e20041c2301abec65a91b553d8284392e7bb1df7f7128a28422c2416e32b0"}
 
 const dbinfo = {name:"testdb", dbtype:"documents"}
 
@@ -11,7 +11,7 @@ const sig = getSig(dbinfo, kp);
 const body = {sig:sig, dbinfo:dbinfo, pubkey:kp['publicKey']}
 
 const postdata = async ()=>{
-    const d = await fetch("http://139.99.91.128:31003/api/createdb", {method:'POST', body:JSON.stringify(body), headers: {
+    const d = await fetch("http://localhost:31003/api/createdb", {method:'POST', body:JSON.stringify(body), headers: {
       'Content-Type': 'application/json',
       'Accept':'application/json'
     },});
