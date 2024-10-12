@@ -66,8 +66,8 @@ if(!account){
 }
 
 const entryStorage =  await ComposedStorage(
+  await RedisStorage({redis_host}),
   await IPFSBlockStorage({ ipfs, pin: true }),
-  await RedisStorage({redis_host})
 )
 
 mqtt_client.on('message', async(topic, payload) => {
