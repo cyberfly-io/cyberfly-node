@@ -148,7 +148,7 @@ const getAllData = async (dbaddress, amount=40)=>{
 
 const getData = async (dbaddress, key)=>{
   try{
-    const db = await orbitdb.open(dbaddress);
+    const db = await orbitdb.open(dbaddress, {entryStorage});
     const data = await db.get(key)
     return data;
   }
@@ -347,7 +347,7 @@ app.post("/api/dbinfo", async(req, res)=>{
   }
   else{
     try{
-      const db = await orbitdb.open(req.body.dbaddress)
+      const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
       const dbinfo = db
       db.close()
     res.json({dbaddress:dbinfo.address, name:dbinfo.name});
