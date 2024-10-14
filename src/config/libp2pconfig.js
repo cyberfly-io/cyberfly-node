@@ -66,7 +66,7 @@ let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
       identify: identify(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
-      pubsub: gossipsub({ ignoreDuplicatePublishError:true,allowPublishToZeroPeers:true ,allowPublishToZeroTopicPeers: true, emitSelf: true, 
+      pubsub: gossipsub({ ignoreDuplicatePublishError:true, allowPublishToZeroTopicPeers: true, emitSelf: true, 
         canRelayMessage: true, scoreThresholds }),
       relay: circuitRelayServer({
         reservations: {
