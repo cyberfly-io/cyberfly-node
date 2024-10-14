@@ -150,6 +150,7 @@ const getData = async (dbaddress, key)=>{
   try{
     const db = await orbitdb.open(dbaddress, {entryStorage});
     const data = await db.get(key)
+    db.close()
     return data;
   }
    catch(e){
@@ -378,6 +379,7 @@ pubsub.addEventListener("message", async(message)=>{
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
     const db = await orbitdb.open(dat.dbAddr, {entryStorage})
+    db.close()
   }
   catch(e) {
    console.log(e)
