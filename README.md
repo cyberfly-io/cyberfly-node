@@ -43,14 +43,15 @@ POST /api/data
 }
 ```
 
-### read all data from db
+### read data from db
 
 POST /api/read
 
 ```json
 
 {
-"dbaddress":"/orbitdb/address"
+"dbaddress":"/orbitdb/address",
+"count":20
 }
 ```
 

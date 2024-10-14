@@ -299,7 +299,7 @@ app.post("/api/dropdb", async(req, res)=>{
 
   }
   else{
-    const db = await orbitdb.open(req.body.dbaddress, {entryStorage, headsStorage, indexStorage})
+    const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
     db.drop() //check authorization before perform this action
     res.json({info:"success"})
   }
@@ -377,7 +377,7 @@ pubsub.addEventListener("message", async(message)=>{
     const addr = OrbitDBAddress(dat.dbAddr)
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
-    const db = await orbitdb.open(dat.dbAddr, {entryStorage, headsStorage, indexStorage})
+    const db = await orbitdb.open(dat.dbAddr, {entryStorage})
   }
   catch(e) {
    console.log(e)
