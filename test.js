@@ -29,7 +29,7 @@ const d = await fetch("http://localhost:31003/api/data", {method:'POST', body:JS
 }
 
 await postdata()
-/*var c = 0
+var c = 0
 while(c<10){
   const start = Date.now();
 
@@ -37,4 +37,4 @@ await postdata();
 const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++
-}*/
+}

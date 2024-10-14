@@ -27,8 +27,7 @@ console.log(error)
   const get = async (hash) => {
     const data = await redis.json_get(`${prefix}:${hash}`, '.');
     const encoded = await Entry.encode(data)
-    console.log(encoded)
-    return encoded
+    return encoded.bytes
   }
 
   const del = async (hash) => {

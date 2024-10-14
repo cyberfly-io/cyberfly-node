@@ -130,7 +130,7 @@ const newDb = async (name, pubkey, dbtype)=>{
   return addr
 }
 
-const getAllData = async (dbaddress, amount=20)=>{
+const getAllData = async (dbaddress, amount=40)=>{
   try{
     const db = await orbitdb.open(dbaddress, {entryStorage});
     const values = []
