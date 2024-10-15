@@ -113,8 +113,8 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
         await db.put({_id:_id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       db.close()
+      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return msg.dbAddr
     }
     catch(e) {
