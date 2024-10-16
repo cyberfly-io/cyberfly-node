@@ -1,4 +1,4 @@
-import {isValidAddress, MemoryStorage, useAccessController  } from '@orbitdb/core'
+import {isValidAddress, useAccessController  } from '@orbitdb/core'
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { nanoid } from 'nanoid'
 import http from "http";
@@ -67,7 +67,7 @@ if(!account){
 
 const entryStorage =  await ComposedStorage(
   await RedisStorage({redis_host}),
-  await MemoryStorage(),
+  await IPFSBlockStorage({ ipfs, pin: true })
 )
 
 mqtt_client.on('message', async(topic, payload) => {
@@ -114,7 +114,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
       }
       const msg = {dbAddr:db.address}
       db.close()
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return msg.dbAddr
     }
     catch(e) {
