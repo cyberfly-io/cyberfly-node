@@ -96,7 +96,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
    
     try{
       let _id
-      const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
+      const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController()})
       if(id==''){
          _id = nanoid()
       }
@@ -124,7 +124,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
 }
 
 const newDb = async (name, pubkey, dbtype)=>{
-  const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
+  const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController()})
   const addr = db.address
   db.close()
   return addr
@@ -132,7 +132,7 @@ const newDb = async (name, pubkey, dbtype)=>{
 
 const getAllData = async (dbaddress, amount=40)=>{
   try{
-    const db = await orbitdb.open(dbaddress, {entryStorage});
+    const db = await orbitdb.open(dbaddress);
     const values = []
     for await (const entry of db.iterator({amount:amount})) {
       values.unshift(entry)
@@ -148,7 +148,7 @@ const getAllData = async (dbaddress, amount=40)=>{
 
 const getData = async (dbaddress, key)=>{
   try{
-    const db = await orbitdb.open(dbaddress, {entryStorage});
+    const db = await orbitdb.open(dbaddress);
     const data = await db.get(key)
     db.close()
     return data;
@@ -300,7 +300,7 @@ app.post("/api/dropdb", async(req, res)=>{
 
   }
   else{
-    const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
+    const db = await orbitdb.open(req.body.dbaddress)
     db.drop() //check authorization before perform this action
     res.json({info:"success"})
   }
@@ -348,7 +348,7 @@ app.post("/api/dbinfo", async(req, res)=>{
   }
   else{
     try{
-      const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
+      const db = await orbitdb.open(req.body.dbaddress)
       const dbinfo = db
       db.close()
     res.json({dbaddress:dbinfo.address, name:dbinfo.name});
@@ -383,7 +383,7 @@ pubsub.addEventListener("message", async(message)=>{
     const addr = OrbitDBAddress(dat.dbAddr)
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
-    const db = await orbitdb.open(dat.dbAddr, {entryStorage})
+    const db = await orbitdb.open(dat.dbAddr)
     //await waitForReplication(db)
     db.close()
   }

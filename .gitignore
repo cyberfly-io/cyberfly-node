@@ -12,6 +12,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 ipfs/
 orbitdb/
 keystore/
+cyberflydata/
 # Runtime data
 pids
 *.pid
