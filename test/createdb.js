@@ -1,17 +1,17 @@
 import { getSig } from "../utils.js"
 
-const kp = {"publicKey": "a8c77a2236af3053e2b6ccb09b3ef8675f621cdcb79128a8f53163a9c8ef412b",
-  "secretKey": "318e20041c2301abec65a91b553d8284392e7bb1df7f7128a28422c2416e32b0"}
+const keypair = {"publicKey": "94faf73efcd9af950d4dbca3e5c65459221377b6ea31e3ed30112939a5c79aa8",
+  "secretKey": "15756809a14b846680f2254b292e6015c4b446f37230bd0669159752521729fa"}
 
-const dbinfo = {name:"testdb", dbtype:"documents"}
+const dbinfo = {name:"replicatest", dbtype:"documents"}
 
 
-const sig = getSig(dbinfo, kp);
+const sig = getSig(dbinfo, keypair);
 
-const body = {sig:sig, dbinfo:dbinfo, pubkey:kp['publicKey']}
+const body = {sig:sig, dbinfo:dbinfo, pubkey:keypair['publicKey']}
 
 const postdata = async ()=>{
-    const d = await fetch("http://localhost:31003/api/createdb", {method:'POST', body:JSON.stringify(body), headers: {
+    const d = await fetch("https://node.cyberfly.io/api/createdb", {method:'POST', body:JSON.stringify(body), headers: {
       'Content-Type': 'application/json',
       'Accept':'application/json'
     },});

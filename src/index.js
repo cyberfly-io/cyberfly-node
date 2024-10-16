@@ -114,7 +114,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
       }
       const msg = {dbAddr:db.address}
       db.close()
-      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return msg.dbAddr
     }
     catch(e) {
@@ -145,6 +145,7 @@ const getAllData = async (dbaddress, amount=40)=>{
     return []
    }
 }
+
 
 const getData = async (dbaddress, key)=>{
   try{
