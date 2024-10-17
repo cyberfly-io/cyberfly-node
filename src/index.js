@@ -114,7 +114,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
       }
       const msg = {dbAddr:db.address}
       db.close()
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return msg.dbAddr
     }
     catch(e) {
@@ -363,12 +363,7 @@ app.post("/api/dbinfo", async(req, res)=>{
 
 await pubsub.subscribe("dbupdate");
 
-const waitForReplication = (db) => {
-  return new Promise((resolve, reject) => {
-    db.events.once('join', () => resolve())
-    db.events.once('error', (err) => reject(err))
-  })
-}
+
 
 pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
@@ -385,7 +380,6 @@ pubsub.addEventListener("message", async(message)=>{
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
     const db = await orbitdb.open(dat.dbAddr)
-    //await waitForReplication(db)
     db.close()
   }
   catch(e) {

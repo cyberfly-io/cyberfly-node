@@ -13,7 +13,7 @@ function randomIntFromInterval(min, max) {
 //store data to localnode and check on other nodes
 const postdata = async ()=>{
     
-const data = {"temperature": 1001, "replica": "testing 12345"}
+const data = {"temperature": randomIntFromInterval(20,40), "replica": "testing 12345"}
 
 
 const sortedJsondata = Object.keys(data)
