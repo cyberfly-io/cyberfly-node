@@ -10,18 +10,13 @@ import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { autoNAT } from "@libp2p/autonat";
 import { dcutr } from "@libp2p/dcutr";
-
-let scoreThresholds = {
-	gossipThreshold: -Infinity,
-	publishThreshold: -Infinity,
-	graylistThreshold: -Infinity,
-	// acceptPXThreshold: 10,
-	// opportunisticGraftThreshold: 20
-}
+import { kadDHT } from "@libp2p/kad-dht";
+import { webTransport } from "@libp2p/webtransport";
+import { webRTC, webRTCDirect } from "@libp2p/webrtc";
 
 
 
-let bsNodes = ["/dns4/vps-5b1e75a3.vps.ovh.ca/tcp/31001/p2p/12D3KooWCaTco8TYafHWko3bNryy2bmULfPvYMNVkYBvJZDXvqRj", 
+let bsNodes = ["/dns4/vps-5b1e75a3.vps.ovh.ca/tcp/31001/p2p/12D3KooWSfGgUaeogSZuRPa4mhsAU41qJH5EpmwKg9wGVzUwFGth", 
   "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
 
 export const getLibp2pOptions = (ip, peerId)=> {
@@ -40,15 +35,31 @@ let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/wss',
+      "/webrtc",
+      "/webtransport",
+      "/webrtc-direct",
     ],
       announce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`]
     },
     connectionManager: {
       minConnections: 1,
       maxConnections: Infinity,
-      autoDialConcurrency: 5,
     },
     transports: [
+      webRTC({
+        rtcConfiguration: {
+          iceServers: [
+            {
+              urls: [
+                "stun:stun.l.google.com:19302",
+                "stun:global.stun.twilio.com:3478",
+              ],
+            },
+          ],
+        },
+      }),
+      webTransport(),
+      webRTCDirect(),
     tcp(),
     webSockets({
       filter: filters.all
@@ -66,13 +77,23 @@ let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
       identify: identify(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
-      pubsub: gossipsub({ ignoreDuplicatePublishError:true,allowPublishToZeroPeers:true , allowPublishToZeroTopicPeers: true, emitSelf: true, 
-        canRelayMessage: true, scoreThresholds }),
+      pubsub: gossipsub({runOnTransientConnection: true,
+        ignoreDuplicatePublishError:true,allowPublishToZeroPeers:true , 
+        allowPublishToZeroTopicPeers: true, emitSelf: true, 
+        canRelayMessage: true, doPX: true,
+        scoreThresholds: {
+          gossipThreshold: -Infinity,
+          publishThreshold: -Infinity,
+          graylistThreshold: -Infinity,
+        }, }),
       relay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
         }
-      })
+      }),
+      dht: kadDHT({
+        clientMode: false,
+      }),
     }
   }
   
