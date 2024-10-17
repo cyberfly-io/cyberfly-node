@@ -114,7 +114,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
       }
       const msg = {dbAddr:db.address}
       db.close()
-      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return msg.dbAddr
     }
     catch(e) {
@@ -376,10 +376,10 @@ pubsub.addEventListener("message", async(message)=>{
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
     }
+    const db = await orbitdb.open(dat.dbAddr)
     const addr = OrbitDBAddress(dat.dbAddr)
     const manifest = await manifestStore.get(addr.hash)
     console.log(manifest)
-    const db = await orbitdb.open(dat.dbAddr)
     db.close()
   }
   catch(e) {
