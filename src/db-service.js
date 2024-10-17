@@ -11,13 +11,13 @@ import { bitswap } from "@helia/block-brokers";
 const startOrbitDB = async ({ id, identity, identities, directory, sk } = {}) => {
 
   const ip = await getIp()
-  const config = await loadOrCreatePeerIdAndKeyPair('./cyberflydata/config.json', sk)
+  const config = await loadOrCreatePeerIdAndKeyPair('./data/config.json', sk)
 
   const options =  getLibp2pOptions(ip, config.peerId.toString())
   const peerId = config.peerId
   const libp2p = await createLibp2p({peerId, ...options })
   console.log(libp2p.peerId.toString())
-  directory = directory || './cyberflydata'
+  directory = directory || './data'
   const blockstore = new LevelBlockstore(`${directory}/ipfs/blocks`)
   const ipfs = await createHelia({ libp2p, blockstore, blockBrokers: [bitswap()]  })
   const orbitdb = await createOrbitDB({ ipfs, id, identity, identities, directory })

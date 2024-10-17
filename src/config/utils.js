@@ -19,8 +19,8 @@ function base64ToUint8Array(base64) {
 
   export async function loadOrCreatePeerIdAndKeyPair(filePath, sk) {
     try {
-      if(!fs.existsSync('./cyberflydata')){
-        fs.mkdirSync('./cyberflydata')
+      if(!fs.existsSync('./data')){
+        fs.mkdirSync('./data')
       }
       if(sk){
         const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(sk))
