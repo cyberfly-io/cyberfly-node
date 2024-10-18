@@ -8,15 +8,6 @@ import pact from 'pact-lang-api'
 
 const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact',)
 
-
-  function uint8ArrayToBase64(bytes) {
-    return Buffer.from(bytes).toString('base64');
-}
-
-function base64ToUint8Array(base64) {
-    return new Uint8Array(Buffer.from(base64, 'base64'));
-}
-
   export async function loadOrCreatePeerIdAndKeyPair(filePath, sk) {
     try {
       if(!fs.existsSync('./data')){
