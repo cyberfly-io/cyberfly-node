@@ -114,10 +114,11 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
       }
       const msg = {dbAddr:db.address}
       db.close()
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      await pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return msg.dbAddr
     }
     catch(e) {
+     console.log(msg)
      console.log(e)
      return "something went wrong"
     }
@@ -156,7 +157,7 @@ const getData = async (dbaddress, key)=>{
   }
    catch(e){
     console.log(e)
-    return []
+    return {}
    }
 }
 

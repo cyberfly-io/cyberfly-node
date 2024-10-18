@@ -27,8 +27,11 @@ const sig = getSig(sortedJsondata, keypair);
 
 const body = {dbaddr:"/orbitdb/zdpuAmCyjYaJoHzHMrtQcYzu8aMLvxY38jyZA6fo5jkt5gXjh" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
+const remote = "https://node.cyberfly.io/api/data"
+const local = "http://localhost:31003/api/data"
+
 console.log(body)
-const d = await fetch("https://node.cyberfly.io/api/data", {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
@@ -37,7 +40,7 @@ const d = await fetch("https://node.cyberfly.io/api/data", {method:'POST', body:
 }
 
 await postdata()
-/*var c = 0
+var c = 0
 while(c<10){
   const start = Date.now();
 
@@ -45,4 +48,4 @@ await postdata();
 const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++
-}*/
+}
