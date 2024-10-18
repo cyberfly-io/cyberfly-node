@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { peerIdFromKeys } from '@libp2p/peer-id';
+import { peerIdFromPrivateKey } from '@libp2p/peer-id';
 import * as crypto from '@libp2p/crypto'; // Assuming this or a similar module for key generation
 import { genKeyPair} from '@kadena/cryptography-utils';
 import { createClient, Pact, createSignWithKeypair } from '@kadena/client';
@@ -25,20 +25,20 @@ function base64ToUint8Array(base64) {
       if(sk){
         const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(sk))
         const kadenaKP = pact.crypto.restoreKeyPairFromSecretKey(sk)
-        const peerId = await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes);
-        return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId};
+        const peerId =  peerIdFromPrivateKey(keyPair);
+        return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId, privateKey:keyPair};
       }
       else{
         if (fs.existsSync(filePath)) {
           const keyJson = fs.readFileSync(filePath, 'utf-8');
           const keyData = JSON.parse(keyJson);
           const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(keyData.kadenaSec))
-          const peerId =  await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes)
-          return {kadenaPub:keyData.kadenaPub, kadenaSec:keyData.kadenaSec, peerId:peerId};
+          const peerId = peerIdFromPrivateKey(keyPair)
+          return {kadenaPub:keyData.kadenaPub, kadenaSec:keyData.kadenaSec, peerId:peerId, privateKey:keyPair};
       } else {
           const kadenaKP = genKeyPair()
           const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(kadenaKP.secretKey))
-          const peerId = await peerIdFromKeys(keyPair.public.bytes, keyPair.bytes);
+          const peerId =  peerIdFromPrivateKey(keyPair);
 
           // Save keys to file, converting Uint8Array to base64 for JSON serialization
           const keyData = {
@@ -49,7 +49,7 @@ function base64ToUint8Array(base64) {
 
           console.log(`Generated and saved a new PeerId to ${filePath}`);
           
-          return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId};
+          return  {kadenaPub: kadenaKP.publicKey, kadenaSec: kadenaKP.secretKey, peerId:peerId, privateKey:keyPair};
       }
       }
     } catch (error) {

@@ -365,7 +365,7 @@ await pubsub.subscribe("dbupdate");
 
 
 
-pubsub.addEventListener("message", async(message)=>{
+/*pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
   if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
@@ -395,7 +395,7 @@ pubsub.addEventListener("message", async(message)=>{
     })
 
   }
-})
+})*/
 
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
 const deviceSockets = {}; // Store user sockets
