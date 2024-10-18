@@ -6,11 +6,13 @@ const CyberflyAccessController = () => async ({ orbitdb, identities, address }) 
 return  {
     address,
     canAppend : async (entry, identityProvider) =>  {
+      //subscription verification should be done here
         const db = await orbitdb.open(entry.id)
         const sig = entry.payload.value.sig;
         const data = entry.payload.value.data;
         const pubkey = db.name.split('-')[1]
         const verify = Pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
+        console.log("access controller called")
      return verify
     }
 }

@@ -386,7 +386,7 @@ pubsub.addEventListener("message", async(message)=>{
    console.log(e)
   }
   }
-  if(!topic.includes("_peer-discovery") && !topic.includes("dbupdate")){
+  if(!topic.includes("_peer-discovery") && !topic.includes("dbupdate") && !isValidAddress(topic)){
     mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
       if(error){
         console.log("mqtt_error")
@@ -460,10 +460,6 @@ io.on("connection", (socket) => {
       console.log(e)
     }
   })
-
-
-
-
 
   socket.on("disconnect", () => {
 

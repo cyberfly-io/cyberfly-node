@@ -13,6 +13,7 @@ import { dcutr } from "@libp2p/dcutr";
 import { kadDHT } from "@libp2p/kad-dht";
 import { webTransport } from "@libp2p/webtransport";
 import { webRTC, webRTCDirect } from "@libp2p/webrtc";
+import { mplex } from '@libp2p/mplex'
 
 
 
@@ -69,7 +70,7 @@ let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
     })
     ],
     connectionEncryption: [noise()],
-    streamMuxers: [yamux()],
+    streamMuxers: [yamux(), mplex()],
     connectionGater: {
       denyDialMultiaddr: () => false,
     },
@@ -77,10 +78,8 @@ let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
       identify: identify(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
-      pubsub: gossipsub({runOnTransientConnection: true,
-        ignoreDuplicatePublishError:true,allowPublishToZeroPeers:true , 
+      pubsub: gossipsub({
         allowPublishToZeroTopicPeers: true, emitSelf: true, 
-        canRelayMessage: true, doPX: true,
         scoreThresholds: {
           gossipThreshold: -Infinity,
           publishThreshold: -Infinity,
