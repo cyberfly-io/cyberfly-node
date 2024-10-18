@@ -16,7 +16,6 @@ import mqtt from 'mqtt';
 import ManifestStore from '@orbitdb/core/src/manifest-store.js'
 import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
 import { ComposedStorage, IPFSBlockStorage } from '@orbitdb/core';
-
 import { RedisStorage } from './redis-storage.js';
 
 

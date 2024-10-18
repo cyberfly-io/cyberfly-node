@@ -31,7 +31,7 @@ const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
 
 console.log(body)
-const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch(remote, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
