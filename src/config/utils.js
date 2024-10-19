@@ -31,7 +31,6 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
           const keyPair = await crypto.keys.generateKeyPairFromSeed('Ed25519', pact.crypto.hexToBin(kadenaKP.secretKey))
           const peerId =  peerIdFromPrivateKey(keyPair);
 
-          // Save keys to file, converting Uint8Array to base64 for JSON serialization
           const keyData = {
               kadenaPub: kadenaKP.publicKey,
               kadenaSec: kadenaKP.secretKey

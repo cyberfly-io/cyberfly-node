@@ -17,7 +17,24 @@ import ManifestStore from '@orbitdb/core/src/manifest-store.js'
 import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
 import { ComposedStorage, IPFSBlockStorage } from '@orbitdb/core';
 import { RedisStorage } from './redis-storage.js';
+import multer from 'multer';
+import { unixfs } from '@helia/unixfs';
+import { promises as fsPromises } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { json } from '@helia/json';
+import { CID } from 'multiformats/cid'
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Configure multer for file uploads
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: {
+      fileSize: 20 * 1024 * 1024 // 10MB limit
+  }
+});
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
@@ -198,6 +215,106 @@ app.get("/api", async(req, res)=>{
 }
   res.json(info)
 });
+
+// Route for file upload
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+      if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      // Initialize Helia and its plugins
+      const helia = ipfs;
+      const fs = unixfs(helia);
+      const j = json(helia);
+
+      // Read the uploaded file
+      const fileBuffer = await fsPromises.readFile(req.file.path);
+
+      // Add the file to IPFS
+      const cid = await fs.addBytes(fileBuffer);
+
+      // Create metadata object
+      const metadata = {
+          filename: req.file.originalname,
+          contentType: req.file.mimetype,
+          uploadDate: new Date().toISOString(),
+          fileCid: cid.toString()
+      };
+
+      // Store metadata in IPFS
+      const metadataCid = await j.add(metadata);
+
+      // Clean up the temporary file
+      await fsPromises.unlink(req.file.path);
+
+      // Return both CIDs and file details
+      res.json({
+          message: 'File uploaded successfully',
+          fileCid: cid.toString(),
+          metadataCid: metadataCid.toString(),
+          filename: req.file.originalname,
+          contentType: req.file.mimetype
+      });
+  } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({ error: 'Failed to upload file' });
+  }
+});
+
+// Route to retrieve file from IPFS
+app.get('/api/file/:metadataCid', async (req, res) => {
+  try {
+      const helia = ipfs;
+      const fs = unixfs(helia);
+      const j = json(helia);
+      const metadataCid = CID.parse(req.params.metadataCid);
+
+      // Get file metadata from IPFS
+      const metadata = await j.get(metadataCid);
+      if (!metadata) {
+          return res.status(404).json({ error: 'File metadata not found' });
+      }
+
+      // Get the file from IPFS using the fileCid stored in metadata
+      const chunks = [];
+      for await (const chunk of fs.cat(metadata.fileCid)) {
+          chunks.push(chunk);
+      }
+      const fileBuffer = Buffer.concat(chunks);
+
+      // Set appropriate headers for file download
+      res.setHeader('Content-Type', metadata.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${metadata.filename}"`);
+      res.send(fileBuffer);
+  } catch (error) {
+      console.error('Retrieval error:', error);
+      res.status(500).json({ error: 'Failed to retrieve file' });
+  }
+});
+
+// Optional: Route to get file metadata only
+app.get('/api/metadata/:metadataCid', async (req, res) => {
+  try {
+      const helia = ipfs;
+      const j = json(helia);
+      const metadataCid = req.params.metadataCid;
+
+      // Get file metadata from IPFS
+      const metadata = await j.get(metadataCid);
+      if (!metadata) {
+          return res.status(404).json({ error: 'File metadata not found' });
+      }
+
+      res.json(metadata);
+  } catch (error) {
+      console.error('Metadata retrieval error:', error);
+      res.status(500).json({ error: 'Failed to retrieve metadata' });
+  }
+});
+
+
+
 
 app.get("/api/location/:ip", async(req, res)=>{
 try{
