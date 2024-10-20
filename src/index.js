@@ -379,31 +379,98 @@ app.post('/api/upload/complete', express.json(), async (req, res) => {
 // Route to retrieve file from IPFS
 app.get('/api/file/:metadataCid', async (req, res) => {
   try {
-      const helia = ipfs;
-      const hfs = unixfs(helia);
-      const j = json(helia);
-      const metadataCid = CID.parse(req.params.metadataCid);
+    const helia = ipfs;
+    const hfs = unixfs(helia);
+    const j = json(helia);
+    const metadataCid = CID.parse(req.params.metadataCid);
 
-      // Get file metadata from IPFS
-      const metadata = await j.get(metadataCid);
-      if (!metadata) {
-          return res.status(404).json({ error: 'File metadata not found' });
+    // Get file metadata from IPFS
+    const metadata = await j.get(metadataCid);
+    if (!metadata) {
+      return res.status(404).json({ error: 'File metadata not found' });
+    }
+
+    // Check if it's a video file
+    const isVideo = metadata.contentType.startsWith('video/');
+
+    // For video files, handle streaming
+    if (isVideo) {
+      const range = req.headers.range;
+      
+      // If no range is provided, send the entire file
+      if (!range) {
+        res.writeHead(200, {
+          'Content-Length': metadata.fileSize,
+          'Content-Type': metadata.contentType
+        });
+        
+        for await (const chunk of hfs.cat(metadata.fileCid)) {
+          res.write(chunk);
+        }
+        res.end();
+        return;
       }
 
-      // Get the file from IPFS using the fileCid stored in metadata
-      const chunks = [];
-      for await (const chunk of hfs.cat(metadata.fileCid)) {
-          chunks.push(chunk);
-      }
-      const fileBuffer = Buffer.concat(chunks);
+      // Parse the range header
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : metadata.fileSize - 1;
+      const chunkSize = (end - start) + 1;
 
-      // Set appropriate headers for file download
-      res.setHeader('Content-Type', metadata.contentType);
-      res.setHeader('Content-Disposition', `attachment; filename="${metadata.filename}"`);
-      res.send(fileBuffer);
+      // Validate range
+      if (start >= metadata.fileSize || end >= metadata.fileSize) {
+        res.writeHead(416, {
+          'Content-Range': `bytes */${metadata.fileSize}`
+        });
+        res.end();
+        return;
+      }
+
+      // Set streaming headers
+      const headers = {
+        'Content-Range': `bytes ${start}-${end}/${metadata.fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': metadata.contentType
+      };
+
+      // Send partial content status
+      res.writeHead(206, headers);
+
+      try {
+        // Stream the content
+        for await (const chunk of hfs.cat(metadata.fileCid, {
+          offset: start,
+          length: chunkSize
+        })) {
+          res.write(chunk);
+        }
+        res.end();
+      } catch (streamError) {
+        console.error('Streaming error:', streamError);
+        // Don't send error response here as headers are already sent
+        res.end();
+      }
+      return;
+    }
+
+    // For non-video files, return the complete file
+    const chunks = [];
+    for await (const chunk of hfs.cat(metadata.fileCid)) {
+      chunks.push(chunk);
+    }
+    const fileBuffer = Buffer.concat(chunks);
+
+    res.setHeader('Content-Type', metadata.contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${metadata.filename}"`);
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.send(fileBuffer);
+
   } catch (error) {
-      console.error('Retrieval error:', error);
+    console.error('File retrieval error:', error);
+    if (!res.headersSent) {
       res.status(500).json({ error: 'Failed to retrieve file' });
+    }
   }
 });
 
@@ -412,7 +479,7 @@ app.get('/api/metadata/:metadataCid', async (req, res) => {
   try {
       const helia = ipfs;
       const j = json(helia);
-      const metadataCid = req.params.metadataCid;
+      const metadataCid = CID.parse(req.params.metadataCid);
 
       // Get file metadata from IPFS
       const metadata = await j.get(metadataCid);
