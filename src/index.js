@@ -20,21 +20,32 @@ import { RedisStorage } from './redis-storage.js';
 import multer from 'multer';
 import { unixfs } from '@helia/unixfs';
 import { promises as fsPromises } from 'fs';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { json } from '@helia/json';
 import { CID } from 'multiformats/cid'
-
+import path from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Configure multer for file uploads
-const upload = multer({ 
-  dest: 'uploads/',
-  limits: {
-      fileSize: 20 * 1024 * 1024 // 10MB limit
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const tempDir = path.join(process.cwd(), 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    cb(null, tempDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
+
+const upload = multer({ storage: storage });
+
+// Store file metadata temporarily
+const fileMetadata = new Map();
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
@@ -216,49 +227,152 @@ app.get("/api", async(req, res)=>{
   res.json(info)
 });
 
-// Route for file upload
+// Chunk upload endpoint
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-      if (!req.file) {
-          return res.status(400).json({ error: 'No file uploaded' });
-      }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
 
+    const { fileName, chunkIndex, totalChunks, mimeType } = req.body;
+    
+    // Create chunks directory in temp
+    const chunksDir = path.join(process.cwd(), 'temp', 'chunks', fileName);
+    if (!fs.existsSync(chunksDir)) {
+      await fsPromises.mkdir(chunksDir, { recursive: true });
+    }
+
+    // Store metadata
+    if (!fileMetadata.has(fileName)) {
+      fileMetadata.set(fileName, {
+        mimeType,
+        chunks: new Set(),
+        uploadStartTime: Date.now(),
+        tempPath: req.file.path
+      });
+    }
+
+    // Move chunk to chunks directory
+    const chunkPath = path.join(chunksDir, `chunk${chunkIndex}`);
+    await fsPromises.rename(req.file.path, chunkPath);
+
+    // Update metadata
+    fileMetadata.get(fileName).chunks.add(parseInt(chunkIndex));
+
+    res.json({ 
+      success: true, 
+      message: 'Chunk uploaded successfully',
+      chunkIndex 
+    });
+
+  } catch (error) {
+    console.error('Chunk upload error:', error);
+    res.status(500).json({ error: 'Failed to process chunk' });
+  }
+});
+
+// Complete upload endpoint
+app.post('/api/upload/complete', express.json(), async (req, res) => {
+  try {
+    const { fileName, totalChunks, mimeType } = req.body;
+    const metadata = fileMetadata.get(fileName);
+
+    if (!metadata) {
+      return res.status(400).json({ error: 'No upload in progress for this file' });
+    }
+
+    // Verify all chunks are present
+    if (metadata.chunks.size !== parseInt(totalChunks)) {
+      return res.status(400).json({ 
+        error: 'Missing chunks',
+        expected: totalChunks,
+        received: metadata.chunks.size
+      });
+    }
+
+    // Create temporary directory for final file
+    const tempDir = path.join(process.cwd(), 'temp', 'final');
+    if (!fs.existsSync(tempDir)) {
+      await fsPromises.mkdir(tempDir, { recursive: true });
+    }
+
+    // Path for combined file
+    const finalPath = path.join(tempDir, fileName);
+    const writeStream = fs.createWriteStream(finalPath);
+
+    // Combine chunks
+    const chunksDir = path.join(process.cwd(), 'temp', 'chunks', fileName);
+    for (let i = 0; i < totalChunks; i++) {
+      const chunkPath = path.join(chunksDir, `chunk${i}`);
+      const chunkBuffer = await fsPromises.readFile(chunkPath);
+      writeStream.write(chunkBuffer);
+      
+      // Clean up chunk after combining
+      await fsPromises.unlink(chunkPath);
+    }
+
+    // Wait for write to complete
+    await new Promise((resolve, reject) => {
+      writeStream.on('finish', resolve);
+      writeStream.on('error', reject);
+      writeStream.end();
+    });
+
+    // Clean up chunks directory
+    await fsPromises.rmdir(chunksDir);
+
+    try {
       // Initialize Helia and its plugins
       const helia = ipfs;
-      const fs = unixfs(helia);
+      const hfs = unixfs(helia);
       const j = json(helia);
 
-      // Read the uploaded file
-      const fileBuffer = await fsPromises.readFile(req.file.path);
+      // Read the final file
+      const fileBuffer = await fsPromises.readFile(finalPath);
 
-      // Add the file to IPFS
-      const cid = await fs.addBytes(fileBuffer);
+      // Add to IPFS
+      const cid = await hfs.addBytes(fileBuffer);
 
-      // Create metadata object
-      const metadata = {
-          filename: req.file.originalname,
-          contentType: req.file.mimetype,
-          uploadDate: new Date().toISOString(),
-          fileCid: cid.toString()
+      // Create IPFS metadata
+      const ipfsMetadata = {
+        filename: fileName,
+        contentType: mimeType,
+        uploadDate: new Date().toISOString(),
+        fileCid: cid.toString(),
+        fileSize: fileBuffer.length,
+        uploadDuration: Date.now() - metadata.uploadStartTime
       };
 
       // Store metadata in IPFS
-      const metadataCid = await j.add(metadata);
+      const metadataCid = await j.add(ipfsMetadata);
 
-      // Clean up the temporary file
-      await fsPromises.unlink(req.file.path);
+      // Clean up final file
+      await fsPromises.unlink(finalPath);
 
-      // Return both CIDs and file details
+      // Clean up metadata
+      fileMetadata.delete(fileName);
+
       res.json({
-          message: 'File uploaded successfully',
-          fileCid: cid.toString(),
-          metadataCid: metadataCid.toString(),
-          filename: req.file.originalname,
-          contentType: req.file.mimetype
+        success: true,
+        message: 'File uploaded successfully',
+        fileCid: cid.toString(),
+        metadataCid: metadataCid.toString(),
+        filename: fileName,
+        contentType: mimeType,
+        metadata: ipfsMetadata
       });
+
+    } catch (ipfsError) {
+      console.error('IPFS error:', ipfsError);
+      res.status(500).json({ error: 'Failed to store file in IPFS' });
+      
+      // Clean up on IPFS error
+      await fsPromises.unlink(finalPath);
+    }
+
   } catch (error) {
-      console.error('Upload error:', error);
-      res.status(500).json({ error: 'Failed to upload file' });
+    console.error('Upload completion error:', error);
+    res.status(500).json({ error: 'Failed to complete upload' });
   }
 });
 
@@ -266,7 +380,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 app.get('/api/file/:metadataCid', async (req, res) => {
   try {
       const helia = ipfs;
-      const fs = unixfs(helia);
+      const hfs = unixfs(helia);
       const j = json(helia);
       const metadataCid = CID.parse(req.params.metadataCid);
 
@@ -278,7 +392,7 @@ app.get('/api/file/:metadataCid', async (req, res) => {
 
       // Get the file from IPFS using the fileCid stored in metadata
       const chunks = [];
-      for await (const chunk of fs.cat(metadata.fileCid)) {
+      for await (const chunk of hfs.cat(metadata.fileCid)) {
           chunks.push(chunk);
       }
       const fileBuffer = Buffer.concat(chunks);
