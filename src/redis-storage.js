@@ -25,10 +25,13 @@ console.log(error)
   }
 
   const get = async (hash) => {
-    console.log("Redis storage called")
     const data = await redis.json_get(`${prefix}:${hash}`, '.');
-    const encoded = await Entry.encode(data)
-    return encoded.bytes
+    if(data){
+        const encoded = await Entry.encode(data)
+        return encoded.bytes
+    }
+    else
+    return data
   }
 
   const del = async (hash) => {

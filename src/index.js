@@ -142,7 +142,8 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
         await db.put({_id:_id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      // we want the data should be replicated on all the nodes irrespective of the db open or not in a specific node
+      pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
       return msg.dbAddr
     }
     catch(e) {

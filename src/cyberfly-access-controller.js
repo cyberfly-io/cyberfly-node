@@ -12,7 +12,6 @@ return  {
         const data = entry.payload.value.data;
         const pubkey = db.name.split('-')[1]
         const verify = Pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
-        console.log("access controller called")
      return verify
     }
 }
