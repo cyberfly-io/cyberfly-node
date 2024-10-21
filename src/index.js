@@ -143,7 +143,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
       }
       const msg = {dbAddr:db.address}
       // we want the data should be replicated on all the nodes irrespective of the db open or not in a specific node
-      pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
+      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
       return msg.dbAddr
     }
     catch(e) {
@@ -661,13 +661,12 @@ await pubsub.subscribe("dbupdate");
 
 
 
-pubsub.addEventListener("message", async(message)=>{
+/*pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
   if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
     console.log(from.toString())
     let dat = JSON.parse(toString(data))
-    console.log(dat)
 
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
@@ -691,7 +690,7 @@ pubsub.addEventListener("message", async(message)=>{
     })
 
   }
-})
+})*/
 
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
 const deviceSockets = {}; // Store user sockets
