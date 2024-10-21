@@ -26,6 +26,7 @@ import { dirname } from 'path';
 import { json } from '@helia/json';
 import { CID } from 'multiformats/cid'
 import path from 'path';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -92,6 +93,7 @@ if(!account){
   process.exit(1)
 }
 
+
 const entryStorage =  await ComposedStorage(
   await RedisStorage({redis_host}),
   await IPFSBlockStorage({ ipfs, pin: true })
@@ -140,8 +142,7 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
         await db.put({_id:_id, publicKey:pubkey, data:data, sig:sig});
       }
       const msg = {dbAddr:db.address}
-      db.close()
-      await pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
+      pubsub.publish("dbupdate", fromString(JSON.stringify(msg)));
       return msg.dbAddr
     }
     catch(e) {
@@ -154,7 +155,6 @@ const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
 const newDb = async (name, pubkey, dbtype)=>{
   const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
   const addr = db.address
-  db.close()
   return addr
 }
 
@@ -165,7 +165,6 @@ const getAllData = async (dbaddress, amount=40)=>{
     for await (const entry of db.iterator({amount:amount})) {
       values.unshift(entry)
     }
-    db.close()
     return values
   }
    catch(e){
@@ -179,7 +178,6 @@ const getData = async (dbaddress, key)=>{
   try{
     const db = await orbitdb.open(dbaddress, {entryStorage});
     const data = await db.get(key)
-    db.close()
     return data;
   }
    catch(e){
@@ -649,7 +647,6 @@ app.post("/api/dbinfo", async(req, res)=>{
     try{
       const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
       const dbinfo = db
-      db.close()
     res.json({dbaddress:dbinfo.address, name:dbinfo.name});
     }
     catch(e){
@@ -663,7 +660,7 @@ await pubsub.subscribe("dbupdate");
 
 
 
-/*pubsub.addEventListener("message", async(message)=>{
+pubsub.addEventListener("message", async(message)=>{
   const { topic, data, from } = message.detail
   if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
@@ -674,11 +671,11 @@ await pubsub.subscribe("dbupdate");
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
     }
-    const db = await orbitdb.open(dat.dbAddr, {entryStorage})
     const addr = OrbitDBAddress(dat.dbAddr)
     const manifest = await manifestStore.get(addr.hash)
-    console.log(manifest)
-    db.close()
+    if(manifest.accessController==="/cyberfly/access-controller"){
+      const db = await orbitdb.open(dat.dbAddr, {entryStorage})
+    }
   }
   catch(e) {
    console.log(e)
@@ -693,7 +690,7 @@ await pubsub.subscribe("dbupdate");
     })
 
   }
-})*/
+})
 
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
 const deviceSockets = {}; // Store user sockets
