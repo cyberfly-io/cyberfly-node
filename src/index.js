@@ -9,7 +9,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
 import { fromString } from 'uint8arrays/from-string'
-import { addNodeToContract, extractFields, getDevice, verify} from './config/utils.js'
+import { addNodeToContract, extractFields, removeDuplicateConnections, getDevice, verify} from './config/utils.js'
 import si from 'systeminformation'
 import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
@@ -26,6 +26,7 @@ import { dirname } from 'path';
 import { json } from '@helia/json';
 import { CID } from 'multiformats/cid'
 import path from 'path';
+import { graphqlHTTP } from 'express-graphql';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -215,8 +216,10 @@ const io = new Server(server, {
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
   const peers = libp2p.getPeers()
+  console.log(peers)
+
   const conn = libp2p.getConnections()
-  const filteredConn = conn.filter(obj => obj.status==="open");
+  const filteredConn = removeDuplicateConnections(conn.filter(obj => obj.status==="open"));
   const info = {peerId:peerId, health:"ok", version:"0.1.2", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 

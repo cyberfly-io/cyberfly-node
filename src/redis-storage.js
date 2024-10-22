@@ -3,7 +3,6 @@ import Entry from '@orbitdb/core/src/oplog/entry.js'
 
 const RedisStorage = async (options) => {
   let redis = new Redis(options.redis_host);
-  const prefix = 'orbitdb';
   
   redis.on("connect", ()=>{
     console.log("Redis Connected")
@@ -21,17 +20,18 @@ console.log(error)
     const decoded = await Entry.decode(data)
     delete decoded['hash']
     delete decoded['bytes']
-    await redis.json_set(`${prefix}:${hash}`, '.',decoded,"NX");
+    await redis.json_set(`${decoded.id}:${hash}`, '.',decoded.payload.value,"NX");
   }
 
   const get = async (hash) => {
-    const data = await redis.json_get(`${prefix}:${hash}`, '.');
+    /*const data = await redis.json_get(`${prefix}:${hash}`, '.');
     if(data){
         const encoded = await Entry.encode(data)
         return encoded.bytes
     }
     else
-    return data
+    return data*/
+  return null
   }
 
   const del = async (hash) => {

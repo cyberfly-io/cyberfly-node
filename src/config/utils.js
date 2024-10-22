@@ -210,8 +210,24 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
     }));
   }
 
+  export const removeDuplicateConnections = (connections) => {
+    // Using Map to keep track of unique remotePeers
+    // We'll keep the first occurrence of each remotePeer
+    const uniquePeers = new Map();
+    
+    connections.forEach(connection => {
+      if (!uniquePeers.has(connection.remotePeer)) {
+        uniquePeers.set(connection.remotePeer, connection);
+      }
+    });
+    
+    // Convert Map values back to array
+    return Array.from(uniquePeers.values());
+  };
+
 
   export const verify = (data, sig, pubkey)=>{
     const verify = pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
     return verify
   }
+

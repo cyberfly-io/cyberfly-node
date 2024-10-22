@@ -25,7 +25,7 @@ const sortedJsondata = Object.keys(data)
 
 const sig = getSig(sortedJsondata, keypair);
 
-const body = {dbaddr:"/orbitdb/zdpuAsf7awdQSZueHatVJMWM46tSQrW8c8CinMFfFH59qg41H" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuAsf7awdQSZueHatVJMWM46tSQrW8c8CinMFfFH59qg41H",_id:"gymS7mSIRpl4JbR7dnAan" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
