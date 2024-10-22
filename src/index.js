@@ -27,7 +27,8 @@ import { json } from '@helia/json';
 import { CID } from 'multiformats/cid'
 import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
-
+import { schema, resolvers } from './graphql.js';
+import { ruruHTML } from 'ruru/server';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -199,6 +200,12 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 
+app.use('/api/graphql', graphqlHTTP({
+  schema,
+  rootValue: resolvers,
+  graphiql: true
+}));
+
 app.options('*', cors(corsOptions));
 
 
@@ -212,6 +219,11 @@ const io = new Server(server, {
   },
 });
 
+
+app.get("/", (_req, res) => {
+  res.type("html")
+  res.end(ruruHTML({ endpoint: "/api/graphql" }))
+})
 
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId

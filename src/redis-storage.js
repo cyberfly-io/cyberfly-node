@@ -35,7 +35,7 @@ console.log(error)
   }
 
   const del = async (hash) => {
-    await redis.del(`${prefix}:${hash}`);
+    //await redis.del(`${prefix}:${hash}`);
   }
 
   const iterator = async function * ({ amount, reverse } = {}) {
