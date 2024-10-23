@@ -200,11 +200,21 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.use('/api/graphql', graphqlHTTP({
-  schema,
-  rootValue: resolvers,
-  graphiql: true
-}));
+app.use('/graphql', (req, res, next) => {
+  // Check if the request accepts JSON (GraphQL clients)
+  if (req.headers.accept?.includes('application/json') || 
+      req.headers['content-type']?.includes('application/json')) {
+    return graphqlHTTP({
+      schema,
+      rootValue: resolvers,
+      graphiql: true
+    })(req, res, next);
+  }
+  
+  // Otherwise serve Ruru HTML interface
+  res.type('html');
+  res.end(ruruHTML({ endpoint: '/graphql' }));
+});
 
 app.options('*', cors(corsOptions));
 
@@ -220,10 +230,7 @@ const io = new Server(server, {
 });
 
 
-app.get("/", (_req, res) => {
-  res.type("html")
-  res.end(ruruHTML({ endpoint: "/api/graphql" }))
-})
+
 
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
