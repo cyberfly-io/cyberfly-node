@@ -7,24 +7,28 @@ const redis_host = `${redis_ip}:${redis_port}`
 let redis = new Redis(redis_host);
 
 export const schema = buildSchema(`
-    type Query {
-      readDB(dbaddr: String!): [JSON]
-    }
     scalar JSON
+
+    type Data {
+      _id: String!
+      sig: String!
+      data: JSON!
+      publicKey: String!
+    }
+    type Query {
+      readDB(dbaddr: String!): [Data]
+    }
   `);
 
 
 export const resolvers = {
     readDB: async (dbaddr) => {
-      console.log(dbaddr)
       try {
         const keys = await redis.keys(`${dbaddr.dbaddr}:*`);
-        console.log(keys)
         const items = await Promise.all(
           keys.map(async (key) => {
             
             const value = await redis.json_get(key);
-            console.log(value)
             if (value) {
               return { ...value };
             }
