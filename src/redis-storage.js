@@ -20,7 +20,7 @@ console.log(error)
     const decoded = await Entry.decode(data)
     delete decoded['hash']
     delete decoded['bytes']
-    await redis.json_set(`${decoded.id}:${hash}`, '.',decoded.payload.value,"NX");
+    await redis.json_set(`${decoded.id}:${hash}`, '$',decoded.payload.value,"NX");
   }
 
   const get = async (hash) => {

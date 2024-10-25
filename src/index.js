@@ -238,7 +238,8 @@ app.get("/api", async(req, res)=>{
   console.log(peers)
 
   const conn = libp2p.getConnections()
-  const filteredConn = removeDuplicateConnections(conn.filter(obj => obj.status==="open"));
+  let con = conn.filter(obj => obj.status==="open")
+  const filteredConn = removeDuplicateConnections(con);
   const info = {peerId:peerId, health:"ok", version:"0.1.2", 
   multiAddr:libp2p.getMultiaddrs()[0].toString(), 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
