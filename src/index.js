@@ -78,7 +78,7 @@ config();
 useAccessController(CyberflyAccessController)
 const node_priv_key = process.env.NODE_PRIV_KEY
 const nodeConfig = await startOrbitDB({sk:node_priv_key})
-const orbitdb = nodeConfig.orbitdb
+export const orbitdb = nodeConfig.orbitdb
 const ipfs = orbitdb.ipfs
 const libp2p = await orbitdb.ipfs.libp2p
 const manifestStore = await ManifestStore({ ipfs })
