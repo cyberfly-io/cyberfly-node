@@ -1,7 +1,7 @@
 import { buildSchema } from 'graphql';
 import Redis from 'ioredis-rejson'
 import { RedisJSONFilter } from './filters.js';
-import { orbitdb } from './index.js';
+import { odb } from './db-service.js';
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
 const redis_host = `${redis_ip}:${redis_port}`
@@ -52,7 +52,7 @@ type Query {
 export const resolvers = {
     readDB: async (params) => {
       try {
-        const db = await orbitdb.open(params.dbaddr) //ensure db is open and sync
+        const db = await odb.open(params.dbaddr) //ensure db is open and sync
         const filters = new RedisJSONFilter(redis)
         return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options)
       } catch (error) {
