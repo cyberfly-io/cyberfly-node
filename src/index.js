@@ -146,9 +146,9 @@ const newDb = async (name, pubkey)=>{
   return addr
 }
 
-const getAllData = async (dbaddress, amount=40)=>{
+const getAllData = async (dbaddr, amount=40)=>{
   try{
-    const db = await orbitdb.open(dbaddress, {entryStorage});
+    const db = await orbitdb.open(dbaddr, {entryStorage});
     const values = []
     for await (const entry of db.iterator({amount:amount})) {
       values.unshift(entry)
@@ -162,9 +162,9 @@ const getAllData = async (dbaddress, amount=40)=>{
 }
 
 
-const getData = async (dbaddress, key)=>{
+const getData = async (dbaddr, key)=>{
   try{
-    const db = await orbitdb.open(dbaddress, {entryStorage});
+    const db = await orbitdb.open(dbaddr, {entryStorage});
     const data = await db.get(key)
     return data;
   }
@@ -550,7 +550,7 @@ app.post("/api/data", async(req, res)=>{
     res.json({info:"Data should be a json object"})
   }
   const dbaddr = await updateData(req.body.dbaddr,req.body.data, req.body.sig, req.body.publicKey,req.body.dbtype,req.body._id)
-  res.json({"info":"success", "dbAddr":dbaddr})
+  res.json({"info":"success", "dbaddr":dbaddr})
 });
 
 app.post("/api/createdb", async(req, res)=>{
@@ -564,7 +564,7 @@ app.post("/api/createdb", async(req, res)=>{
         res.json({info:"name is required"})
       }
       const address = await newDb(req.body.dbinfo.name,req.body.pubkey)
-      res.json({dbaddress:address})
+      res.json({dbaddr:address})
      }
   }
   catch(e){
@@ -574,11 +574,11 @@ app.post("/api/createdb", async(req, res)=>{
 })
 
 app.post("/api/getdata", async(req, res)=>{
-  if(req.body.dbaddress==null || req.body.id==null ){
-    res.json({"error":"dbaddress and id are required"})
+  if(req.body.dbaddr==null || req.body.id==null ){
+    res.json({"error":"dbaddr and id are required"})
   }
   else{
-    const data = await getData(req.body.dbaddress, req.body.id);
+    const data = await getData(req.body.dbaddr, req.body.id);
     if(data){
       res.json(data)
 
@@ -591,11 +591,11 @@ app.post("/api/getdata", async(req, res)=>{
 
 
 app.post("/api/dropdb", async(req, res)=>{
-  if( !req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
+  if( !req.body.dbaddr || !isValidAddress(req.body.dbaddr)){
     res.json({"error":"Invalid db address"})
   }
   else{
-    const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
+    const db = await orbitdb.open(req.body.dbaddr, {entryStorage})
     db.drop() //check authorization before perform this action
     res.json({info:"success"})
   }
@@ -603,13 +603,13 @@ app.post("/api/dropdb", async(req, res)=>{
 
 
 app.post("/api/read", async(req, res)=>{
-  if( !req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
+  if( !req.body.dbaddr || !isValidAddress(req.body.dbaddr)){
     res.json({"error":"Invalid db address"})
 
   }
   else{
     try{
-      const data = await getAllData(req.body.dbaddress, req.body.count);
+      const data = await getAllData(req.body.dbaddr, req.body.count);
       res.json(data);
     }
     catch(e){
@@ -638,14 +638,14 @@ app.post('/api/dial', async(req, res)=>{
   })
 
 app.post("/api/dbinfo", async(req, res)=>{
-  if(!req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
+  if(!req.body.dbaddr || !isValidAddress(req.body.dbaddr)){
     res.json({"error":"Invalid db address"})
   }
   else{
     try{
-      const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
+      const db = await orbitdb.open(req.body.dbaddr, {entryStorage})
       const dbinfo = db
-    res.json({dbaddress:dbinfo.address, name:dbinfo.name});
+    res.json({dbaddr:dbinfo.address, name:dbinfo.name});
     }
     catch(e){
   res.json({"error":"Invalid db address"})

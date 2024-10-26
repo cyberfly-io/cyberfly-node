@@ -20,11 +20,11 @@ console.log(error)
     const decoded = await Entry.decode(data)
     delete decoded['hash']
     delete decoded['bytes']
-    if(typeof decoded.payload.value === "object"){
-      await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value,);
+    if(typeof decoded.payload.value.objectType === "stream"){
+
     }
-    else if(typeof decoded.payload.value === "string"){
-      await redis.set(`${decoded.id}:${hash}`, decoded.payload.value)
+    else {
+      await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value);
     }
   }
 

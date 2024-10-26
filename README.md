@@ -9,7 +9,7 @@ POST /api/createdb
 ```json
 
 {
-"dbinfo":{"name":"dashboard", "dbtype":"documents"}, 
+"dbinfo":{"name":"dashboard"}, 
 "sig":"signature", 
 "pubkey":"pubkey used to sign the dbinfo"
 }
@@ -63,6 +63,6 @@ POST /api/getdata
 
 {
 "dbaddress":"/orbitdb/address",
-"key":"valid key of the existing record"
+"id":"valid key of the existing record"
 }
 ```
