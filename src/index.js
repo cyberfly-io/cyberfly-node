@@ -566,11 +566,11 @@ app.post("/api/data", async(req, res)=>{
    const allInKeys = array.every(item => keys.includes(item));
 
   if(req.body.objectType==="geo" && !allInKeys){
-   res.json({info:"data should contain longitude ,latitude, member"})
+   res.json({info:"data should contains longitude ,latitude, member"})
   }
   if(req.body.objectType==="ts" && !("value" in req.body.data)){
    //recommended to create time series before add data to series to configure time series policy
-    res.json({info:"data should contain longitude ,latitude, member"})
+    res.json({info:"data should contains value"})
    }
 
   const dbaddr = await updateData(req.body.dbaddr, req.body.objectType ,req.body.data, req.body.sig, req.body.publicKey,req.body.dbtype,req.body._id)

@@ -22,9 +22,10 @@ console.log(error)
     delete decoded['bytes']
     const objectType = decoded.payload.value.objectType
     if(objectType === "stream"){
-    const message = payload.value.data
+    const message = decoded.payload.value.data
+    const streamName = decoded.payload.value.data.streamName
     delete message['streamName']
-    await redis.xAdd(payload.value.data.streamName, "*", message)
+    await redis.xAdd(streamName, "*", {message:JSON.stringify(message)})
     }
     else if(objectType==="geo"){
       const data = decoded.payload.value.data

@@ -13,7 +13,7 @@ function randomIntFromInterval(min, max) {
 //store data to localnode and check on other nodes
 const postdata = async ()=>{
     
-const data = {"value": randomIntFromInterval(20,40)}
+const data = {"hello": `world ${randomIntFromInterval(20,40)}`, streamName:"mystream"}
 
 
 const sortedJsondata = Object.keys(data)
@@ -25,7 +25,7 @@ const sortedJsondata = Object.keys(data)
 
 const sig = getSig(sortedJsondata, keypair);
 
-const body = {dbaddr:"/orbitdb/zdpuAkv3hhDWeCgPTpDZdFaGfXgVjZST95CDsv2wgSKFJY29x", objectType:"ts" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuB268RnEE63E3Yu28hFXjVcH3C4dMYiLTiNJ2CUUw6qCrG", objectType:"stream" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
