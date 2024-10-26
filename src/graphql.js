@@ -1,12 +1,12 @@
 import { buildSchema } from 'graphql';
-import Redis from 'ioredis-rejson'
+import { createClient } from 'redis';
 import { RedisJSONFilter } from './filters.js';
 import { odb } from './db-service.js';
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
 const redis_host = `${redis_ip}:${redis_port}`
-let redis = new Redis(redis_host);
-
+let redis =  createClient({url:`redis://${redis_host}`});
+redis.connect();
 export const schema = buildSchema(`
  scalar JSON
 

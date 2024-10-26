@@ -3,20 +3,7 @@ export class RedisJSONFilter {
       this.redis = redisClient;
     }
   
-    /**
-     * Store JSON data in Redis
-     * @param {string} key - Redis key
-     * @param {Object} data - JSON data to store
-     */
-    async setJSON(key, data) {
-      try {
-        await this.redis.call('JSON.SET', key, '$', JSON.stringify(data));
-        return true;
-      } catch (error) {
-        console.error('Error setting JSON:', error);
-        throw error;
-      }
-    }
+  
   
     /**
      * Filter JSON data across multiple keys using pattern
@@ -29,7 +16,6 @@ export class RedisJSONFilter {
       try {
         // Get all keys matching the pattern
         const keys = await this.redis.keys(pattern);
-        
         if (!keys.length) {
           return [];
         }
@@ -46,17 +32,16 @@ export class RedisJSONFilter {
         const jsonPath = path || '.';
         const filterExpr = this.buildFilterExpression(conditions);
         const fullPath = filterExpr ? `${jsonPath}[?(${filterExpr})]` : jsonPath;
-  
         // Fetch and filter data from all matching keys
         const results = await Promise.all(
           keys.map(async (key) => {
             try {
-              const data = await this.redis.call('JSON.GET', key, fullPath);
+              const data = await this.redis.json.get(key, {path:[fullPath]});
               if (!data) return null;
-              const full_data = await this.redis.json_get(key)
+              const full_data = await this.redis.json.get(key)
               return Array.isArray(full_data) 
                 ? parsed.map(item => ({ ...item, _key: key }))
-                : { ...full_data };
+                : full_data;
             } catch (error) {
               //console.error(`Error processing key ${key}:`, error);
               return null;
