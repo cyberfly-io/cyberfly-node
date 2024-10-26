@@ -13,7 +13,7 @@ function randomIntFromInterval(min, max) {
 //store data to localnode and check on other nodes
 const postdata = async ()=>{
     
-const data = {"temperature": randomIntFromInterval(20,40), "replica": "testing 12345"}
+const data = {"value": randomIntFromInterval(20,40)}
 
 
 const sortedJsondata = Object.keys(data)
@@ -25,7 +25,7 @@ const sortedJsondata = Object.keys(data)
 
 const sig = getSig(sortedJsondata, keypair);
 
-const body = {dbaddr:"/orbitdb/zdpuAkv3hhDWeCgPTpDZdFaGfXgVjZST95CDsv2wgSKFJY29x" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuAkv3hhDWeCgPTpDZdFaGfXgVjZST95CDsv2wgSKFJY29x", objectType:"ts" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
@@ -40,7 +40,7 @@ const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers:
 }
 
 await postdata()
-/*var c = 0
+var c = 0
 while(c<10){
   const start = Date.now();
 
@@ -48,4 +48,4 @@ await postdata();
 const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++
-}*/
+}

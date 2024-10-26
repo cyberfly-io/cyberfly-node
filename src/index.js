@@ -29,6 +29,8 @@ import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
 import { ruruHTML } from 'ruru/server';
+import { createClient } from 'redis';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -44,6 +46,8 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
+
+
 
 const upload = multer({ storage: storage });
 
@@ -61,6 +65,8 @@ const redis_port = 6379
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
 const redis_host = `${redis_ip}:${redis_port}`
 
+let redis =  createClient({url:`redis://${redis_host}`})
+redis.connect();
 
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const mqtt_client = mqtt.connect(mqtt_host, {
@@ -123,12 +129,12 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   //console.log(peerInfo)
 })
 
-const updateData = async (addr, data, sig, pubkey, dbtype, id='')=>{
+const updateData = async (addr, objectType, data, sig, pubkey, dbtype, id='')=>{
    
     try{
       let _id
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
-      await db.put({_id:id? id:nanoid(), publicKey:pubkey, data:data, sig:sig});
+      await db.put({_id:id? id:nanoid(), publicKey:pubkey, data:data, sig:sig, objectType});
       const msg = {dbAddr:db.address}
       // we want the data should be replicated on all the nodes irrespective of the db open or not in a specific node
       //pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
@@ -549,7 +555,25 @@ app.post("/api/data", async(req, res)=>{
   if(typeof req.body.data !=="object"){
     res.json({info:"Data should be a json object"})
   }
-  const dbaddr = await updateData(req.body.dbaddr,req.body.data, req.body.sig, req.body.publicKey,req.body.dbtype,req.body._id)
+  if(!req.body.objectType){
+    res.json({info:"objectType is required"})
+  }
+  if(req.body.objectType==="stream" && !req.body.data.streamName){
+    res.json({info:"streamName in data is required"})
+  }
+  const keys = Object.keys(req.body.data);
+   const array = ["latitude", "longitude", "member"];
+   const allInKeys = array.every(item => keys.includes(item));
+
+  if(req.body.objectType==="geo" && !allInKeys){
+   res.json({info:"data should contain longitude ,latitude, member"})
+  }
+  if(req.body.objectType==="ts" && !("value" in req.body.data)){
+   //recommended to create time series before add data to series to configure time series policy
+    res.json({info:"data should contain longitude ,latitude, member"})
+   }
+
+  const dbaddr = await updateData(req.body.dbaddr, req.body.objectType ,req.body.data, req.body.sig, req.body.publicKey,req.body.dbtype,req.body._id)
   res.json({"info":"success", "dbaddr":dbaddr})
 });
 

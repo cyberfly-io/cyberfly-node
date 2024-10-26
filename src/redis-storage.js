@@ -20,8 +20,24 @@ console.log(error)
     const decoded = await Entry.decode(data)
     delete decoded['hash']
     delete decoded['bytes']
-    if(typeof decoded.payload.value.objectType === "stream"){
-
+    const objectType = decoded.payload.value.objectType
+    if(objectType === "stream"){
+    const message = payload.value.data
+    delete message['streamName']
+    await redis.xAdd(payload.value.data.streamName, "*", message)
+    }
+    else if(objectType==="geo"){
+      const data = decoded.payload.value.data
+      await redis.geoAdd(`${decoded.id}`, {
+        longitude: data.longitude,
+        latitude:data.latitude,
+        member:data.member
+      }
+      )
+    }
+    else if(objectType==="ts"){
+      const data = decoded.payload.value.data
+      await redis.ts.ADD(`${decoded.id}`, "*", data.value)
     }
     else {
       await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value);
