@@ -52,7 +52,7 @@ type Query {
 export const resolvers = {
     readDB: async (params) => {
       try {
-        const db = await odb.open(params.dbaddr) //ensure db is open and sync
+        await odb.open(params.dbaddr) //ensure db is open and sync
         const filters = new RedisJSONFilter(redis)
         return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options)
       } catch (error) {

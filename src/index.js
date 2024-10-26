@@ -123,40 +123,25 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   //console.log(peerInfo)
 })
 
-const updateData = async (addr, data, sig, pubkey, dbtype, key='', id='')=>{
+const updateData = async (addr, data, sig, pubkey, dbtype, id='')=>{
    
     try{
       let _id
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
-      if(id==''){
-         _id = nanoid()
-      }
-      else{
-       _id = id
-      }
-      if(dbtype=='events'){
-        await db.add({publicKey:pubkey, data:data, sig:sig});
-      }
-      else if(dbtype=='keyvalue'){
-        await db.put(key,{publicKey:pubkey, data:data, sig:sig});
-      }
-      else{
-        await db.put({_id:_id, publicKey:pubkey, data:data, sig:sig});
-      }
+      await db.put({_id:id? id:nanoid(), publicKey:pubkey, data:data, sig:sig});
       const msg = {dbAddr:db.address}
       // we want the data should be replicated on all the nodes irrespective of the db open or not in a specific node
       //pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
       return msg.dbAddr
     }
     catch(e) {
-     console.log(msg)
      console.log(e)
      return "something went wrong"
     }
 }
 
-const newDb = async (name, pubkey, dbtype)=>{
-  const db = await orbitdb.open(`cyberfly-${pubkey}-${name}-${dbtype}`, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
+const newDb = async (name, pubkey)=>{
+  const db = await orbitdb.open(`${name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController(), entryStorage})
   const addr = db.address
   return addr
 }
@@ -561,18 +546,11 @@ app.post("/api/data", async(req, res)=>{
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
   }
-  if(req.body.dbtype=='keyvalue' && !req.body.key){
-    res.send("Need key for keyvalue store")
+  if(typeof req.body.data !=="object"){
+    res.json({info:"Data should be a json object"})
   }
-  else if (req.body.dbtype=='keyvalue' && req.body.key){
-    const dbaddr = await updateData(req.body.dbaddr, req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype, req.body.key)
-   res.json({"info":"success", "dbAddr":dbaddr})
-  }
-  else{
-    const dbaddr = await updateData(req.body.dbaddr,req.body.data, req.body.sig, req.body.publicKey, req.body.dbtype,'',req.body._id)
-    res.json({"info":"success", "dbAddr":dbaddr})
-  }
-
+  const dbaddr = await updateData(req.body.dbaddr,req.body.data, req.body.sig, req.body.publicKey,req.body.dbtype,req.body._id)
+  res.json({"info":"success", "dbAddr":dbaddr})
 });
 
 app.post("/api/createdb", async(req, res)=>{
@@ -580,13 +558,12 @@ app.post("/api/createdb", async(req, res)=>{
   if(req.body.dbinfo==null){
     res.json({"info":"dbinfo is required"});
   }
-
   try{
      if(verify(req.body.dbinfo, req.body.sig, req.body.pubkey)){
-      if(req.body.dbinfo.dbtype == null || req.body.dbinfo.name == null){
-        res.json({info:"dbtype and name are required"})
+      if(req.body.dbinfo.name == null){
+        res.json({info:"name is required"})
       }
-      const address = await newDb(req.body.dbinfo.name,req.body.pubkey, req.body.dbinfo.dbtype)
+      const address = await newDb(req.body.dbinfo.name,req.body.pubkey)
       res.json({dbaddress:address})
      }
   }
@@ -597,28 +574,25 @@ app.post("/api/createdb", async(req, res)=>{
 })
 
 app.post("/api/getdata", async(req, res)=>{
-  if(req.body.dbaddress==null || req.body.key==null ){
-    res.json({"error":"dbaddress and key are required"})
+  if(req.body.dbaddress==null || req.body.id==null ){
+    res.json({"error":"dbaddress and id are required"})
   }
   else{
-    const data = await getData(req.body.dbaddress, req.body.key);
+    const data = await getData(req.body.dbaddress, req.body.id);
     if(data){
       res.json(data)
 
     }
     else {
-      res.json({info:"Data not found for key"})
+      res.json({info:`Data not found for this ${req.body.id} id`})
     }
   }
-
 });
 
 
 app.post("/api/dropdb", async(req, res)=>{
-
   if( !req.body.dbaddress || !isValidAddress(req.body.dbaddress)){
     res.json({"error":"Invalid db address"})
-
   }
   else{
     const db = await orbitdb.open(req.body.dbaddress, {entryStorage})
