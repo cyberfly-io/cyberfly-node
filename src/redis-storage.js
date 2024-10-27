@@ -44,7 +44,7 @@ console.log(error)
       await redis.ts.ADD(`${decoded.id}`, "*", data.value)
     }
     else {
-      await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value);
+      await redis.json.set(`${decoded.id}`, '$',decoded.payload.value);
     }
     await redis.set(hash, "true")
   }
