@@ -10,8 +10,14 @@ return  {
         const db = await orbitdb.open(entry.id)
         const sig = entry.payload.value.sig;
         const data = entry.payload.value.data;
+        const sortedJsondata = Object.keys(data)
+        .sort() // Sort the keys
+        .reduce((obj, key) => {
+            obj[key] = data[key]; // Build a new sorted object
+            return obj;
+        }, {});
         const pubkey = db.name.split('-')[1]
-        const verify = Pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
+        const verify = Pact.crypto.verifySignature(JSON.stringify(sortedJsondata), sig, pubkey);
      return verify
     }
 }

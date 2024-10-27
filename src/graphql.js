@@ -1,6 +1,6 @@
 import { buildSchema } from 'graphql';
 import { createClient } from 'redis';
-import { RedisJSONFilter, RedisStreamFilter } from './filters.js';
+import { RedisJSONFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
 import { odb } from './db-service.js';
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
@@ -21,6 +21,70 @@ type Message {
 id: String!
 message: JSON
 }
+
+type TimeSeries {
+timestamp: String!
+value: Int!
+}
+
+"""
+Input type for aggregation options in time series queries
+"""
+input AggregationInput {
+  """
+  Type of aggregation (avg, sum, min, max, range, count, first, last, std.p, std.s, var.p, var.s)
+  """
+  type: AggregationType!
+
+  """
+  Time bucket size in milliseconds for aggregation
+  """
+  timeBucket: Int!
+}
+
+"""
+Available aggregation types for time series data
+"""
+enum AggregationType {
+  AVG
+  SUM
+  MIN
+  MAX
+  RANGE
+  COUNT
+  FIRST
+  LAST
+  STD_P
+  STD_S
+  VAR_P
+  VAR_S
+}
+
+"""
+Input type for label-based filtering
+"""
+input FilterByLabelsInput {
+  """
+  Key-value pairs for filtering time series data
+  """
+  labels: [LabelInput!]
+}
+
+"""
+Input type for individual label key-value pairs
+"""
+input LabelInput {
+  """
+  Label key
+  """
+  key: String!
+
+  """
+  Label value
+  """
+  value: String!
+}
+
 
 input FilterOptionsInput {
   """
@@ -44,6 +108,12 @@ enum SortOrder {
   desc
 }
 
+input TimeSeriesOptions {
+ aggregation: AggregationInput
+ filterByLabels: FilterByLabelsInput
+ count: Int
+}
+
 type Query {
   readDB(
     dbaddr: String!, 
@@ -63,6 +133,13 @@ type Query {
   streamName: String!,
   count: Int!
   ):[Message]
+
+  readTimeSeries(
+  dbaddr: String!,
+  fromTimestamp: String,
+  toTimestamp: String,
+  options: TimeSeriesOptions
+  ):[TimeSeries]
 }
   `);
 
@@ -92,9 +169,15 @@ export const resolvers = {
       }
     },
     readLastNStreams: async (params)=>{
+
       await odb.open(params.dbaddr) 
       const streamFilters = new RedisStreamFilter(redis)
       const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName,params.count)
       return result
+    },
+    readTimeSeries : async(params)=>{
+     const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
+     const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
+     return result
     }
   };

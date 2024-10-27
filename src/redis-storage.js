@@ -64,7 +64,7 @@ console.log(error)
        })
       }
       try{
-        await redis.ts.ADD(decoded.id.split("/")[2], "*", data.value)
+        await redis.ts.ADD(decoded.id.split("/")[2], "*", data.value, {LABELS:data.labels})
       }
       catch(e){
         console.log(`time series error ${e}`)

@@ -166,3 +166,52 @@ export class RedisStreamFilter {
       }
 
 }
+
+export class RedisTimeSeriesFilter {
+    constructor(redisClient) {
+      this.redis = redisClient;
+    }
+
+    async query(dbaddr, fromTimestamp="-", toTimestamp="+", options = {}) {
+        const {
+            aggregation = '',
+            aggregationTime = '',
+            filterByLabels = {},
+            count = ''
+        } = options;
+
+        const queryOptions = {};
+
+        // Add aggregation if specified
+        if (aggregation && aggregationTime) {
+            queryOptions.AGGREGATION = {
+                type: aggregation,
+                timeBucket: aggregationTime
+            };
+        }
+
+        // Add count if specified
+        if (count) {
+            queryOptions.COUNT = count;
+        }
+
+        // Add filters if specified
+        if (Object.keys(filterByLabels).length > 0) {
+            queryOptions.FILTER_BY_TS = filterByLabels;
+        }
+
+        const result = await this.redis.ts.range(dbaddr.split("/")[2], fromTimestamp, toTimestamp, queryOptions);
+        return result.map(({ timestamp, value }) => ({
+            timestamp: Number(timestamp),
+            value: Number(value)
+        }));
+    }
+
+
+}
+
+export async function testTimeSeries (redis){
+    const filter = new RedisTimeSeriesFilter(redis)
+    const result = await filter.query("/orbitdb/zdpuB268RnEE63E3Yu28hFXjVcH3C4dMYiLTiNJ2CUUw6qCrG")
+    console.log(result)
+}
