@@ -7,13 +7,19 @@ function randomIntFromInterval(min, max) {
   const keypair = {"publicKey": "94faf73efcd9af950d4dbca3e5c65459221377b6ea31e3ed30112939a5c79aa8",
     "secretKey": "15756809a14b846680f2254b292e6015c4b446f37230bd0669159752521729fa"}
   
-
+    function generateRandomCoordinates() {
+      const latitude = (Math.random() * 180 - 90).toFixed(6); // Latitude ranges from -90 to 90
+      const longitude = (Math.random() * 360 - 180).toFixed(6); // Longitude ranges from -180 to 180
+      return { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
+  }
 
 //going to test data replication across nodes
 //store data to localnode and check on other nodes
 const postdata = async ()=>{
-    
-const data = {"hello": `world ${randomIntFromInterval(20,40)}`, streamName:"mystream"}
+
+
+const randomCoordinates = generateRandomCoordinates();
+const data = {member:"mycar", ...randomCoordinates}
 
 
 const sortedJsondata = Object.keys(data)
@@ -25,7 +31,7 @@ const sortedJsondata = Object.keys(data)
 
 const sig = getSig(sortedJsondata, keypair);
 
-const body = {dbaddr:"/orbitdb/zdpuB268RnEE63E3Yu28hFXjVcH3C4dMYiLTiNJ2CUUw6qCrG", objectType:"stream" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuB268RnEE63E3Yu28hFXjVcH3C4dMYiLTiNJ2CUUw6qCrG", objectType:"json" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
@@ -40,7 +46,7 @@ const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers:
 }
 
 await postdata()
-var c = 0
+/*var c = 0
 while(c<10){
   const start = Date.now();
 
@@ -48,4 +54,4 @@ await postdata();
 const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++
-}
+}*/

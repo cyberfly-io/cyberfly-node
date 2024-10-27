@@ -17,14 +17,17 @@ console.log(error)
   })
 
   const put = async (hash, data) => {
+    const hashexist = await redis.get(hash)
+    if (hashexist){
+      return 
+    }
     const decoded = await Entry.decode(data)
     delete decoded['hash']
     delete decoded['bytes']
     const objectType = decoded.payload.value.objectType
     if(objectType === "stream"){
-    const message = decoded.payload.value.data
+    const message = decoded.payload.value
     const streamName = decoded.payload.value.data.streamName
-    delete message['streamName']
     await redis.xAdd(streamName, "*", {message:JSON.stringify(message)})
     }
     else if(objectType==="geo"){
@@ -43,9 +46,11 @@ console.log(error)
     else {
       await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value);
     }
+    await redis.set(hash, "true")
   }
 
   const get = async (hash) => {
+    return null
   }
 
   const del = async (hash) => {
