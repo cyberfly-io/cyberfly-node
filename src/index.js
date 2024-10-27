@@ -127,12 +127,12 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   //console.log(peerInfo)
 })
 
-const updateData = async (addr, objectType, data, sig, pubkey, dbtype, id='')=>{
+const updateData = async (addr, objectType, data, sig, pubkey, timestamp, dbtype, id='')=>{
    
     try{
       let _id
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
-      await db.put({_id:id? id:nanoid(), publicKey:pubkey, data:data, sig:sig, objectType});
+      await db.put({_id:id? id:nanoid(), publicKey:pubkey, data:data,timestamp:timestamp, sig:sig, objectType});
       const msg = {dbAddr:db.address}
       // we want the data should be replicated on all the nodes irrespective of the db open or not in a specific node
       //pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
@@ -572,8 +572,8 @@ app.post("/api/data", async(req, res)=>{
    if(req.body.objectType==="ts" && !req.body.data.labels){
     return res.json({info:"data should contains labels"})
    }
-
-  const dbaddr = await updateData(req.body.dbaddr, req.body.objectType ,req.body.data, req.body.sig, req.body.publicKey,req.body.dbtype,req.body._id)
+  const timestamp = Date.now()
+  const dbaddr = await updateData(req.body.dbaddr, req.body.objectType ,req.body.data, req.body.sig, req.body.publicKey,timestamp,req.body.dbtype,req.body._id)
   res.json({"info":"success", "dbaddr":dbaddr})
 });
 
