@@ -544,30 +544,32 @@ app.get("/api/subscribe/:topic", async(req, res)=>{
 
 app.post("/api/data", async(req, res)=>{
   if(req.body.dbaddr==null){
-    res.json({"info":"dbaddr is required"})
+    return res.json({"info":"dbaddr is required"})
   }
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
   }
   if(typeof req.body.data !=="object"){
-    res.json({info:"Data should be a json object"})
+    return res.json({info:"Data should be a json object"})
   }
   if(!req.body.objectType){
-    res.json({info:"objectType is required"})
+    return res.json({info:"objectType is required"})
   }
   if(req.body.objectType==="stream" && !req.body.data.streamName){
-    res.json({info:"streamName in data is required"})
+    return res.json({info:"streamName in data is required"})
   }
   const keys = Object.keys(req.body.data);
    const array = ["latitude", "longitude", "member"];
    const allInKeys = array.every(item => keys.includes(item));
 
   if(req.body.objectType==="geo" && !allInKeys){
-   res.json({info:"data should contains longitude ,latitude, member"})
+   return res.json({info:"data should contains longitude ,latitude, member"})
   }
   if(req.body.objectType==="ts" && !("value" in req.body.data)){
-   //recommended to create time series before add data to series to configure time series policy
-    res.json({info:"data should contains value"})
+    return res.json({info:"data should contains value"})
+   }
+   if(req.body.objectType==="ts" && !req.body.data.labels){
+    return res.json({info:"data should contains labels"})
    }
 
   const dbaddr = await updateData(req.body.dbaddr, req.body.objectType ,req.body.data, req.body.sig, req.body.publicKey,req.body.dbtype,req.body._id)

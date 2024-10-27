@@ -19,7 +19,7 @@ const postdata = async ()=>{
 
 
 const randomCoordinates = generateRandomCoordinates();
-const data = {value:randomIntFromInterval(1, 100)}
+const data = {value:randomIntFromInterval(1, 100), labels:{sensor:"temperature"}}
 
 
 const sortedJsondata = Object.keys(data)
