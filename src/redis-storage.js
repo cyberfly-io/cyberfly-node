@@ -28,23 +28,40 @@ console.log(error)
     if(objectType === "stream"){
     const message = decoded.payload.value
     const streamName = decoded.payload.value.data.streamName
-    await redis.xAdd(streamName, "*", {message:JSON.stringify(message)})
+    try{
+      await redis.xAdd(streamName, "*", {message:JSON.stringify(message)})
+
+    }
+    catch(e){
+      console.log(`xAdd error: ${e}`)
+    }
     }
     else if(objectType==="geo"){
       const data = decoded.payload.value.data
-      await redis.geoAdd(`${decoded.id}`, {
-        longitude: data.longitude,
-        latitude:data.latitude,
-        member:data.member
+      try{
+        await redis.geoAdd(`${decoded.id}`, {
+          longitude: data.longitude,
+          latitude:data.latitude,
+          member:data.member
+        }
+        )
       }
-      )
+      catch(e){
+        console.log(`geoAdd error: ${e}`)
+      }
     }
     else if(objectType==="ts"){
       const data = decoded.payload.value.data
-      await redis.ts.ADD(`${decoded.id}`, "*", data.value)
+      try{
+        await redis.ts.ADD(`${decoded.id}`, "*", data.value)
+
+      }
+      catch(e){
+        console.log(`ts.add error ${e}`)
+      }
     }
     else {
-      await redis.json.set(`${decoded.id}`, '$',decoded.payload.value);
+      await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value);
     }
     await redis.set(hash, "true")
   }
