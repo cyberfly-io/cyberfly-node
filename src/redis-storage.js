@@ -1,5 +1,6 @@
 import { createClient } from 'redis';
 import Entry from '@orbitdb/core/src/oplog/entry.js'
+import { TimeSeriesDuplicatePolicies, TimeSeriesEncoding, TimeSeriesAggregationType } from '@redis/time-series';
 
 const RedisStorage = async (options) => {
   let redis =  createClient({url:`redis://${options.redis_host}`})
@@ -53,11 +54,20 @@ console.log(error)
     else if(objectType==="ts"){
       const data = decoded.payload.value.data
       try{
-        await redis.ts.ADD(`${decoded.id}`, "*", data.value)
-
+        await redis.ts.info(decoded.id.split("/")[2])
       }
       catch(e){
-        console.log(`ts.add error ${e}`)
+       await redis.ts.create(decoded.id.split("/")[2], {
+        RETENTION: 86400000, // 1 day in milliseconds
+        ENCODING: TimeSeriesEncoding.UNCOMPRESSED, // No compression
+        DUPLICATE_POLICY: TimeSeriesDuplicatePolicies.BLOCK // No duplicates
+       })
+      }
+      try{
+        await redis.ts.ADD(decoded.id.split("/")[2], "*", data.value)
+      }
+      catch(e){
+        console.log(`time series error ${e}`)
       }
     }
     else {

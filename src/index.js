@@ -29,7 +29,6 @@ import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
 import { ruruHTML } from 'ruru/server';
-import { createClient } from 'redis';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,8 +64,6 @@ const redis_port = 6379
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
 const redis_host = `${redis_ip}:${redis_port}`
 
-let redis =  createClient({url:`redis://${redis_host}`})
-redis.connect();
 
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
 const mqtt_client = mqtt.connect(mqtt_host, {
