@@ -29,6 +29,7 @@ import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
 import { ruruHTML } from 'ruru/server';
+import { isFlatJson } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

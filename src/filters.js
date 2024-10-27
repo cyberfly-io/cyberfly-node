@@ -148,3 +148,21 @@ export class RedisJSONFilter {
   
     console.log('Filtered Results:', results);
   }
+
+export class RedisStreamFilter {
+    constructor(redisClient) {
+      this.redis = redisClient;
+    }
+
+    async getEntries(dbaddr, streamName, from='-', to='+') {
+        return await this.redis.xRange(`${dbaddr}:${streamName}`, from, to);
+      }
+
+      async getLastNEntries(dbaddr, streamName, count) {
+        // Get the last N entries
+        return await this.redis.xRevRange(`${dbaddr}:${streamName}`, '+', '-', {
+          COUNT: count
+        });
+      }
+
+}
