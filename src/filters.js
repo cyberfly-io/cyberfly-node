@@ -175,7 +175,6 @@ export class RedisTimeSeriesFilter {
     async query(dbaddr, fromTimestamp="-", toTimestamp="+", options = {}) {
         const {
             aggregation = '',
-            aggregationTime = '',
             filterByLabels = {},
             count = ''
         } = options;
@@ -183,12 +182,13 @@ export class RedisTimeSeriesFilter {
         const queryOptions = {};
 
         // Add aggregation if specified
-        if (aggregation && aggregationTime) {
+        if (aggregation) {
             queryOptions.AGGREGATION = {
-                type: aggregation,
-                timeBucket: aggregationTime
+                type: aggregation.type,
+                timeBucket: aggregation.time
             };
         }
+
 
         // Add count if specified
         if (count) {
@@ -199,7 +199,6 @@ export class RedisTimeSeriesFilter {
         if (Object.keys(filterByLabels).length > 0) {
             queryOptions.FILTER_BY_TS = filterByLabels;
         }
-
         const result = await this.redis.ts.range(dbaddr.split("/")[2], fromTimestamp, toTimestamp, queryOptions);
         return result.map(({ timestamp, value }) => ({
             timestamp: Number(timestamp),

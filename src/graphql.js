@@ -24,7 +24,7 @@ message: JSON
 
 type TimeSeries {
 timestamp: String!
-value: Int!
+value: Float!
 }
 
 """
@@ -39,7 +39,7 @@ input AggregationInput {
   """
   Time bucket size in milliseconds for aggregation
   """
-  timeBucket: Int!
+  time: Int!
 }
 
 """
@@ -58,6 +58,7 @@ enum AggregationType {
   STD_S
   VAR_P
   VAR_S
+  TWA
 }
 
 """
