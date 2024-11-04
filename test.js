@@ -35,9 +35,10 @@ const body = {dbaddr:"/orbitdb/zdpuAskvXsjijvGLM5j66ZNCbhMKGY3qyB5cSTq3zhEEPWnmK
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
+const remote2 = "http://vps-5b1e75a3.vps.ovh.ca:31003/api/data"
 
 console.log(body)
-const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch(remote2, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
