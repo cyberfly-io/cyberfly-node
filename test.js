@@ -19,7 +19,7 @@ const postdata = async ()=>{
 
 
 const randomCoordinates = generateRandomCoordinates();
-const data = {value:randomIntFromInterval(1, 100), labels:{sensor:"temperature"}}
+const data = {...randomCoordinates, member:"chai kings", locationLabel:"Coffee shop", streamName:"mystream"}
 
 
 const sortedJsondata = Object.keys(data)
@@ -31,7 +31,7 @@ const sortedJsondata = Object.keys(data)
 
 const sig = getSig(sortedJsondata, keypair);
 
-const body = {dbaddr:"/orbitdb/zdpuB268RnEE63E3Yu28hFXjVcH3C4dMYiLTiNJ2CUUw6qCrG", objectType:"ts" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuAskvXsjijvGLM5j66ZNCbhMKGY3qyB5cSTq3zhEEPWnmK", objectType:"stream" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"

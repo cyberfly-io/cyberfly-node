@@ -16,7 +16,7 @@ return  {
             obj[key] = data[key]; // Build a new sorted object
             return obj;
         }, {});
-        const pubkey = db.name.split('-')[1]
+        const pubkey = db.name.split('-').at(-1)
         const verify = Pact.crypto.verifySignature(JSON.stringify(sortedJsondata), sig, pubkey);
      return verify
     }

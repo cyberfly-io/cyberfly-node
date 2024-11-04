@@ -29,8 +29,9 @@ console.log(error)
     if(objectType === "stream"){
     const message = decoded.payload.value
     const streamName = decoded.payload.value.data.streamName
+    const messageId = `${decoded.payload.value.timestamp}-0`
     try{
-      await redis.xAdd(`${decoded.id}:${streamName}`, decoded.payload.value.timestamp, {message:JSON.stringify(message)})
+      await redis.xAdd(`${decoded.id}:${streamName}`, messageId, {message:JSON.stringify(message)})
 
     }
     catch(e){
@@ -40,7 +41,7 @@ console.log(error)
     else if(objectType==="geo"){
       const data = decoded.payload.value.data
       try{
-        await redis.geoAdd(`${decoded.id}`, {
+        await redis.geoAdd(`${decoded.id}:${data.locationLabel}`, {
           longitude: data.longitude,
           latitude:data.latitude,
           member:data.member
