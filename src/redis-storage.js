@@ -29,9 +29,8 @@ console.log(error)
     if(objectType === "stream"){
     const message = decoded.payload.value
     const streamName = decoded.payload.value.data.streamName
-    
     try{
-      await redis.xAdd(`${decoded.id}:${streamName}`, "*", {message:JSON.stringify(message)})
+      await redis.xAdd(`${decoded.id}:${streamName}`, "*", {timestamp:`${decoded.payload.value.timestamp}`,message:JSON.stringify(message)})
       await redis.set(hash, "true")
 
     }
