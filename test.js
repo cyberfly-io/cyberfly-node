@@ -38,16 +38,16 @@ const local = "http://localhost:31003/api/data"
 const remote2 = "http://vps-5b1e75a3.vps.ovh.ca:31003/api/data"
 
 console.log(body)
-const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
+/*const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
   const j = await d.json()
-  console.log(j)
+  console.log(j)*/
 }
 
 await postdata()
-var c = 0
+/*var c = 0
 while(c<10){
   const start = Date.now();
 
@@ -56,3 +56,4 @@ const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++
 }
+*/

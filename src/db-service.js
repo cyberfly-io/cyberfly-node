@@ -6,7 +6,6 @@ import { getLibp2pOptions } from './config/libp2pconfig.js'
 import { getIp, loadOrCreatePeerIdAndKeyPair } from './config/utils.js'
 
 
-let odb = null;
 
 const startOrbitDB = async ({ id, identity, identities, directory, sk } = {}) => {
 
@@ -21,7 +20,6 @@ const startOrbitDB = async ({ id, identity, identities, directory, sk } = {}) =>
 
   const ipfs = await createHelia({ libp2p, blockstore  })
   const orbitdb = await createOrbitDB({ ipfs, id, identity, identities, directory })
-  odb = orbitdb
   return {orbitdb, ...config}
 }
 
@@ -35,5 +33,4 @@ const stopOrbitDB = async (orbitdb) => {
 export {
   startOrbitDB,
   stopOrbitDB,
-  odb
 }

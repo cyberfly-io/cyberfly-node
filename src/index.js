@@ -1,10 +1,8 @@
 import {isValidAddress, useAccessController  } from '@orbitdb/core'
 import CyberflyAccessController from './cyberfly-access-controller.js'
-import { nanoid } from 'nanoid'
 import http from "http";
 import cors from 'cors';
 import { Server } from "socket.io";
-import { startOrbitDB } from './db-service.js';
 import { config } from 'dotenv';
 import express from 'express';
 import { toString } from 'uint8arrays/to-string'
@@ -15,8 +13,6 @@ import { multiaddr } from '@multiformats/multiaddr'
 import mqtt from 'mqtt';
 import ManifestStore from '@orbitdb/core/src/manifest-store.js'
 import { OrbitDBAddress } from '@orbitdb/core/src/orbitdb.js';
-import { ComposedStorage, IPFSBlockStorage } from '@orbitdb/core';
-import { RedisStorage } from './redis-storage.js';
 import multer from 'multer';
 import { unixfs } from '@helia/unixfs';
 import { promises as fsPromises } from 'fs';
@@ -29,8 +25,7 @@ import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
 import { ruruHTML } from 'ruru/server';
-import { isFlatJson } from './utils.js';
-
+import { nodeConfig, entryStorage, updateData } from './custom-entry-storage.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -55,15 +50,12 @@ const upload = multer({ storage: storage });
 const fileMetadata = new Map();
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
-const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
 
 
 
 const mqtt_port = 1883
-const redis_port = 6379
 
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
-const redis_host = `${redis_ip}:${redis_port}`
 
 
 const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
@@ -80,14 +72,11 @@ mqtt_client.on('connect', () => {
 
 config();
 useAccessController(CyberflyAccessController)
-const node_priv_key = process.env.NODE_PRIV_KEY
-const nodeConfig = await startOrbitDB({sk:node_priv_key})
 export const orbitdb = nodeConfig.orbitdb
 const ipfs = orbitdb.ipfs
 const libp2p = await orbitdb.ipfs.libp2p
 const manifestStore = await ManifestStore({ ipfs })
-
-const pubsub = orbitdb.ipfs.libp2p.services.pubsub
+const pubsub = libp2p.services.pubsub
 const account = process.env.KADENA_ACCOUNT
 // Print out listening addresses
 console.log('libp2p listening on addresses:');
@@ -98,12 +87,6 @@ if(!account){
   console.log("KADENA_ACCOUNT environment variable is required")
   process.exit(1)
 }
-
-
-const entryStorage =  await ComposedStorage(
-  await RedisStorage({redis_host}),
-  await IPFSBlockStorage({ ipfs, pin: true })
-)
 
 mqtt_client.on('message', async(topic, payload) => {
 
@@ -127,22 +110,7 @@ libp2p.addEventListener('peer:discovery', (evt) => {
   //console.log(peerInfo)
 })
 
-const updateData = async (addr, objectType, data, sig, pubkey, timestamp, dbtype, id='')=>{
-   
-    try{
-      let _id
-      const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
-      await db.put({_id:id? id:nanoid(), publicKey:pubkey, data:data,timestamp:timestamp, sig:sig, objectType});
-      const msg = {dbAddr:db.address}
-      // we want the data should be replicated on all the nodes irrespective of the db open or not in a specific node
-      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
-      return msg.dbAddr
-    }
-    catch(e) {
-     console.log(e)
-     return "something went wrong"
-    }
-}
+
 
 const newDb = async (name, pubkey)=>{
   const db = await orbitdb.open(`${name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController(), entryStorage})
@@ -620,7 +588,7 @@ app.post("/api/dropdb", async(req, res)=>{
   }
   else{
     const db = await orbitdb.open(req.body.dbaddr, {entryStorage})
-    db.drop() //check authorization before perform this action
+    //db.drop() //check authorization before perform this action
     res.json({info:"success"})
   }
 })

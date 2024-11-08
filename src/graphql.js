@@ -1,7 +1,9 @@
 import { buildSchema } from 'graphql';
 import { createClient } from 'redis';
+import CyberflyAccessController from './cyberfly-access-controller.js'
 import { RedisJSONFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
-import { odb } from './db-service.js';
+import { verify } from './config/utils.js';
+import { updateData, nodeConfig } from './custom-entry-storage.js';
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
 const redis_host = `${redis_ip}:${redis_port}`
@@ -142,43 +144,178 @@ type Query {
   options: TimeSeriesOptions
   ):[TimeSeries]
 }
+  # Types for the schema
+type DatabaseAddress {
+  dbaddr: String!
+}
+
+type ErrorResponse {
+  info: String!
+}
+
+# Union type to handle both success and error responses
+union CreateDatabaseResult = DatabaseAddress | ErrorResponse
+
+# Input type for database creation
+input DatabaseInfo {
+  name: String!
+}
+
+input CreateDatabaseInput {
+  dbinfo: DatabaseInfo!
+  sig: String!
+  pubkey: String!
+}
+
+ enum ObjectType {
+    stream
+    geo
+    ts
+    json
+  }
+  
+
+    input UpdateDataInput {
+    dbaddr: String!
+    data: JSON!
+    objectType: ObjectType!
+    sig: String!
+    publicKey: String!
+    _id: ID
+  }
+
+    type UpdateDataResponse {
+    info: String!
+    dbaddr: String
+  }
+
+type Mutation {
+  createDatabase(input: CreateDatabaseInput!): CreateDatabaseResult!
+  updateData(input: UpdateDataInput!): UpdateDataResponse!
+}
   `);
 
 
+const orbitdb = nodeConfig.orbitdb
+
 export const resolvers = {
-    readDB: async (params) => {
-      try {
-        await odb.open(params.dbaddr) //ensure db is open and sync
-        const filters = new RedisJSONFilter(redis)
-        return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options)
-      } catch (error) {
-        console.error('Error fetching all items:', error);
-        throw new Error('Failed to fetch items');
-      }
-    },
-    readStream: async (params)=>{
-      try{
-      await odb.open(params.dbaddr) 
-      const streamFilters = new RedisStreamFilter(redis)
-      const result = await streamFilters.getEntries(params.dbaddr, params.streamName, params.from, params.to)
-      return result
-      }
-      catch(e){
-        console.error("Error fetching stream" ,e)
-        throw new Error('Failed to fetch streams');
-
-      }
-    },
-    readLastNStreams: async (params)=>{
-
-      await odb.open(params.dbaddr) 
-      const streamFilters = new RedisStreamFilter(redis)
-      const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName,params.count)
-      return result
-    },
-    readTimeSeries : async(params)=>{
-     const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
-     const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
-     return result
+  readDB: async (params) => {
+    try {
+      await orbitdb.open(params.dbaddr) //ensure db is open and sync
+      const filters = new RedisJSONFilter(redis)
+      return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options)
+    } catch (error) {
+      console.error('Error fetching all items:', error);
+      throw new Error('Failed to fetch items');
     }
+  },
+  readStream: async (params)=>{
+    try{
+    await orbitdb.open(params.dbaddr) 
+    const streamFilters = new RedisStreamFilter(redis)
+    const result = await streamFilters.getEntries(params.dbaddr, params.streamName, params.from, params.to)
+    return result
+    }
+    catch(e){
+      console.error("Error fetching stream" ,e)
+      throw new Error('Failed to fetch streams');
+
+    }
+  },
+  readLastNStreams: async (params)=>{
+
+    await orbitdb.open(params.dbaddr) 
+    const streamFilters = new RedisStreamFilter(redis)
+    const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName,params.count)
+    return result
+  },
+  readTimeSeries : async(params)=>{
+   await orbitdb.open(params.dbaddr) 
+   const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
+   const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
+   return result
+  } 
+  ,
+  createDatabase: async ({input}) => {
+    // debugger;
+    const { dbinfo, sig, pubkey } = input;
+
+    if (!dbinfo) {
+      return { __typename: 'ErrorResponse', info: 'dbinfo is required' };
+    }
+
+    try {
+      if (verify(dbinfo, sig, pubkey)) {
+        if (!dbinfo.name) {
+          return { __typename: 'ErrorResponse', info: 'name is required' };
+        }
+
+        const db = await odb.open(`${dbinfo.name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController()})
+        return { __typename: 'DatabaseAddress', dbaddr: db.address };
+      } else {
+        return { __typename: 'ErrorResponse', info: 'Verification failed' };
+      }
+    } catch (e) {
+      console.log(e)
+      return { __typename: 'ErrorResponse', info: 'Something went wrong' };
+    }
+  },
+  updateData: async ({ input }) => {
+    const {
+      dbaddr,
+      dbtype = 'documents',
+      data,
+      objectType,
+      sig,
+      publicKey,
+      _id
+    } = input;
+
+    // Object type specific validations
+    switch (objectType) {
+      case 'stream':
+        if (!data.streamName) {
+          throw new Error("streamName in data is required");
+        }
+        break;
+
+      case 'geo':
+        const requiredGeoFields = ["latitude", "longitude", "member"];
+        const hasAllGeoFields = requiredGeoFields.every(field => 
+          field in data
+        );
+        if (!hasAllGeoFields) {
+          throw new Error("data should contains longitude, latitude, member");
+        }
+        break;
+
+      case 'ts':
+        if (!('value' in data)) {
+          throw new Error("data should contains value");
+        }
+        if (!data.labels) {
+          throw new Error("data should contains labels");
+        }
+        break;
+    }
+
+    const timestamp = Date.now();
+    
+    // Call the existing updateData function
+    const updatedDbaddr = await updateData(
+      dbaddr,
+      objectType,
+      data,
+      sig,
+      publicKey,
+      timestamp,
+      dbtype,
+      _id
+    );
+
+    return {
+      info: "success",
+      dbaddr: updatedDbaddr
+    };
+  }
   };

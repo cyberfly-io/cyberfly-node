@@ -227,7 +227,12 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
 
 
   export const verify = (data, sig, pubkey)=>{
-    const verify = pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
-    return verify
+    try{
+      const verify = pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
+      return verify
+    }
+    catch(e){
+      return false
+    }
   }
 
