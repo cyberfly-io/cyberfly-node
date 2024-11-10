@@ -12,6 +12,20 @@ const node_priv_key = process.env.NODE_PRIV_KEY
 const nodeConfig = await startOrbitDB({sk:node_priv_key})
 const ipfs = nodeConfig.orbitdb.ipfs
 const orbitdb = nodeConfig.orbitdb
+const libp2p = nodeConfig.orbitdb.ipfs.libp2p
+
+
+
+const discovered = []
+
+
+libp2p.addEventListener('peer:discovery', (evt) => {
+    const peerInfo = evt.detail
+    if (!discovered.includes(peerInfo.id.toString())) {
+      discovered.push(peerInfo.id.toString());
+  }
+
+  })
 
 
 const entryStorage =  await ComposedStorage(
@@ -40,5 +54,6 @@ const entryStorage =  await ComposedStorage(
   export  {
     nodeConfig,
     entryStorage,
-    updateData
+    updateData,
+    discovered
   }

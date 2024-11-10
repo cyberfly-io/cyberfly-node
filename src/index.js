@@ -100,15 +100,7 @@ const port = 31003;
 const discovered = []
 addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 
-libp2p.addEventListener('peer:discovery', (evt) => {
-  const peerInfo = evt.detail
-  if (!discovered.includes(peerInfo.id.toString())) {
-    discovered.push(peerInfo.id.toString());
-}
 
-  //console.log('Discovered:', peerInfo.id.toString())
-  //console.log(peerInfo)
-})
 
 
 
@@ -192,7 +184,6 @@ const io = new Server(server, {
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
   const peers = libp2p.getPeers()
-  console.log(peers)
 
   const conn = libp2p.getConnections()
   let con = conn.filter(obj => obj.status==="open")
@@ -636,8 +627,8 @@ app.post("/api/dbinfo", async(req, res)=>{
   else{
     try{
       const db = await orbitdb.open(req.body.dbaddr, {entryStorage})
-      const dbinfo = db
-    res.json({dbaddr:dbinfo.address, name:dbinfo.name});
+      console.log(db)
+    res.json({dbaddr:db.address, name:db.name});
     }
     catch(e){
   res.json({"error":"Invalid db address"})

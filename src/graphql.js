@@ -2,12 +2,17 @@ import { buildSchema } from 'graphql';
 import { createClient } from 'redis';
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { RedisJSONFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
-import { verify } from './config/utils.js';
-import { updateData, nodeConfig } from './custom-entry-storage.js';
+import { getIp, verify } from './config/utils.js';
+import { updateData, nodeConfig, discovered } from './custom-entry-storage.js';
+import { removeDuplicateConnections, extractFields, getDevice } from './config/utils.js';
+import si from 'systeminformation'
+
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
 const redis_host = `${redis_ip}:${redis_port}`
 let redis =  createClient({url:`redis://${redis_host}`});
+const account = process.env.KADENA_ACCOUNT
+
 redis.connect();
 export const schema = buildSchema(`
  scalar JSON
@@ -27,6 +32,19 @@ message: JSON
 type TimeSeries {
 timestamp: String!
 value: Float!
+}
+
+type NodeInfo {
+peerId: String!
+health: String!
+version: String!
+multiAddr: String!
+publicKey: String!
+discovered: Int!
+connected: Int!
+peers: JSON
+account: String!
+connections: JSON
 }
 
 """
@@ -117,7 +135,87 @@ input TimeSeriesOptions {
  count: Int
 }
 
+type IPLocation {
+  status: String
+  country: String
+  countryCode: String
+  region: String
+  regionName: String
+  city: String
+  zip: String
+  lat: Float
+  lon: Float
+  timezone: String
+  isp: String
+  org: String
+  as: String
+  query: String
+}
+
+
+
+type Device {
+  status: String
+  device_id: ID
+  guard: JSON
+  name: String
+}
+
+type CPU {
+    manufacturer: String
+    brand: String
+    speed: Float
+    cores: Int
+  }
+
+  type OS {
+    platform: String
+    distro: String
+    release: String
+    codename: String
+    arch: String
+  }
+
+  type Disk {
+    device: String
+    type: String
+    name: String
+    vendor: String
+    size: Float
+  }
+
+  type Memory {
+    total: Float
+    free: Float
+    used: Float
+    active: Float
+    available: Float
+  }
+
+  type SystemInfo {
+    cpu: CPU
+    memory: Memory
+    os: OS
+    storage: [Disk]
+  }
+
+  type DBInfo {
+  dbaddr: String!
+  name: String!
+  }
+
 type Query {
+  sysInfo: SystemInfo
+  dbInfo(dbaddr: String!) : DBInfo
+
+  nodeInfo: NodeInfo
+    getDevice(deviceId: String!): Device
+
+    getIPLocation(
+    ip: String
+    ): IPLocation
+
+
   readDB(
     dbaddr: String!, 
     filters: JSON, 
@@ -161,6 +259,8 @@ input DatabaseInfo {
   name: String!
 }
 
+
+
 input CreateDatabaseInput {
   dbinfo: DatabaseInfo!
   sig: String!
@@ -197,8 +297,13 @@ type Mutation {
 
 
 const orbitdb = nodeConfig.orbitdb
-
+const libp2p = orbitdb.ipfs.libp2p
 export const resolvers = {
+  dbInfo: async(params)=>{
+    const db = await orbitdb.open(params.dbaddr)
+  return {dbaddr:db.address, name:db.name};
+  }
+  ,
   readDB: async (params) => {
     try {
       await orbitdb.open(params.dbaddr) //ensure db is open and sync
@@ -234,10 +339,56 @@ export const resolvers = {
    const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
    const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
    return result
+  },
+  nodeInfo: async ()=>{
+    const peerId = libp2p.peerId
+    const peers = libp2p.getPeers()
+  
+    const conn = libp2p.getConnections()
+    let con = conn.filter(obj => obj.status==="open")
+    const filteredConn = removeDuplicateConnections(con);
+    const info = {peerId:peerId, health:"ok", version:"0.1.2", 
+    multiAddr:libp2p.getMultiaddrs()[0].toString(), 
+    publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
+    connected:filteredConn.length, peers:peers, account:account, 
+    connections:extractFields(filteredConn, 'remotePeer', 'remoteAddr')
+  }
+  return info
+  },
+  getIPLocation: async (input)=>{
+    try{
+      if(input.ip){
+        const loc = await fetch(`http://ip-api.com/json/${input.ip}`)
+      return await loc.json()
+      }
+      else{
+        const loc = await fetch(`http://ip-api.com/json/`)
+        return await loc.json()
+      }
+    }
+    catch{
+    return {info:"Something went wrong"}
+    }
+  },
+  getDevice: async (input)=>{
+    const data = await getDevice(input.deviceId)
+    return data.result.data
+  },
+  sysInfo: async () => {
+    const cpu = await si.cpu();
+    const os = await si.osInfo();
+    const memory = await si.mem();
+    const disk = await si.diskLayout();
+
+    return {
+      cpu,
+      memory,
+      os,
+      storage: disk,
+    };
   } 
   ,
   createDatabase: async ({input}) => {
-    // debugger;
     const { dbinfo, sig, pubkey } = input;
 
     if (!dbinfo) {
