@@ -3,7 +3,6 @@ import { getSig } from "./utils.js"
 function randomIntFromInterval(min, max) { 
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
-
   const keypair = {"publicKey": "94faf73efcd9af950d4dbca3e5c65459221377b6ea31e3ed30112939a5c79aa8",
     "secretKey": "15756809a14b846680f2254b292e6015c4b446f37230bd0669159752521729fa"}
   
