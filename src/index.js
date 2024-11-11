@@ -24,7 +24,7 @@ import { CID } from 'multiformats/cid'
 import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
-import { ruruHTML } from 'ruru/server';
+import { ruruHTML, defaultHTMLParts } from 'ruru/server';
 import { nodeConfig, entryStorage, updateData } from './custom-entry-storage.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -162,7 +162,26 @@ app.use('/graphql', (req, res, next) => {
   
   // Otherwise serve Ruru HTML interface
   res.type('html');
-  res.end(ruruHTML({ endpoint: '/graphql' }));
+  res.end(ruruHTML({ endpoint: '/graphql'
+  },   {
+    ...defaultHTMLParts,
+    titleTag: '<title>Cyberfly Graphql</title>',
+    styleTags: `<style>
+body {
+  margin: 0;
+}
+#ruru-root {
+  height: 100vh;
+}
+/* Hide the footer */
+.graphiql-footer {
+  display: none !important;
+}
+.graphiql-logo {
+display: none !important;
+}
+</style>`
+  }));
 });
 
 app.options('*', cors(corsOptions));

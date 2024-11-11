@@ -2,7 +2,7 @@ import { buildSchema } from 'graphql';
 import { createClient } from 'redis';
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { RedisJSONFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
-import { getIp, verify } from './config/utils.js';
+import { verify } from './config/utils.js';
 import { updateData, nodeConfig, discovered } from './custom-entry-storage.js';
 import { removeDuplicateConnections, extractFields, getDevice } from './config/utils.js';
 import si from 'systeminformation'
