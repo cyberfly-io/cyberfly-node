@@ -177,9 +177,19 @@ body {
 .graphiql-footer {
   display: none !important;
 }
-.graphiql-logo {
-display: none !important;
+  /* Replace logo text */
+.graphiql-logo::after {
+  content: 'CyberFly' !important;
 }
+.graphiql-logo {
+  visibility: hidden;
+  position: relative;
+}
+.graphiql-logo::after {
+  visibility: visible;
+  position: absolute;
+  left: 0;
+  }
 </style>`
   }));
 });
