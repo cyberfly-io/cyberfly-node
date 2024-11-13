@@ -3,7 +3,7 @@ import { createClient } from 'redis';
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { RedisJSONFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
 import { verify } from './config/utils.js';
-import { updateData, nodeConfig, discovered } from './custom-entry-storage.js';
+import { updateData, nodeConfig, discovered, entryStorage } from './custom-entry-storage.js';
 import { removeDuplicateConnections, extractFields, getDevice } from './config/utils.js';
 import si from 'systeminformation'
 
@@ -401,7 +401,7 @@ export const resolvers = {
           return { __typename: 'ErrorResponse', info: 'name is required' };
         }
 
-        const db = await orbitdb.open(`${dbinfo.name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController()})
+        const db = await orbitdb.open(`${dbinfo.name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController(), entryStorage})
         return { __typename: 'DatabaseAddress', dbaddr: db.address };
       } else {
         return { __typename: 'ErrorResponse', info: 'Verification failed' };
