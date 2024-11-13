@@ -30,19 +30,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: function (req:any, file:any, cb:any) {
     const tempDir = path.join(process.cwd(), 'temp');
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
     cb(null, tempDir);
   },
-  filename: function (req, file, cb) {
+  filename: function (req:any, file:any, cb:any) {
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
-
-
 
 const upload = multer({ storage: storage });
 
@@ -78,7 +76,7 @@ const pubsub = libp2p.services.pubsub
 const account = process.env.KADENA_ACCOUNT
 // Print out listening addresses
 console.log('libp2p listening on addresses:');
-libp2p.getMultiaddrs().forEach((addr) => {
+libp2p.getMultiaddrs().forEach((addr:any) => {
   console.log(addr.toString());
 });
 if(!account){
@@ -102,16 +100,16 @@ addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),
 
 
 
-const newDb = async (name, pubkey)=>{
+const newDb = async (name:string, pubkey:string)=>{
   const db = await orbitdb.open(`${name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController(), entryStorage})
   const addr = db.address
   return addr
 }
 
-const getAllData = async (dbaddr, amount=40)=>{
+const getAllData = async (dbaddr:string, amount=40)=>{
   try{
     const db = await orbitdb.open(dbaddr, {entryStorage});
-    const values = []
+    const values:any = []
     for await (const entry of db.iterator({amount:amount})) {
       values.unshift(entry)
     }
@@ -124,7 +122,7 @@ const getAllData = async (dbaddr, amount=40)=>{
 }
 
 
-const getData = async (dbaddr, key)=>{
+const getData = async (dbaddr:string, key:string)=>{
   try{
     const db = await orbitdb.open(dbaddr, {entryStorage});
     const data = await db.get(key)
@@ -147,7 +145,7 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.use('/graphql', (req, res, next) => {
+app.use('/graphql', (req, res) => {
   // Check if the request accepts JSON (GraphQL clients)
   if (req.headers.accept?.includes('application/json') || 
       req.headers['content-type']?.includes('application/json')) {
@@ -155,7 +153,7 @@ app.use('/graphql', (req, res, next) => {
       schema,
       rootValue: resolvers,
       graphiql: true
-    })(req, res, next);
+    })(req, res);
   }
   
   // Otherwise serve Ruru HTML interface
@@ -228,7 +226,7 @@ app.get("/api", async(req, res)=>{
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      res.status(400).json({ error: 'No file uploaded' });
     }
 
     const { fileName, chunkIndex, totalChunks, mimeType } = req.body;
@@ -245,13 +243,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         mimeType,
         chunks: new Set(),
         uploadStartTime: Date.now(),
-        tempPath: req.file.path
+        tempPath: req.file? req.file.path : ''
       });
     }
 
     // Move chunk to chunks directory
     const chunkPath = path.join(chunksDir, `chunk${chunkIndex}`);
-    await fsPromises.rename(req.file.path, chunkPath);
+    await fsPromises.rename(req.file? req.file.path: '', chunkPath);
 
     // Update metadata
     fileMetadata.get(fileName).chunks.add(parseInt(chunkIndex));
@@ -272,15 +270,15 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 app.post('/api/upload/complete', express.json(), async (req, res) => {
   try {
     const { fileName, totalChunks, mimeType } = req.body;
-    const metadata = fileMetadata.get(fileName);
+    const metadata:any = fileMetadata.get(fileName);
 
     if (!metadata) {
-      return res.status(400).json({ error: 'No upload in progress for this file' });
+       res.status(400).json({ error: 'No upload in progress for this file' });
     }
 
     // Verify all chunks are present
     if (metadata.chunks.size !== parseInt(totalChunks)) {
-      return res.status(400).json({ 
+       res.status(400).json({ 
         error: 'Missing chunks',
         expected: totalChunks,
         received: metadata.chunks.size
@@ -382,9 +380,9 @@ app.get('/api/file/:metadataCid', async (req, res) => {
     const metadataCid = CID.parse(req.params.metadataCid);
 
     // Get file metadata from IPFS
-    const metadata = await j.get(metadataCid);
+    const metadata:any = await j.get(metadataCid);
     if (!metadata) {
-      return res.status(404).json({ error: 'File metadata not found' });
+       res.status(404).json({ error: 'File metadata not found' });
     }
 
     // Check if it's a video file
@@ -452,7 +450,7 @@ app.get('/api/file/:metadataCid', async (req, res) => {
     }
 
     // For non-video files, return the complete file
-    const chunks = [];
+    const chunks:any = [];
     for await (const chunk of hfs.cat(metadata.fileCid)) {
       chunks.push(chunk);
     }
@@ -481,7 +479,7 @@ app.get('/api/metadata/:metadataCid', async (req, res) => {
       // Get file metadata from IPFS
       const metadata = await j.get(metadataCid);
       if (!metadata) {
-          return res.status(404).json({ error: 'File metadata not found' });
+          res.status(404).json({ error: 'File metadata not found' });
       }
 
       res.json(metadata);
@@ -514,7 +512,7 @@ app.get("/api/sysinfo", async(req, res)=>{
 
 app.get("/api/device/:deviceId", async(req, res)=>{
   try{
-  const data = await getDevice(req.params.deviceId)
+  const data:any = await getDevice(req.params.deviceId)
   const deviceData = data.result.data
   res.json(deviceData)
 }
@@ -531,32 +529,32 @@ app.get("/api/subscribe/:topic", async(req, res)=>{
 
 app.post("/api/data", async(req, res)=>{
   if(req.body.dbaddr==null){
-    return res.json({"info":"dbaddr is required"})
+    res.json({"info":"dbaddr is required"})
   }
   if(req.body.dbtype==null){
     req.body.dbtype = 'documents'
   }
   if(typeof req.body.data !=="object"){
-    return res.json({info:"Data should be a json object"})
+    res.json({info:"Data should be a json object"})
   }
   if(!req.body.objectType){
-    return res.json({info:"objectType is required"})
+    res.json({info:"objectType is required"})
   }
   if(req.body.objectType==="stream" && !req.body.data.streamName){
-    return res.json({info:"streamName in data is required"})
+    res.json({info:"streamName in data is required"})
   }
   const keys = Object.keys(req.body.data);
    const array = ["latitude", "longitude", "member"];
    const allInKeys = array.every(item => keys.includes(item));
 
   if(req.body.objectType==="geo" && !allInKeys){
-   return res.json({info:"data should contains longitude ,latitude, member"})
+  res.json({info:"data should contains longitude ,latitude, member"})
   }
   if(req.body.objectType==="ts" && !("value" in req.body.data)){
-    return res.json({info:"data should contains value"})
+    res.json({info:"data should contains value"})
    }
    if(req.body.objectType==="ts" && !req.body.data.labels){
-    return res.json({info:"data should contains labels"})
+    res.json({info:"data should contains labels"})
    }
   const timestamp = Date.now()
   const dbaddr = await updateData(req.body.dbaddr, req.body.objectType ,req.body.data, req.body.sig, req.body.publicKey,timestamp,req.body.dbtype,req.body._id)
@@ -668,7 +666,7 @@ await pubsub.subscribe("dbupdate");
 
 
 
-pubsub.addEventListener("message", async(message)=>{
+pubsub.addEventListener("message", async(message:any)=>{
   const { topic, data, from } = message.detail
   if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
@@ -709,7 +707,7 @@ app.get('/api/onlinedevices', async(req, res)=>{
 io.on("connection", (socket) => {
   socket.on('online', (account) => {
     try{
-      userSockets[account] = socket; // Associate the socket with the account
+      deviceSockets[account] = socket; // Associate the socket with the account
     io.emit('onlineDevices', Object.keys(deviceSockets));
     }
     catch(e){

@@ -24,7 +24,7 @@ const startOrbitDB = async ({ id, identity, identities, directory, sk } = {}) =>
 }
 
 
-const stopOrbitDB = async (orbitdb) => {
+const stopOrbitDB = async (orbitdb:any) => {
   await orbitdb.stop()
   await orbitdb.ipfs.stop()
   await orbitdb.ipfs.blockstore.unwrap().unwrap().close()

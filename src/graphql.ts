@@ -2,9 +2,8 @@ import { buildSchema } from 'graphql';
 import { createClient } from 'redis';
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { RedisJSONFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
-import { verify } from './config/utils.js';
 import { updateData, nodeConfig, discovered, entryStorage } from './custom-entry-storage.js';
-import { removeDuplicateConnections, extractFields, getDevice } from './config/utils.js';
+import { removeDuplicateConnections, extractFields, getDevice, verify } from './config/utils.js';
 import si from 'systeminformation'
 
 const redis_port = 6379
@@ -299,12 +298,12 @@ type Mutation {
 const orbitdb = nodeConfig.orbitdb
 const libp2p = orbitdb.ipfs.libp2p
 export const resolvers = {
-  dbInfo: async(params)=>{
+  dbInfo: async(params:any)=>{
     const db = await orbitdb.open(params.dbaddr)
   return {dbaddr:db.address, name:db.name};
   }
   ,
-  readDB: async (params) => {
+  readDB: async (params:any) => {
     try {
       await orbitdb.open(params.dbaddr) //ensure db is open and sync
       const filters = new RedisJSONFilter(redis)
@@ -314,7 +313,7 @@ export const resolvers = {
       throw new Error('Failed to fetch items');
     }
   },
-  readStream: async (params)=>{
+  readStream: async (params:any)=>{
     try{
     await orbitdb.open(params.dbaddr) 
     const streamFilters = new RedisStreamFilter(redis)
@@ -327,14 +326,14 @@ export const resolvers = {
 
     }
   },
-  readLastNStreams: async (params)=>{
+  readLastNStreams: async (params:any)=>{
 
     await orbitdb.open(params.dbaddr) 
     const streamFilters = new RedisStreamFilter(redis)
     const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName,params.count)
     return result
   },
-  readTimeSeries : async(params)=>{
+  readTimeSeries : async(params:any)=>{
    await orbitdb.open(params.dbaddr) 
    const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
    const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
@@ -355,7 +354,7 @@ export const resolvers = {
   }
   return info
   },
-  getIPLocation: async (input)=>{
+  getIPLocation: async (input:any)=>{
     try{
       if(input.ip){
         const loc = await fetch(`http://ip-api.com/json/${input.ip}`)
@@ -370,7 +369,7 @@ export const resolvers = {
     return {info:"Something went wrong"}
     }
   },
-  getDevice: async (input)=>{
+  getDevice: async (input:any)=>{
     const data = await getDevice(input.deviceId)
     return data.result.data
   },

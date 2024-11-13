@@ -1,14 +1,17 @@
 # Use an official Node.js runtime as the base image
-FROM node:19-slim
+FROM node:19-alpine
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
+
+RUN npm install -g pnpm
 
 # Copy package.json and package-lock.json to the working directory
 COPY package*.json ./
 
 # Install project dependencies
-RUN yarn install --ignore-engines
+RUN pnpm install
+RUN npm run build
 
 # Copy the rest of the application code to the working directory
 COPY . .
@@ -19,4 +22,4 @@ EXPOSE 31002
 EXPOSE 31003
 
 # Command to run your application
-CMD ["node", "src/index.js"]
+CMD ["node", "dist/index.js"]

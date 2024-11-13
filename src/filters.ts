@@ -1,5 +1,6 @@
 export class RedisJSONFilter {
-    constructor(redisClient) {
+  redis:any
+    constructor(redisClient:any) {
       this.redis = redisClient;
     }
   
@@ -12,7 +13,7 @@ export class RedisJSONFilter {
      * @param {Object} conditions - Filter conditions
      * @param {Object} options - Additional options (pagination, sorting)
      */
-    async filterAcrossKeys(pattern, path, conditions, options = {}) {
+    async filterAcrossKeys(pattern:any, path:any, conditions:any, options = {}) {
       try {
         // Get all keys matching the pattern
         const keys = await this.redis.keys(pattern);
@@ -40,7 +41,7 @@ export class RedisJSONFilter {
               if (!data) return null;
               const full_data = await this.redis.json.get(key)
               return Array.isArray(full_data) 
-                ? parsed.map(item => ({ ...item, _key: key }))
+                ? full_data.map(item => ({ ...item, _key: key }))
                 : full_data;
             } catch (error) {
               //console.error(`Error processing key ${key}:`, error);
@@ -87,7 +88,7 @@ export class RedisJSONFilter {
      * @param {Object} conditions - Filter conditions
      * @returns {string} RedisJSON filter expression
      */
-    buildFilterExpression(conditions) {
+    buildFilterExpression(conditions:any) {
       if (!conditions || Object.keys(conditions).length === 0) {
         return '';
       }
@@ -115,7 +116,7 @@ export class RedisJSONFilter {
      * @param {string} op - Operator
      * @returns {string} RedisJSON operator
      */
-    getOperator(op) {
+    getOperator(op:any) {
       const operators = {
         eq: '==',
         gt: '>',
@@ -128,37 +129,19 @@ export class RedisJSONFilter {
     }
   }
 
-  export async function exampleFilters(redis) {
-    const filter = new RedisJSONFilter(redis);
-  
-    // Filter across keys with pagination and sorting
-    const results = await filter.filterAcrossKeys(
-      '/orbitdb/zdpuAsf7awdQSZueHatVJMWM46tSQrW8c8CinMFfFH59qg41H:*',           // key pattern
-      '.',               // JSON path
-      {                  // conditions
-        "temperature": { gt: 19 }
-      },
-      {                  // options
-        //limit: 1,
-        offset: 0,
-        sortOrder: 'desc'
-      }
-    );
-  
-  
-    console.log('Filtered Results:', results);
-  }
+ 
 
 export class RedisStreamFilter {
-    constructor(redisClient) {
+  redis:any
+    constructor(redisClient:any) {
       this.redis = redisClient;
     }
 
-    async getEntries(dbaddr, streamName, from='-', to='+') {
+    async getEntries(dbaddr:string, streamName:string, from='-', to='+') {
         return await this.redis.xRange(`${dbaddr}:${streamName}`, from, to);
       }
 
-      async getLastNEntries(dbaddr, streamName, count) {
+      async getLastNEntries(dbaddr:string, streamName:string, count:number) {
         // Get the last N entries
         return await this.redis.xRevRange(`${dbaddr}:${streamName}`, '+', '-', {
           COUNT: count
@@ -168,18 +151,19 @@ export class RedisStreamFilter {
 }
 
 export class RedisTimeSeriesFilter {
-    constructor(redisClient) {
+  redis:any
+    constructor(redisClient:any) {
       this.redis = redisClient;
     }
 
-    async query(dbaddr, fromTimestamp="-", toTimestamp="+", options = {}) {
+    async query(dbaddr:string, fromTimestamp="-", toTimestamp="+", options = {}) {
         const {
             aggregation = '',
             filterByLabels = {},
             count = ''
         } = options;
 
-        const queryOptions = {};
+        const queryOptions:any = {};
 
         // Add aggregation if specified
         if (aggregation) {
@@ -207,10 +191,4 @@ export class RedisTimeSeriesFilter {
     }
 
 
-}
-
-export async function testTimeSeries (redis){
-    const filter = new RedisTimeSeriesFilter(redis)
-    const result = await filter.query("/orbitdb/zdpuB268RnEE63E3Yu28hFXjVcH3C4dMYiLTiNJ2CUUw6qCrG")
-    console.log(result)
 }

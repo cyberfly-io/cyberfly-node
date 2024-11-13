@@ -1,4 +1,4 @@
-export function isFlatJson(obj) {
+export function isFlatJson(obj:any) {
     // Check if the input is an object and not null
     if (typeof obj !== 'object' || obj === null) {
         return false;

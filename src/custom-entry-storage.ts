@@ -14,13 +14,14 @@ const ipfs = nodeConfig.orbitdb.ipfs
 const orbitdb = nodeConfig.orbitdb
 const libp2p = nodeConfig.orbitdb.ipfs.libp2p
 
-const discovered = []
+const discovered:any = []
 
 
-libp2p.addEventListener('peer:discovery', (evt) => {
+libp2p.addEventListener('peer:discovery', (evt:any) => {
     const peerInfo = evt.detail
-    if (!discovered.includes(peerInfo.id.toString())) {
-      discovered.push(peerInfo.id.toString());
+    const peerId = peerInfo.id.toString()
+    if (!discovered.includes(peerId)) {
+      discovered.push(peerId);
   }
 
   })
@@ -32,7 +33,7 @@ const entryStorage =  await ComposedStorage(
   )
 
 
-  const updateData = async (addr, objectType, data, sig, pubkey, timestamp, dbtype, id='')=>{
+  const updateData = async (addr:string, objectType:any, data:any, sig:string, pubkey:string, timestamp:any, dbtype:string, id='')=>{
    
     try{
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})

@@ -8,7 +8,7 @@ import pact from 'pact-lang-api'
 
 const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact',)
 
-  export async function loadOrCreatePeerIdAndKeyPair(filePath, sk) {
+  export async function loadOrCreatePeerIdAndKeyPair(filePath:string, sk:string) {
     try {
       if(!fs.existsSync('./data')){
         fs.mkdirSync('./data')
@@ -62,12 +62,12 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
   }
 
 
-  const getGuard = (account, pubkey)=>{
+  const getGuard = (account:string, pubkey:string)=>{
     return {pred:"keys-any", keys:[account.split(':')[1], pubkey]}
   }
 
 
-  const createNode = async (peerId, multiaddr, account, pubkey, seckey)=>{
+  const createNode = async (peerId:string, multiaddr:string, account:string, pubkey:string, seckey:string)=>{
   const utxn = Pact.builder.execution(`(free.cyberfly_node.new-node "${peerId}" "active" "${multiaddr}" "${account}" (read-keyset "ks"))`)
   .addData("ks",getGuard(account, pubkey))
   .addSigner(pubkey, (withCapability)=>[
@@ -77,7 +77,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
   .setNetworkId("testnet04")
   .createTransaction();
   const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
-  const signedTx = await signTransaction(utxn)
+  const signedTx:any = await signTransaction(utxn)
   const res = await client.local(signedTx)
   if(res.result.status=="success"){
     const txn = await client.submit(signedTx)
@@ -86,19 +86,19 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
 }
 
 
-  export const addNodeToContract = async (peerId, multiaddr, account, pubkey, seckey)=>{
+  export const addNodeToContract = async (peerId:string, multiaddr:string, account:string, pubkey:string, seckey:string)=>{
   
-    const nodeinfo = await getNodeInfo(peerId, pubkey, seckey)
-    if(nodeinfo.result.status == "failure" && nodeinfo.result.error.message.includes("row not found")){
+    const nodeinfo:any = await getNodeInfo(peerId)
+    if(nodeinfo &&nodeinfo.result.status == "failure" && nodeinfo.result.error.message.includes("row not found")){
       await createNode(peerId, multiaddr, account, pubkey, seckey)
     }
     
-    setInterval(()=>{checkNodeStatus(peerId, multiaddr, account, pubkey, seckey)}, 10000)
+    setInterval(()=>{checkNodeStatus(peerId, multiaddr, pubkey, seckey)}, 10000)
 
   }
 
 
-  const getNodeInfo = async (peerId) =>{
+  const getNodeInfo = async (peerId:string) =>{
     const unsignedTransaction = Pact.builder
     .execution(`(free.cyberfly_node.get-node "${peerId}")`)
     .setMeta({
@@ -113,12 +113,18 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
     .createTransaction();
     
   // Send it or local it
-  const res = await client.local(unsignedTransaction, { signatureVerification:false, preflight:false});
-  return res
+  try{
+    const res = await client.local(unsignedTransaction, { signatureVerification:false, preflight:false});
+    return res
+
+  }
+  catch(e){
+  return null
+  }
   }
 
 
-  export const getDevice = async (deviceId) =>{
+  export const getDevice = async (deviceId:string) =>{
     const unsignedTransaction = Pact.builder
     .execution(`(free.cyberfly_devices.get-device "${deviceId}")`)
     .setMeta({
@@ -157,7 +163,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
   return res
   }
 
-  export function selectFields(objects, fields) {
+  export function selectFields(objects:any, fields:any) {
     return objects.map(obj => {
       const newObj = {};
       fields.forEach(field => {
@@ -167,7 +173,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
     });
   }
 
-  const activateNode = async(peerId, multiaddr, pubkey, seckey)=>{
+  const activateNode = async(peerId:string, multiaddr:string, pubkey:string, seckey:string)=>{
 
     const utxn = Pact.builder.execution(`(free.cyberfly_node.update-node "${peerId}" "${multiaddr}" "active")`)
     .addSigner(pubkey, (withCapability)=>[
@@ -187,12 +193,12 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
      
   }
 
-  const checkNodeStatus = async (peerId, multiaddr, account, pubkey, seckey)=>{
+  const checkNodeStatus = async (peerId:string, multiaddr:string, pubkey:string, seckey:string)=>{
     try{
 
 
-     const result = await getNodeInfo(peerId)
-     if(result.result.status==="success"){
+     const result:any = await getNodeInfo(peerId)
+     if(result && result.result.status==="success"){
       if(result.result.data.status!=='active'){
          activateNode(peerId, multiaddr, pubkey, seckey)
       }
@@ -203,14 +209,14 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
     }
   }
 
-  export function extractFields(array, field1, field2) {
+  export function extractFields(array:any, field1:any, field2:any) {
     return array.map(obj => ({
       [field1]: obj[field1],
       [field2]: obj[field2]
     }));
   }
 
-  export const removeDuplicateConnections = (connections) => {
+  export const removeDuplicateConnections = (connections:any) => {
     // Using Map to keep track of unique remotePeers
     // We'll keep the first occurrence of each remotePeer
     const uniquePeers = new Map();
@@ -226,7 +232,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
   };
 
 
-  export const verify = (data, sig, pubkey)=>{
+  export const verify = (data:any, sig:any, pubkey:any)=>{
     try{
       const verify = pact.crypto.verifySignature(JSON.stringify(data), sig, pubkey);
       return verify

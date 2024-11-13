@@ -5,7 +5,7 @@ const CyberflyAccessController = () => async ({ orbitdb, identities, address }) 
   address = '/cyberfly/access-controller'
 return  {
     address,
-    canAppend : async (entry, identityProvider) =>  {
+    canAppend : async (entry:any, identityProvider:any) =>  {
       //subscription verification should be done here
         const db = await orbitdb.open(entry.id)
         const sig = entry.payload.value.sig;

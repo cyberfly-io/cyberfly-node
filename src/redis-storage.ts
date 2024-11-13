@@ -1,8 +1,8 @@
 import { createClient } from 'redis';
 import Entry from '@orbitdb/core/src/oplog/entry.js'
-import { TimeSeriesDuplicatePolicies, TimeSeriesEncoding, TimeSeriesAggregationType } from '@redis/time-series';
+import { TimeSeriesDuplicatePolicies, TimeSeriesEncoding } from '@redis/time-series';
 
-const RedisStorage = async (options) => {
+const RedisStorage = async (options:any) => {
   let redis =  createClient({url:`redis://${options.redis_host}`})
   redis.connect();
   redis.on("connect", ()=>{
@@ -17,9 +17,8 @@ console.log(error)
     console.log("Redis disconnected")
   })
 
-  const put = async (hash, data) => {
+  const put = async (hash:any, data:any) => {
     const hashexist = await redis.get(hash)
-    console.log(data)
     if (hashexist){
       return 
     }
@@ -80,17 +79,17 @@ console.log(error)
     }
   }
 
-  const get = async (hash) => {
+  const get = async (hash:string) => {
     return null
   }
 
-  const del = async (hash) => {
+  const del = async (hash:string) => {
   }
 
   const iterator = async function * ({ amount, reverse } = {}) {
   }
 
-  const merge = async (other) => {
+  const merge = async (other:any) => {
   }
 
   const clear = async () => {

@@ -13,7 +13,7 @@ import { dcutr } from "@libp2p/dcutr";
 import { kadDHT } from "@libp2p/kad-dht";
 import { webTransport } from "@libp2p/webtransport";
 import { webRTC, webRTCDirect } from "@libp2p/webrtc";
-import { preSharedKey, generateKey } from '@libp2p/pnet'
+import { preSharedKey } from '@libp2p/pnet'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -24,7 +24,7 @@ const __dirname = path.dirname(__filename)
 let bsNodes = ["/dns4/vps-5b1e75a3.vps.ovh.ca/tcp/31001/p2p/12D3KooWSfGgUaeogSZuRPa4mhsAU41qJH5EpmwKg9wGVzUwFGth", 
   "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
 
-export const getLibp2pOptions = (ip, peerId)=> {
+export const getLibp2pOptions = (ip:string, peerId:string)=> {
 
 let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
 const filePath = path.join(__dirname, "swarm.key")

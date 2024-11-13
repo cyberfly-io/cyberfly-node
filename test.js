@@ -37,7 +37,7 @@ const local = "http://localhost:31003/api/data"
 const remote2 = "http://vps-5b1e75a3.vps.ovh.ca:31003/api/data"
 
 console.log(body)
-const d = await fetch(remote, {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
