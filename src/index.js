@@ -51,8 +51,6 @@ const fileMetadata = new Map();
 
 const mqttUrl = process.env.MQTT_HOST || 'mqtt://localhost';
 
-
-
 const mqtt_port = 1883
 
 const mqtt_host = `${mqttUrl}:${mqtt_port}`

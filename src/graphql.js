@@ -401,7 +401,7 @@ export const resolvers = {
           return { __typename: 'ErrorResponse', info: 'name is required' };
         }
 
-        const db = await odb.open(`${dbinfo.name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController()})
+        const db = await orbitdb.open(`${dbinfo.name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController()})
         return { __typename: 'DatabaseAddress', dbaddr: db.address };
       } else {
         return { __typename: 'ErrorResponse', info: 'Verification failed' };

@@ -14,8 +14,6 @@ const ipfs = nodeConfig.orbitdb.ipfs
 const orbitdb = nodeConfig.orbitdb
 const libp2p = nodeConfig.orbitdb.ipfs.libp2p
 
-
-
 const discovered = []
 
 

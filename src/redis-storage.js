@@ -19,6 +19,7 @@ console.log(error)
 
   const put = async (hash, data) => {
     const hashexist = await redis.get(hash)
+    console.log(data)
     if (hashexist){
       return 
     }
