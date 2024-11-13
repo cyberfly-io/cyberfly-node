@@ -11,10 +11,12 @@ COPY package*.json ./
 
 # Install project dependencies
 RUN pnpm install
-RUN npm run build
 
 # Copy the rest of the application code to the working directory
+
 COPY . .
+
+RUN npm run build
 
 # Expose the port the app runs on
 EXPOSE 31001
