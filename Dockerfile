@@ -11,7 +11,7 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 
 # Install all dependencies
-RUN pnpm install --prod
+RUN pnpm install
 
 # Copy the rest of the application code to the working directory
 COPY . .
@@ -24,9 +24,6 @@ FROM node:19-alpine
 
 # Set the working directory
 WORKDIR /usr/src/app
-
-# Install pnpm globally in the final stage if needed
-RUN npm install -g pnpm
 
 # Copy only the production dependencies and built files from the builder stage
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
