@@ -11,7 +11,7 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 
 # Install all dependencies
-RUN pnpm install
+RUN pnpm install --prod
 
 # Copy the rest of the application code to the working directory
 COPY . .
