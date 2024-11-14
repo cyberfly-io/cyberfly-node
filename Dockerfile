@@ -1,57 +1,41 @@
 # Stage 1: Build Stage
 FROM node:19-alpine AS builder
 
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Install pnpm
+# Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy only package files first to leverage cache
+# Copy package.json and pnpm-lock.yaml to leverage Docker cache for dependencies
 COPY package.json pnpm-lock.yaml ./
 
-# Install all dependencies (including dev dependencies) for building
-RUN pnpm install --frozen-lockfile 
+# Install all dependencies
+RUN pnpm install
 
+# Copy the rest of the application code to the working directory
 COPY . .
 
 # Build the project
-RUN pnpm run build
+RUN npm run build
 
-# Stage 2: Dependencies Stage
-FROM node:19-alpine AS deps
+# Stage 2: Production Stage
+FROM node:19-alpine
 
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Install pnpm
+# Install pnpm globally in the final stage if needed
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
+# Copy only the production dependencies and built files from the builder stage
+COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
+COPY --from=builder /usr/src/app/dist /usr/src/app/dist
+COPY --from=builder /usr/src/app/package.json /usr/src/app/package.json
 
-# Install ONLY production dependencies and clean up
-RUN pnpm install --prod --frozen-lockfile
-
-# Stage 3: Production Stage
-FROM node:19-alpine AS runner
-
-# Add a non-root user and set up workdir in a single layer
-RUN addgroup -S appuser && \
-    adduser -S appuser -G appuser && \
-    mkdir -p /usr/src/app && \
-    chown -R appuser:appuser /usr/src/app
-
-WORKDIR /usr/src/app
-
-# Copy only the necessary files from builder and deps
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/package.json ./
-
-# Use non-root user
-USER appuser
-
-# Expose ports as a single layer
+# Expose the necessary ports
 EXPOSE 31001 31002 31003
+
 
 # Command to run the application
 CMD ["node", "dist/index.js"]
