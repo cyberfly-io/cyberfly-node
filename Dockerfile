@@ -32,11 +32,7 @@ COPY package.json pnpm-lock.yaml ./
 # Install production dependencies and prune in the same layer
 RUN pnpm install --prod --frozen-lockfile && \
     curl -sf https://gobinaries.com/tj/node-prune | sh && \
-    node-prune node_modules && \
-    rm -rf /root/.cache && \
-    rm -rf /root/.npm && \
-    rm -rf /root/.pnpm-store && \
-    rm -rf /tmp/*
+    node-prune node_modules
 
 # Stage 3: Production Stage
 FROM node:19-alpine AS runner
