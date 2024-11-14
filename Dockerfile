@@ -30,7 +30,7 @@ COPY package.json pnpm-lock.yaml ./
 
 # Install ONLY production dependencies and clean up
 RUN pnpm install --prod --frozen-lockfile && \
-    modclean -r -n default:safe && \
+    modclean --patterns="default:*" && \
     rm -rf /root/.cache && \
     rm -rf /root/.npm && \
     rm -rf /root/.pnpm-store
