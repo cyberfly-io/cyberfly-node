@@ -3,10 +3,7 @@ FROM node:19-alpine AS builder
 
 WORKDIR /usr/src/app
 
-# Install build essentials and node-prune in a single layer
-RUN apk add --no-cache curl && \
-    curl -sf https://gobinaries.com/tj/node-prune | sh && \
-    npm install -g pnpm
+RUN npm install -g pnpm
 
 # Copy only package files first to leverage cache
 COPY package.json pnpm-lock.yaml ./
@@ -16,9 +13,7 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# Build the project and prune in the same layer to keep the image size down
-RUN pnpm run build && \
-    node-prune node_modules
+RUN pnpm run build 
 
 # Stage 2: Dependencies Stage
 FROM node:19-alpine AS deps
@@ -29,10 +24,7 @@ WORKDIR /usr/src/app
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 
-# Install production dependencies and prune in the same layer
-RUN pnpm install --prod --frozen-lockfile && \
-    curl -sf https://gobinaries.com/tj/node-prune | sh && \
-    node-prune node_modules
+RUN pnpm install --prod --frozen-lockfile
 
 # Stage 3: Production Stage
 FROM node:19-alpine AS runner
