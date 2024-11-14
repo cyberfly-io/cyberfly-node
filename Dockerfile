@@ -22,18 +22,14 @@ FROM node:19-alpine AS deps
 
 WORKDIR /usr/src/app
 
-# Install pnpm and modclean
-RUN npm install -g pnpm modclean
+# Install pnpm
+RUN npm install -g pnpm
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
 # Install ONLY production dependencies and clean up
-RUN pnpm install --prod --frozen-lockfile && \
-    modclean --patterns="default:*" && \
-    rm -rf /root/.cache && \
-    rm -rf /root/.npm && \
-    rm -rf /root/.pnpm-store
+RUN pnpm install --prod --frozen-lockfile
 
 # Stage 3: Production Stage
 FROM node:19-alpine AS runner
@@ -53,9 +49,6 @@ COPY --from=builder /usr/src/app/package.json ./
 
 # Use non-root user
 USER appuser
-
-# Set Node environment
-ENV NODE_ENV=production
 
 # Expose ports as a single layer
 EXPOSE 31001 31002 31003
