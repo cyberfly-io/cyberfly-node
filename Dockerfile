@@ -4,17 +4,15 @@ FROM node:19-alpine AS builder
 WORKDIR /usr/src/app
 
 # Use a specific version of pnpm for better reproducibility
-RUN npm install -g pnpm@8.6.0
+RUN npm install -g pnpm
 
 # Copy only package files first to leverage cache
 COPY package.json pnpm-lock.yaml ./
 
 # Install all dependencies (including dev dependencies) for building
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
-# Copy only necessary source files
-COPY tsconfig*.json ./
-COPY src/ ./src/
+COPY . .
 
 # Build the project
 RUN npm run build
@@ -24,13 +22,13 @@ FROM node:19-alpine AS deps
 
 WORKDIR /usr/src/app
 
-RUN npm install -g pnpm@8.6.0
+RUN npm install -g pnpm
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
 # Install ONLY production dependencies
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod
 
 # Stage 3: Production Stage
 FROM node:19-alpine AS runner
