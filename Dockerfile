@@ -3,6 +3,7 @@ FROM node:19-alpine AS builder
 
 WORKDIR /usr/src/app
 
+# Install pnpm
 RUN npm install -g pnpm
 
 # Copy only package files first to leverage cache
@@ -13,18 +14,26 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN pnpm run build 
+# Build the project
+RUN pnpm run build
 
 # Stage 2: Dependencies Stage
 FROM node:19-alpine AS deps
 
 WORKDIR /usr/src/app
 
-# Install pnpm and copy package files in a single layer
-RUN npm install -g pnpm
+# Install pnpm and modclean
+RUN npm install -g pnpm modclean
+
+# Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --prod --frozen-lockfile
+# Install ONLY production dependencies and clean up
+RUN pnpm install --prod --frozen-lockfile && \
+    modclean -r -n default:safe && \
+    rm -rf /root/.cache && \
+    rm -rf /root/.npm && \
+    rm -rf /root/.pnpm-store
 
 # Stage 3: Production Stage
 FROM node:19-alpine AS runner
