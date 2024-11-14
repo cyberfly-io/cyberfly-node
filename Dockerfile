@@ -19,6 +19,8 @@ COPY . .
 # Build the project
 RUN npm run build
 
+RUN wget -O - https://gobinaries.com/tj/node-prune | sh
+
 # Stage 2: Production Stage
 FROM node:19-alpine
 
