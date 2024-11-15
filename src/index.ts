@@ -25,7 +25,7 @@ import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
 import { ruruHTML, defaultHTMLParts } from 'ruru/server';
-import { nodeConfig, entryStorage, updateData } from './custom-entry-storage.js';
+import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry-storage.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -93,7 +93,6 @@ mqtt_client.on('message', async(topic, payload) => {
 })
 
 const port = 31003;
-const discovered = []
 addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 
 
