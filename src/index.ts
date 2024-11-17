@@ -17,8 +17,6 @@ import multer from 'multer';
 import { unixfs } from '@helia/unixfs';
 import { promises as fsPromises } from 'fs';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import { json } from '@helia/json';
 import { CID } from 'multiformats/cid'
 import path from 'path';
@@ -26,8 +24,6 @@ import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
 import { ruruHTML, defaultHTMLParts } from 'ruru/server';
 import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry-storage.js';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: function (req:any, file:any, cb:any) {
@@ -54,17 +50,6 @@ const mqtt_port = 1883
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
 
 
-const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
-const mqtt_client = mqtt.connect(mqtt_host, {
-  clientId,
-  clean: true,
-  connectTimeout: 4000,
-  reconnectPeriod: 1000,
-})
-mqtt_client.on('connect', () => {
-  console.log('Mqtt connection Established')
-  mqtt_client.subscribe('#')
-})
 
 config();
 useAccessController(CyberflyAccessController)
@@ -84,6 +69,18 @@ if(!account){
   process.exit(1)
 }
 
+const clientId = `${libp2p.peerId.toString()}`
+const mqtt_client = mqtt.connect(mqtt_host, {
+  clientId,
+  clean: true,
+  connectTimeout: 4000,
+  reconnectPeriod: 1000,
+})
+mqtt_client.on('connect', () => {
+  console.log('Mqtt connection Established')
+  mqtt_client.subscribe('#')
+})
+
 mqtt_client.on('message', async(topic, payload) => {
 
   if(!payload.toString().startsWith('"'))
@@ -94,9 +91,6 @@ mqtt_client.on('message', async(topic, payload) => {
 
 const port = 31003;
 addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
-
-
-
 
 
 const newDb = async (name:string, pubkey:string)=>{
