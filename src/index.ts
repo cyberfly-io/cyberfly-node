@@ -24,6 +24,7 @@ import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
 import { ruruHTML, defaultHTMLParts } from 'ruru/server';
 import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry-storage.js';
+import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 
 const storage = multer.diskStorage({
   destination: function (req:any, file:any, cb:any) {
@@ -53,6 +54,7 @@ const mqtt_host = `${mqttUrl}:${mqtt_port}`
 
 config();
 useAccessController(CyberflyAccessController)
+useAccessController(CyberflyChatAccessController)
 export const orbitdb = nodeConfig.orbitdb
 const ipfs = orbitdb.ipfs
 const libp2p = await orbitdb.ipfs.libp2p
@@ -656,24 +658,20 @@ app.post("/api/dbinfo", async(req, res)=>{
 
 
 await pubsub.subscribe("dbupdate");
-
-
-
+console.log("Subscribed to dbupdate")
 pubsub.addEventListener("message", async(message:any)=>{
   const { topic, data, from } = message.detail
+
   if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
     try{
-    console.log(from.toString())
     let dat = JSON.parse(toString(data))
-
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
     }
-    const addr = OrbitDBAddress(dat.dbAddr)
-    const manifest = await manifestStore.get(addr.hash)
-    if(manifest.accessController==="/cyberfly/access-controller"){
-      const db = await orbitdb.open(dat.dbAddr, {entryStorage})
-    }
+    //const addr = OrbitDBAddress(dat.dbAddr)
+    //const manifest = await manifestStore.get(addr.hash)
+    await orbitdb.open(dat.dbaddr, {entryStorage})
+    console.log(`opening: ${dat.dbaddr}`)
   }
   catch(e) {
    console.log(e)

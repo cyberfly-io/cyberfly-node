@@ -38,10 +38,7 @@ const entryStorage =  await ComposedStorage(
     try{
       const db = await orbitdb.open(addr, {type:dbtype, AccessController:CyberflyAccessController(), entryStorage})
       await db.put({_id:id? id:nanoid(), publicKey:pubkey, data:data,timestamp:timestamp, sig:sig, objectType});
-      const msg = {dbAddr:db.address}
-      // we want the data should be replicated on all the nodes irrespective of the db open or not in a specific node
-      //pubsub.publish("dbupdate", fromString(JSON.stringify(msg))); 
-      return msg.dbAddr
+      return db.address
     }
     catch(e) {
      console.log(e)
