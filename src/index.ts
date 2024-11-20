@@ -25,6 +25,8 @@ import { schema, resolvers } from './graphql.js';
 import { ruruHTML, defaultHTMLParts } from 'ruru/server';
 import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry-storage.js';
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
+import { getStreamName, verifyMsg } from './utils.js';
+import { nanoid } from 'nanoid'
 
 const storage = multer.diskStorage({
   destination: function (req:any, file:any, cb:any) {
@@ -668,10 +670,11 @@ pubsub.addEventListener("message", async(message:any)=>{
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
     }
-    //const addr = OrbitDBAddress(dat.dbAddr)
-    //const manifest = await manifestStore.get(addr.hash)
+    const addr = OrbitDBAddress(dat.dbAddr)
+    const manifest = await manifestStore.get(addr.hash)
+    if(manifest.accessController.includes('cyberfly')){
     await orbitdb.open(dat.dbaddr, {entryStorage})
-    console.log(`opening: ${dat.dbaddr}`)
+    }
   }
   catch(e) {
    console.log(e)
@@ -750,6 +753,20 @@ io.on("connection", (socket) => {
     catch(e){
       console.log(e)
     }
+  })
+
+  socket.on("send message", async(receiver: string, stream:string ,message: string)=>{
+    try{
+    const msg = JSON.parse(message)
+    const from_account = msg.data['fromAccount']
+    const public_key = from_account.split(':')[1]
+    if(stream===getStreamName(public_key, receiver) && public_key===msg.publicKey && verifyMsg(msg)){
+      const db = await orbitdb.open(`cyberfly-chat-${stream}`, {type:"documents", AccessController:CyberflyChatAccessController(),entryStorage})
+      await db.put({_id:nanoid(), data:msg.data, sig:msg.sig,publicKey:msg.publicKey, timestamp: Date.now(), objectType:"stream"})
+      await libp2p.publish(receiver, JSON.stringify(msg))
+    }
+    }
+catch(err){console.log(err)}
   })
 
   socket.on("disconnect", () => {
