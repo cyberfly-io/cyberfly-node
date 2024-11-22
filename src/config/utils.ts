@@ -72,6 +72,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
   .addData("ks",getGuard(account, pubkey))
   .addSigner(pubkey, (withCapability)=>[
     withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
+    withCapability('free.cyberfly_node.NEWNODE')
   ])
   .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001})
   .setNetworkId("testnet04")
