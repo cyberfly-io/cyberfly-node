@@ -86,7 +86,7 @@ console.log(error)
   const del = async (hash:string) => {
   }
 
-  const iterator = async function * ({ amount, reverse } = {}) {
+  const iterator = async function * ({ amount, reverse }:any = {}) {
   }
 
   const merge = async (other:any) => {

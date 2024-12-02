@@ -75,9 +75,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     webSockets({
       filter: filters.all
     }),
-    circuitRelayTransport({
-      discoverRelays: 2,
-    })
+    circuitRelayTransport()
     ],
     connectionEncrypters: [noise()],
     streamMuxers: [yamux()],

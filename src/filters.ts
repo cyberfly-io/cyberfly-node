@@ -13,7 +13,7 @@ export class RedisJSONFilter {
      * @param {Object} conditions - Filter conditions
      * @param {Object} options - Additional options (pagination, sorting)
      */
-    async filterAcrossKeys(pattern:any, path:any, conditions:any, options = {}) {
+    async filterAcrossKeys(pattern:any, path:any, conditions:any, options:any = {}) {
       try {
         // Get all keys matching the pattern
         const keys = await this.redis.keys(pattern);
@@ -156,7 +156,7 @@ export class RedisTimeSeriesFilter {
       this.redis = redisClient;
     }
 
-    async query(dbaddr:string, fromTimestamp="-", toTimestamp="+", options = {}) {
+    async query(dbaddr:string, fromTimestamp="-", toTimestamp="+", options:any = {}) {
         const {
             aggregation = '',
             filterByLabels = {},

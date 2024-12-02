@@ -185,7 +185,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
     .setNetworkId("testnet04")
     .createTransaction();
     const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
-    const signedTx = await signTransaction(utxn)
+    const signedTx:any = await signTransaction(utxn)
     const res = await client.local(signedTx)
     if(res.result.status=="success"){
       const txn = await client.submit(signedTx)

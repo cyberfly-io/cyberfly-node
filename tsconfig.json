@@ -2,15 +2,31 @@
     "compilerOptions": {
       "declaration": true,
       "module": "NodeNext",
-      "moduleResolution": "nodenext",
+      "moduleResolution": "NodeNext",      
       "outDir": "./dist",
+      "rootDir": "./src",
       "allowJs": true,
-      "target": "es2023", // or keep "es2022" if that's the preferred version
-      "esModuleInterop": true // Optional for interop with CommonJS modules
+      "target": "ES2023", // or keep "es2022" if that's the preferred version
+      "esModuleInterop": true, // Optional for interop with CommonJS modules
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "allowSyntheticDefaultImports": true,
+      "noEmitOnError": false,
+      "checkJs": false,
+      "noImplicitAny": false,
+      "noImplicitThis": false,
+      "noUnusedLocals": false,
+      "noUnusedParameters": false,
+      "noImplicitReturns": false,
+      "strict": false
     },
     "include": [
       "./src/**/*",
       "src/types/**/*.d.ts"
-    ]
+    ],
+    "ts-node": {
+      "esm": true,
+      "experimentalSpecifier": true
+    }
   }
   

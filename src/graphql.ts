@@ -371,7 +371,8 @@ export const resolvers = {
   },
   getDevice: async (input:any)=>{
     const data = await getDevice(input.deviceId)
-    return data.result.data
+    const result:any = data.result
+    return result
   },
   sysInfo: async () => {
     const cpu = await si.cpu();

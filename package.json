@@ -7,8 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsup src/index.ts",
-    "dev": "tsup src/index.ts --watch --onSuccess 'cp src/config/swarm.key dist/ && node dist/index.js'",
-    "start": "nodemon src/index.js"
+    "dev": "tsup src/index.ts --watch --onSuccess 'cp src/config/swarm.key dist/ && node dist/index.js'"
   },
   "author": "",
   "license": "ISC",
@@ -64,6 +63,7 @@
   "devDependencies": {
     "@types/express": "^5.0.0",
     "nodemon": "^3.1.0",
+    "ts-loader": "^9.5.1",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3"
   }

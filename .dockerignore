@@ -17,6 +17,7 @@
 /orbitdb
 /data
 /dist
+/src
 # production
 /build
 peer-id.json
