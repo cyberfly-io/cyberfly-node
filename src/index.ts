@@ -525,7 +525,7 @@ app.get("/api/subscribe/:topic", async(req, res)=>{
 })
 
 app.post("/api/data", async(req, res)=>{
-  if(req.body.dbaddr==null){
+  if(req.body.dbaddr==null || req.body.dbaddr==''){
     res.json({"info":"dbaddr is required"})
   }
   if(req.body.dbtype==null){
