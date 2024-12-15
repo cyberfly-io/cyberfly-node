@@ -94,7 +94,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
       await createNode(peerId, multiaddr, account, pubkey, seckey)
     }
     
-    setInterval(()=>{checkNodeStatus(peerId, multiaddr, pubkey, seckey)}, 10000)
+    setInterval(()=>{checkNodeStatus(peerId, multiaddr, pubkey, seckey)}, 100000)
 
   }
 
@@ -191,13 +191,14 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
       const txn = await client.submit(signedTx)
       console.log(txn)
     }
+   
      
   }
 
   const checkNodeStatus = async (peerId:string, multiaddr:string, pubkey:string, seckey:string)=>{
     try{
 
-
+     console.log("Checking Node Status")
      const result:any = await getNodeInfo(peerId)
      if(result && result.result.status==="success"){
       if(result.result.data.status!=='active'){
