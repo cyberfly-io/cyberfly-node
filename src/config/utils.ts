@@ -198,7 +198,6 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
   const checkNodeStatus = async (peerId:string, multiaddr:string, pubkey:string, seckey:string)=>{
     try{
 
-     console.log("Checking Node Status")
      const result:any = await getNodeInfo(peerId)
      if(result && result.result.status==="success"){
       if(result.result.data.status!=='active'){
