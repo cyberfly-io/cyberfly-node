@@ -27,6 +27,8 @@ import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 import { getStreamName, verifyMsg } from './utils.js';
 import { nanoid } from 'nanoid'
+import { peerIdFromString } from '@libp2p/peer-id'
+
 
 const storage = multer.diskStorage({
   destination: function (req:any, file:any, cb:any) {
@@ -634,13 +636,31 @@ app.post('/api/dial', async(req, res)=>{
    }
    catch(e){
     console.log(e)
-    res.json({"info":"Failed to dial"})
+    res.json({"info":e.toString()})
    }
   }
   else{
     res.json({"info":"multiAddr is required"})
   }
   })
+
+  app.post('/api/findpeer', async(req, res)=>{
+    if(req.body.peerId){
+     try{
+      const peerId = peerIdFromString(req.body.peerId)
+      const peerInfo = await libp2p.peerRouting.findPeer(peerId, {maxTimeout:1000})
+      res.json(peerInfo)
+     }
+     catch(e){
+      res.json({"info":e.toString()})
+     }
+    }
+    else{
+      res.json({"info":"peerId is required"})
+    }
+    })
+
+  
 
 app.post("/api/dbinfo", async(req, res)=>{
   if(!req.body.dbaddr || !isValidAddress(req.body.dbaddr)){
