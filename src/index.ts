@@ -649,7 +649,6 @@ app.post("/api/dbinfo", async(req, res)=>{
   else{
     try{
       const db = await orbitdb.open(req.body.dbaddr, {entryStorage})
-      console.log(db)
     res.json({dbaddr:db.address, name:db.name});
     }
     catch(e){
