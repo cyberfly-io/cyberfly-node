@@ -49,7 +49,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       }),
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
-      '/ip4/0.0.0.0/tcp/31002/wss',
+      '/ip4/0.0.0.0/tcp/31002/ws',
       "/webrtc",
       "/webtransport",
       "/webrtc-direct",
