@@ -59,6 +59,9 @@ importers:
       '@libp2p/peer-id':
         specifier: 5.0.9
         version: 5.0.9
+      '@libp2p/ping':
+        specifier: ^2.0.14
+        version: 2.0.14
       '@libp2p/pnet':
         specifier: ^2.0.8
         version: 2.0.10
@@ -72,8 +75,8 @@ importers:
         specifier: ^5.0.16
         version: 5.0.16(react-native@0.76.1(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(react@18.3.1))
       '@libp2p/websockets':
-        specifier: ^9.0.11
-        version: 9.0.11
+        specifier: ^9.1.0
+        version: 9.1.0
       '@libp2p/webtransport':
         specifier: ^5.0.16
         version: 5.0.16
@@ -1219,8 +1222,8 @@ packages:
   '@libp2p/peer-store@11.0.13':
     resolution: {integrity: sha512-KieXSY8ysyC7ROJ7GI7dtQkowRFDuG2jk5HQedSXNUe74JurG0uI/HddFF8yij+HgY/kZiBwWUQbKrTC4Cewbw==}
 
-  '@libp2p/ping@2.0.10':
-    resolution: {integrity: sha512-TfeCyaq2JRwEBGsfE7HlY2ZbOr7mglTp6D/i05JEZrQ+fbpW7ZZs/BMwC/p7jhvuvYGnWyl/F8ih/UBiPExtZQ==}
+  '@libp2p/ping@2.0.14':
+    resolution: {integrity: sha512-+idRl+4T2bhP+FNDgwBFWHyHkFoOcjwzQmezLR00mG8hg2iH3BvDmzMd7cagZM21SaeDd4eiN8XyhQqyi1RcZA==}
 
   '@libp2p/pnet@2.0.10':
     resolution: {integrity: sha512-ZB4nU5Wbln8h6ljp8RBOq1qx0RrX3k8PoOreKv74j4ntHoxhRQ8dqBLRThThkeNCRxuIDlnNrb/dX9bpswMpkw==}
@@ -1252,8 +1255,8 @@ packages:
   '@libp2p/webrtc@5.0.16':
     resolution: {integrity: sha512-+o82zclk0d8HVGfI1pNiypCvhC0boubRVIJ/5+JSyUbZFpTNDelBb6DziI7s6NPVn0OnNvlfS6xWO3cetw9qag==}
 
-  '@libp2p/websockets@9.0.11':
-    resolution: {integrity: sha512-GoX323NMnbOwPu4Cq49XD9AwKLJfOr/R4H5b21ZCpgPIryVGmKUUzS8tWVdBu8RlWcRwCqz7rTUGZ95TKJeVwQ==}
+  '@libp2p/websockets@9.1.0':
+    resolution: {integrity: sha512-110hKTaCO13nUxUAr5KQPyomzbXbwkoyeY0Xr5urX8oAA7R3hQrcs8+luWpouiF8Ui5SvmeWDN8t2yPMoH2v5g==}
 
   '@libp2p/webtransport@5.0.16':
     resolution: {integrity: sha512-0CRugE+RlqhDasn/bFq45PjiyBLNnBeTSAfwVI9sYBV0irPh1Fg8nNunxNIXkIfCptnB9UlxKS1Ho2vwwEscdg==}
@@ -1272,6 +1275,9 @@ packages:
 
   '@multiformats/multiaddr-to-uri@10.1.2':
     resolution: {integrity: sha512-6sicfYRjJlHJn4bwsQancs8kXncWU4dDN/+V9sMVTYp9hi8ovWgVkK75AbAv4SfhztmmI+oufVUncQ1n+SukKQ==}
+
+  '@multiformats/multiaddr-to-uri@11.0.0':
+    resolution: {integrity: sha512-9RNmlIGwZbBLsHekT50dbt4o4u8Iciw9kGjv+WHiGxQdsJ6xKKjU1+C0Vbas6RilMbaVOAOnEyfNcXbUmTkLxQ==}
 
   '@multiformats/multiaddr@12.3.1':
     resolution: {integrity: sha512-yoGODQY4nIj41ENJClucS8FtBoe8w682bzbKldEQr9lSlfdHqAsRC+vpJAOBpiMwPps1tHua4kxrDmvprdhoDQ==}
@@ -6783,12 +6789,12 @@ snapshots:
       uint8arraylist: 2.4.8
       uint8arrays: 5.1.0
 
-  '@libp2p/ping@2.0.10':
+  '@libp2p/ping@2.0.14':
     dependencies:
       '@libp2p/crypto': 5.0.8
-      '@libp2p/interface': 2.2.0
-      '@libp2p/interface-internal': 2.0.10
-      '@multiformats/multiaddr': 12.3.1
+      '@libp2p/interface': 2.3.0
+      '@libp2p/interface-internal': 2.2.1
+      '@multiformats/multiaddr': 12.3.4
       it-byte-stream: 1.1.0
       uint8arrays: 5.1.0
 
@@ -6958,19 +6964,19 @@ snapshots:
       - react-native
       - supports-color
 
-  '@libp2p/websockets@9.0.11':
+  '@libp2p/websockets@9.1.0':
     dependencies:
-      '@libp2p/interface': 2.2.0
-      '@libp2p/utils': 6.1.3
-      '@multiformats/multiaddr': 12.3.1
-      '@multiformats/multiaddr-matcher': 1.5.1
-      '@multiformats/multiaddr-to-uri': 10.1.2
+      '@libp2p/interface': 2.3.0
+      '@libp2p/utils': 6.3.0
+      '@multiformats/multiaddr': 12.3.4
+      '@multiformats/multiaddr-matcher': 1.6.0
+      '@multiformats/multiaddr-to-uri': 11.0.0
       '@types/ws': 8.5.13
       it-ws: 6.1.5
       p-defer: 4.0.1
+      p-event: 6.0.1
       progress-events: 1.0.1
       race-signal: 1.1.0
-      wherearewe: 2.0.1
       ws: 8.18.0
     transitivePeerDependencies:
       - bufferutil
@@ -7020,6 +7026,10 @@ snapshots:
   '@multiformats/multiaddr-to-uri@10.1.2':
     dependencies:
       '@multiformats/multiaddr': 12.3.1
+
+  '@multiformats/multiaddr-to-uri@11.0.0':
+    dependencies:
+      '@multiformats/multiaddr': 12.3.4
 
   '@multiformats/multiaddr@12.3.1':
     dependencies:
@@ -9361,12 +9371,12 @@ snapshots:
       '@libp2p/logger': 5.1.3
       '@libp2p/mdns': 11.0.10
       '@libp2p/mplex': 11.0.10
-      '@libp2p/ping': 2.0.10
+      '@libp2p/ping': 2.0.14
       '@libp2p/tcp': 10.0.11
       '@libp2p/tls': 2.0.10
       '@libp2p/upnp-nat': 2.0.10
       '@libp2p/webrtc': 5.0.16(react-native@0.76.1(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(react@18.3.1))
-      '@libp2p/websockets': 9.0.11
+      '@libp2p/websockets': 9.1.0
       '@libp2p/webtransport': 5.0.16
       '@multiformats/dns': 1.0.6
       blockstore-core: 5.0.2

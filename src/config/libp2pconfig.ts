@@ -14,6 +14,10 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { webTransport } from "@libp2p/webtransport";
 import { webRTC, webRTCDirect } from "@libp2p/webrtc";
 import { preSharedKey } from '@libp2p/pnet'
+import { multiaddr } from '@multiformats/multiaddr'
+import { ping } from "@libp2p/ping"
+
+
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -53,8 +57,13 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
     connectionManager: {
-      minConnections: 1,
-      maxConnections: Infinity,
+            maxConnections: 1000,
+            minConnections: 10,
+            maxIncomingPendingConnections: 100,
+            maxOutgoingPendingConnections: 100,
+            pollInterval: 2000,
+            maxDialTimeout: 30000,
+            inboundUpgradeTimeout: 30000,
     },
     transports: [
       webRTC({
@@ -73,7 +82,11 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       webRTCDirect(),
     tcp(),
     webSockets({
-      filter: filters.all
+      filter: filters.all,
+      /*listener: (socket) => {
+        const remoteAddr = multiaddr(socket.remoteAddress).toString()
+        logger.info(`WebSocket connection established with: ${remoteAddr}`)
+    }*/
     }),
     circuitRelayTransport()
     ],
@@ -83,6 +96,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       denyDialMultiaddr: () => false,
     },
     services: {
+      ping: ping(),
       identify: identify(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
@@ -93,7 +107,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
           publishThreshold: -Infinity,
           graylistThreshold: -Infinity,
         }, }),
-      relay: circuitRelayServer({
+        circuitRelay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
         }
