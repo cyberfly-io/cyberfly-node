@@ -57,10 +57,10 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
     connectionManager: {
-            maxConnections: 1000,
-            minConnections: 10,
-            maxIncomingPendingConnections: 100,
-            maxOutgoingPendingConnections: 100,
+            maxConnections: Infinity,
+            minConnections: 1,
+            maxIncomingPendingConnections: 200,
+            maxOutgoingPendingConnections: 200,
             pollInterval: 2000,
             maxDialTimeout: 30000,
             inboundUpgradeTimeout: 30000,
