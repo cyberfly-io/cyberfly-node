@@ -26,8 +26,10 @@ import { ruruHTML, defaultHTMLParts } from 'ruru/server';
 import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry-storage.js';
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 import { getStreamName, verifyMsg } from './utils.js';
+import { getMultiAddr } from './config/utils.js';
 import { nanoid } from 'nanoid'
 import { peerIdFromString } from '@libp2p/peer-id'
+
 
 
 const storage = multer.diskStorage({
@@ -76,6 +78,7 @@ if(!account){
 }
 
 const clientId = `${libp2p.peerId.toString()}`
+console.log(`MQTT client id: ${clientId}`)
 const mqtt_client = mqtt.connect(mqtt_host, {
   clientId,
   clean: true,
@@ -96,7 +99,8 @@ mqtt_client.on('message', async(topic, payload) => {
 })
 
 const port = 31003;
-addNodeToContract(libp2p.peerId.toString(),libp2p.getMultiaddrs()[0].toString(),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
+const peer_id = libp2p.peerId.toString()
+addNodeToContract(libp2p.peerId.toString(),await getMultiAddr(clientId),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 
 
 const newDb = async (name:string, pubkey:string)=>{
