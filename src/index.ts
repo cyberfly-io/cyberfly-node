@@ -100,13 +100,6 @@ mqtt_client.on('message', async(topic, payload) => {
 
 libp2p.addEventListener('peer:connect', async(evt) => {   
   const peerId = evt.detail
-  await libp2p.peerStore.merge(peerId, {
-    tags: {
-      'keep-alive': {
-        value: 50, // 0-100 is the typical value range
-      }
-    }
-  });
 })
 
 const port = 31003;
