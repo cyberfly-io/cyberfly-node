@@ -1,5 +1,5 @@
 import { tcp } from '@libp2p/tcp'
-import { identify } from '@libp2p/identify'
+import { identify, identifyPush } from '@libp2p/identify'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
@@ -10,11 +10,10 @@ import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { autoNAT } from "@libp2p/autonat";
 import { dcutr } from "@libp2p/dcutr";
-import { kadDHT } from "@libp2p/kad-dht";
+import { kadDHT, removePrivateAddressesMapper } from "@libp2p/kad-dht";
 import { webTransport } from "@libp2p/webtransport";
 import { webRTC, webRTCDirect } from "@libp2p/webrtc";
 import { preSharedKey } from '@libp2p/pnet'
-import { multiaddr } from '@multiformats/multiaddr'
 import { ping } from "@libp2p/ping"
 
 
@@ -53,6 +52,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       "/webrtc",
       "/webtransport",
       "/webrtc-direct",
+      "/p2p-circuit"
     ],
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
@@ -98,6 +98,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     services: {
       ping: ping(),
       identify: identify(),
+      identifyPush:identifyPush(),
       autoNAT: autoNAT(),
       dcutr: dcutr(),
       pubsub: gossipsub({
@@ -110,10 +111,11 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
         circuitRelay: circuitRelayServer({
         reservations: {
           maxReservations: Infinity
-        }
+        },
       }),
       dht: kadDHT({
         clientMode: false,
+        peerInfoMapper: removePrivateAddressesMapper,
       }),
     }
   }
