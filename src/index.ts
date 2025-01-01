@@ -98,9 +98,19 @@ mqtt_client.on('message', async(topic, payload) => {
   }
 })
 
+libp2p.addEventListener('peer:connect', async(evt) => {   
+  const peerId = evt.detail
+  await libp2p.peerStore.merge(peerId, {
+    tags: {
+      'keep-alive': {
+        value: 50, // 0-100 is the typical value range
+      }
+    }
+  });
+})
+
 const port = 31003;
-const peer_id = libp2p.peerId.toString()
-addNodeToContract(libp2p.peerId.toString(),await getMultiAddr(clientId),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
+addNodeToContract(clientId,await getMultiAddr(clientId),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 
 
 const newDb = async (name:string, pubkey:string)=>{
