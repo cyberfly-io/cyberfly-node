@@ -52,7 +52,6 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       "/webrtc",
       "/webtransport",
       "/webrtc-direct",
-      "/p2p-circuit"
     ],
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
@@ -102,11 +101,6 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
           publishThreshold: -Infinity,
           graylistThreshold: -Infinity,
         }, }),
-        circuitRelay: circuitRelayServer({
-        reservations: {
-          maxReservations: Infinity
-        },
-      }),
       dht: kadDHT({
         clientMode: false,
         peerInfoMapper: removePrivateAddressesMapper,
