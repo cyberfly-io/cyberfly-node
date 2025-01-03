@@ -229,8 +229,9 @@ return `/ip4/${ip}/tcp/31001/p2p/${peerId}`
     const uniquePeers = new Map();
     
     connections.forEach(connection => {
-      if (!uniquePeers.has(connection.remotePeer)) {
-        uniquePeers.set(connection.remotePeer, connection);
+
+      if (!uniquePeers.has(connection.remotePeer.toString())) {
+        uniquePeers.set(connection.remotePeer.toString(), connection);
       }
     });
     

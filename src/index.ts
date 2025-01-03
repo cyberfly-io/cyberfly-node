@@ -215,12 +215,12 @@ const io = new Server(server, {
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
   const peers = libp2p.getPeers()
-
+  const multiAddr = await getMultiAddr(clientId)
   const conn = libp2p.getConnections()
   let con = conn.filter(obj => obj.status==="open")
   const filteredConn = removeDuplicateConnections(con);
   const info = {peerId:peerId, health:"ok", version:"0.2.1", 
-  multiAddr:libp2p.getMultiaddrs()[0].toString(), 
+  multiAddr:multiAddr, 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
   connected:filteredConn.length, peers:peers, account:account, 
   connections:extractFields(filteredConn, 'remotePeer', 'remoteAddr')
