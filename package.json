@@ -41,6 +41,7 @@
     "@redis/time-series": "^1.1.0",
     "blockstore-level": "^2.0.1",
     "cors": "^2.8.5",
+    "datastore-level": "^11.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
     "express-graphql": "^0.12.0",

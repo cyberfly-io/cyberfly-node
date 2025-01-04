@@ -95,6 +95,9 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
+      datastore-level:
+        specifier: ^11.0.1
+        version: 11.0.1
       dotenv:
         specifier: ^16.4.5
         version: 16.4.5
@@ -2502,6 +2505,9 @@ packages:
 
   datastore-core@10.0.2:
     resolution: {integrity: sha512-B3WXxI54VxJkpXxnYibiF17si3bLXE1XOjrJB7wM5co9fx2KOEkiePDGiCCEtnapFHTnmAnYCPdA7WZTIpdn/A==}
+
+  datastore-level@11.0.1:
+    resolution: {integrity: sha512-mOcQTgSJL1bp6tM1F2WzpytIPX96i3SlshaFqEBhlAP6yLMjLgw8cVhHaWpR+wJ+tsLGjAKcKOSwecfgGvEoww==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -8776,6 +8782,17 @@ snapshots:
       it-pushable: 3.2.3
       it-sort: 3.0.6
       it-take: 3.0.6
+
+  datastore-level@11.0.1:
+    dependencies:
+      datastore-core: 10.0.2
+      interface-datastore: 8.3.1
+      interface-store: 6.0.2
+      it-filter: 3.1.1
+      it-map: 3.1.1
+      it-sort: 3.0.6
+      it-take: 3.0.6
+      level: 8.0.1
 
   debug@2.6.9:
     dependencies:
