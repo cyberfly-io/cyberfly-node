@@ -7,7 +7,7 @@ import { bootstrap } from '@libp2p/bootstrap'
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { webSockets } from '@libp2p/websockets'
 import * as filters from '@libp2p/websockets/filters'
-import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { autoNAT } from "@libp2p/autonat";
 import { dcutr } from "@libp2p/dcutr";
 import { kadDHT, removePrivateAddressesMapper } from "@libp2p/kad-dht";
@@ -27,7 +27,7 @@ const __dirname = path.dirname(__filename)
 let bsNodes = ["/dns4/node2.cyberfly.io/tcp/31001/p2p/12D3KooWSfGgUaeogSZuRPa4mhsAU41qJH5EpmwKg9wGVzUwFGth", 
   "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
 
-export const getLibp2pOptions = (ip:string, peerId:string)=> {
+export const getLibp2pOptions:any = (ip:string, peerId:string)=> {
 
 let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
 const filePath = path.join(__dirname, "swarm.key")
@@ -76,10 +76,6 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     tcp(),
     webSockets({
       filter: filters.all,
-      /*listener: (socket) => {
-        const remoteAddr = multiaddr(socket.remoteAddress).toString()
-        logger.info(`WebSocket connection established with: ${remoteAddr}`)
-    }*/
     }),
     circuitRelayTransport()
     ],

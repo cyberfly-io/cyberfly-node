@@ -404,13 +404,13 @@ export const resolvers = {
     const cpu = await si.cpu();
     const os = await si.osInfo();
     const memory = await si.mem();
-    const disk = await si.diskLayout();
+    const storage = await si.diskLayout();
 
     return {
       cpu,
       memory,
       os,
-      storage: disk,
+      storage,
     };
   } 
   ,

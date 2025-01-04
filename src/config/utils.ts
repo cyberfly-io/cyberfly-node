@@ -8,7 +8,7 @@ import pact from 'pact-lang-api'
 
 const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact',)
 
-  export async function loadOrCreatePeerIdAndKeyPair(filePath:string, sk:string) {
+  export  const loadOrCreatePeerIdAndKeyPair:any = async(filePath:string, sk:string)=> {
     try {
       if(!fs.existsSync('./data')){
         fs.mkdirSync('./data')

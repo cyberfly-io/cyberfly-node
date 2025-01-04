@@ -13,7 +13,7 @@ const startOrbitDB = async ({sk}) => {
   const config = await loadOrCreatePeerIdAndKeyPair('./data/config.json', sk)
 
   const options =  getLibp2pOptions(ip, config.peerId.toString())
-  const libp2p = await createLibp2p({privateKey:config.privateKey, ...options })
+  const libp2p:any = await createLibp2p({privateKey:config.privateKey, ...options })
   console.log(libp2p.peerId.toString())
   const directory = './data'
   const blockstore = new LevelBlockstore(`${directory}/ipfs/blocks`)

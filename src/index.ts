@@ -98,9 +98,9 @@ mqtt_client.on('message', async(topic, payload) => {
   }
 })
 
-libp2p.addEventListener('peer:connect', async(evt) => {   
+/*libp2p.addEventListener('peer:connect', async(evt) => {   
   const peerId = evt.detail
-})
+})*/
 
 const port = 31003;
 addNodeToContract(clientId,await getMultiAddr(clientId),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
