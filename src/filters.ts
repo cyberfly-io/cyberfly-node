@@ -150,6 +150,19 @@ export class RedisStreamFilter {
 
 }
 
+
+export class RedisSortedSetFilter {
+  redis:any
+    constructor(redisClient:any) {
+      this.redis = redisClient;
+    }
+
+    async getEntries(dbaddr:string, min=0, max=-1) {
+        return await this.redis.zRangeWithScores(dbaddr.split("/")[2], min, max);
+      }
+
+}
+
 export class RedisTimeSeriesFilter {
   redis:any
     constructor(redisClient:any) {

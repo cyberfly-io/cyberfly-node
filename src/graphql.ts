@@ -1,7 +1,7 @@
 import { buildSchema } from 'graphql';
 import { createClient } from 'redis';
 import CyberflyAccessController from './cyberfly-access-controller.js'
-import { RedisJSONFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
+import { RedisJSONFilter, RedisSortedSetFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
 import { updateData, nodeConfig, discovered, entryStorage } from './custom-entry-storage.js';
 import { removeDuplicateConnections, extractFields, getDevice, verify } from './config/utils.js';
 import si from 'systeminformation'
@@ -15,6 +15,8 @@ const account = process.env.KADENA_ACCOUNT
 redis.connect();
 export const schema = buildSchema(`
  scalar JSON
+ scalar Timestamp
+
 
 type Data {
   _id: String!
@@ -203,6 +205,11 @@ type CPU {
   name: String!
   }
 
+  type SortedSet {
+  score: Timestamp!
+  value: JSON!
+  }
+
 type Query {
   sysInfo: SystemInfo
   dbInfo(dbaddr: String!) : DBInfo
@@ -221,6 +228,8 @@ type Query {
     options: FilterOptionsInput
   ): [Data]
 
+
+
   readStream(
   dbaddr: String!,
   streamName: String!,
@@ -233,6 +242,11 @@ type Query {
   streamName: String!,
   count: Int!
   ):[Message]
+
+  readSortedSet(
+  dbaddr: String!,
+  min: Timestamp,
+  max: Timestamp):[SortedSet]
 
   readTimeSeries(
   dbaddr: String!,
@@ -323,6 +337,19 @@ export const resolvers = {
     catch(e){
       console.error("Error fetching stream" ,e)
       throw new Error('Failed to fetch streams');
+
+    }
+  },
+  readSortedSet: async (params:any)=>{
+    try{
+    await orbitdb.open(params.dbaddr) 
+    const sortedSetFilters = new RedisSortedSetFilter(redis)
+    const result = await sortedSetFilters.getEntries(params.dbaddr, params.min, params.max)
+    return result
+    }
+    catch(e){
+      console.error("Error fetching sorted set" ,e)
+      throw new Error('Failed to fetch sorted set');
 
     }
   },

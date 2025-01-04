@@ -73,6 +73,16 @@ console.log(error)
         console.log(`time series error ${e}`)
       }
     }
+    else if(objectType=='sortedset'){
+      const data = decoded.payload.value.data
+      try{
+        await redis.zAdd(decoded.id.split("/")[2], [{score:decoded.payload.value.timestamp, value:JSON.stringify(data)}])
+        await redis.set(hash, "true")
+      }
+      catch(e){
+        console.log(`zadd error ${e}`)
+      }
+    }
     else {
       await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value);
       await redis.set(hash, "true")

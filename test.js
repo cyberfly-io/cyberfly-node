@@ -18,7 +18,7 @@ const postdata = async ()=>{
 
 
 const randomCoordinates = generateRandomCoordinates();
-const data = {...randomCoordinates, member:"chai kings", locationLabel:"Coffee shop", streamName:"mystream"}
+const data = {hello:"hello world"}
 
 
 const sortedJsondata = Object.keys(data)
@@ -33,14 +33,14 @@ const sig = getSig(sortedJsondata, keypair);
 console.log(sig)
 console.log(data)
 
-const body = {dbaddr:"/orbitdb/zdpuAzLFHuv3QecXd3z26RuoBFGJ44dR8ehyfbQcD2PyXVnxg", objectType:"json" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuAzLFHuv3QecXd3z26RuoBFGJ44dR8ehyfbQcD2PyXVnxg", objectType:"sortedset" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
 const remote2 = "https://node2.cyberfly.io/api/data"
 
 console.log(body)
-const d = await fetch(remote2, {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
