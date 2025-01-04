@@ -158,7 +158,23 @@ export class RedisSortedSetFilter {
     }
 
     async getEntries(dbaddr:string, min=0, max=-1) {
-        return await this.redis.zRangeWithScores(dbaddr.split("/")[2], min, max);
+        const entries =  await this.redis.zRangeWithScores(dbaddr.split("/")[2], min, max);
+        return entries.map(({ score, value }) => {
+          try {
+            const parsed = JSON.parse(value);
+            return {
+              message: parsed,  // parsed message
+              timestamp: score  // score is the timestamp we stored
+            };
+          } catch (parseError) {
+            console.error('Failed to parse message:', parseError);
+            return {
+              message: value,  // fallback to raw value
+              timestamp: score,
+              error: 'Parse failed'
+            };
+          }
+        });
       }
 
 }

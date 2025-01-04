@@ -206,8 +206,8 @@ type CPU {
   }
 
   type SortedSet {
-  score: Timestamp!
-  value: JSON!
+  timestamp: Timestamp!
+  message: JSON!
   }
 
 type Query {
