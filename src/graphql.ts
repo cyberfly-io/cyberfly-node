@@ -3,7 +3,7 @@ import { createClient } from 'redis';
 import CyberflyAccessController from './cyberfly-access-controller.js'
 import { RedisJSONFilter, RedisSortedSetFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
 import { updateData, nodeConfig, discovered, entryStorage } from './custom-entry-storage.js';
-import { removeDuplicateConnections, extractFields, getDevice, verify } from './config/utils.js';
+import { removeDuplicateConnections, extractFields, getDevice, verify, getMultiAddr } from './config/utils.js';
 import si from 'systeminformation'
 
 const redis_port = 6379
@@ -369,12 +369,11 @@ export const resolvers = {
   nodeInfo: async ()=>{
     const peerId = libp2p.peerId
     const peers = libp2p.getPeers()
-  
     const conn = libp2p.getConnections()
     let con = conn.filter(obj => obj.status==="open")
     const filteredConn = removeDuplicateConnections(con);
-    const info = {peerId:peerId, health:"ok", version:"0.2.1", 
-    multiAddr:libp2p.getMultiaddrs()[0].toString(), 
+    const info = {peerId:peerId, health:"ok", version:"0.2.2", 
+    multiAddr: await getMultiAddr(peerId.toString()), 
     publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
     connected:filteredConn.length, peers:peers, account:account, 
     connections:extractFields(filteredConn, 'remotePeer', 'remoteAddr')
