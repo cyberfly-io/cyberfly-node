@@ -73,8 +73,8 @@ console.log(error)
         console.log(`time series error ${e}`)
       }
     }
-    else if(objectType=='sortedset'){
-      const data = decoded.payload.value.data
+    else if(objectType === 'sortedset'){
+      const data = decoded.payload.value
       try{
         await redis.zAdd(decoded.id.split("/")[2], [{score:decoded.payload.value.timestamp, value:JSON.stringify(data)}])
         await redis.set(hash, "true")

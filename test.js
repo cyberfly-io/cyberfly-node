@@ -18,7 +18,7 @@ const postdata = async ()=>{
 
 
 const randomCoordinates = generateRandomCoordinates();
-const data = {hello:"hello world"}
+const data = {hello:`hello world ${randomIntFromInterval(1, 100)}`}
 
 
 const sortedJsondata = Object.keys(data)
@@ -49,7 +49,7 @@ const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers:
 }
 
 await postdata()
-/*var c = 0
+var c = 0
 while(c<100){
   const start = Date.now();
 
@@ -57,4 +57,4 @@ await postdata();
 const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++
-}*/
+}

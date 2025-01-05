@@ -319,7 +319,7 @@ export const resolvers = {
   ,
   readDB: async (params:any) => {
     try {
-      await orbitdb.open(params.dbaddr, {entryStorage}) //ensure db is open and sync
+      const db = await orbitdb.open(params.dbaddr, {entryStorage}) //ensure db is open and sync
       const filters = new RedisJSONFilter(redis)
       return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options)
     } catch (error) {
@@ -329,7 +329,7 @@ export const resolvers = {
   },
   readStream: async (params:any)=>{
     try{
-    await orbitdb.open(params.dbaddr, {entryStorage}) 
+      const db = await orbitdb.open(params.dbaddr, {entryStorage}) 
     const streamFilters = new RedisStreamFilter(redis)
     const result = await streamFilters.getEntries(params.dbaddr, params.streamName, params.from, params.to)
     return result
@@ -342,7 +342,7 @@ export const resolvers = {
   },
   readSortedSet: async (params:any)=>{
     try{
-    await orbitdb.open(params.dbaddr, {entryStorage}) 
+      const db = await orbitdb.open(params.dbaddr, {entryStorage}) 
     const sortedSetFilters = new RedisSortedSetFilter(redis)
     const result = await sortedSetFilters.getEntries(params.dbaddr, params.min, params.max)
     return result
@@ -355,13 +355,13 @@ export const resolvers = {
   },
   readLastNStreams: async (params:any)=>{
 
-    await orbitdb.open(params.dbaddr,{entryStorage}) 
+    const db = await orbitdb.open(params.dbaddr,{entryStorage}) 
     const streamFilters = new RedisStreamFilter(redis)
     const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName,params.count)
     return result
   },
   readTimeSeries : async(params:any)=>{
-   await orbitdb.open(params.dbaddr, {entryStorage}) 
+    const db = await orbitdb.open(params.dbaddr, {entryStorage}) 
    const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
    const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
    return result
