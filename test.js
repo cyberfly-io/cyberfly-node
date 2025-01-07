@@ -14,11 +14,11 @@ function randomIntFromInterval(min, max) {
 
 //going to test data replication across nodes
 //store data to localnode and check on other nodes
-const postdata = async ()=>{
+const postdata = async (i)=>{
 
 
 const randomCoordinates = generateRandomCoordinates();
-const data = {hello:`hello world ${randomIntFromInterval(1, 100)}`}
+const data = {hello:`hello world ${i}`}
 
 
 const sortedJsondata = Object.keys(data)
@@ -33,14 +33,14 @@ const sig = getSig(sortedJsondata, keypair);
 console.log(sig)
 console.log(data)
 
-const body = {dbaddr:"/orbitdb/zdpuAzLFHuv3QecXd3z26RuoBFGJ44dR8ehyfbQcD2PyXVnxg", objectType:"sortedset" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr:"/orbitdb/zdpuB3V6MRsZb7KaP8qXpjD1mumGVTWQ6yV4ZCn3SEMTtbG1Q", objectType:"sortedset" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
 const remote2 = "https://node2.cyberfly.io/api/data"
 
 console.log(body)
-const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch(remote, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
@@ -48,12 +48,12 @@ const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers:
   console.log(j)
 }
 
-await postdata()
+await postdata(1)
 var c = 0
 while(c<100){
   const start = Date.now();
 
-await postdata();
+await postdata(c+1);
 const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++

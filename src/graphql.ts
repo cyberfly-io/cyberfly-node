@@ -222,7 +222,7 @@ type Query {
     ): IPLocation
 
 
-  readDB(
+  readJSONDB(
     dbaddr: String!, 
     filters: JSON, 
     options: FilterOptionsInput
@@ -317,7 +317,7 @@ export const resolvers = {
   return {dbaddr:db.address, name:db.name};
   }
   ,
-  readDB: async (params:any) => {
+  readJSONDB: async (params:any) => {
     try {
       const db = await orbitdb.open(params.dbaddr, {entryStorage}) //ensure db is open and sync
       const filters = new RedisJSONFilter(redis)

@@ -1,5 +1,5 @@
 import { tcp } from '@libp2p/tcp'
-import { identify, identifyPush } from '@libp2p/identify'
+import { identify } from '@libp2p/identify'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
@@ -8,13 +8,9 @@ import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { webSockets } from '@libp2p/websockets'
 import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { autoNAT } from "@libp2p/autonat";
-import { dcutr } from "@libp2p/dcutr";
-import { kadDHT, removePrivateAddressesMapper } from "@libp2p/kad-dht";
-import { webTransport } from "@libp2p/webtransport";
-import { webRTC, webRTCDirect } from "@libp2p/webrtc";
+import { kadDHT } from "@libp2p/kad-dht";
 import { preSharedKey } from '@libp2p/pnet'
-import { ping } from "@libp2p/ping"
+
 
 
 import fs from 'fs'
@@ -49,9 +45,6 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/ws',
-      "/webrtc",
-      "/webtransport",
-      "/webrtc-direct",
     ],
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
@@ -59,20 +52,6 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
             maxConnections: Infinity,
     },
     transports: [
-      webRTC({
-        rtcConfiguration: {
-          iceServers: [
-            {
-              urls: [
-                "stun:stun.l.google.com:19302",
-                "stun:global.stun.twilio.com:3478",
-              ],
-            },
-          ],
-        },
-      }),
-      webTransport(),
-      webRTCDirect(),
     tcp(),
     webSockets({
       filter: filters.all,
@@ -85,21 +64,12 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       denyDialMultiaddr: () => false,
     },
     services: {
-      ping: ping(),
       identify: identify(),
-      identifyPush:identifyPush(),
-      autoNAT: autoNAT(),
-      dcutr: dcutr(),
       pubsub: gossipsub({
-        allowPublishToZeroTopicPeers: true, emitSelf: true, 
-        scoreThresholds: {
-          gossipThreshold: -Infinity,
-          publishThreshold: -Infinity,
-          graylistThreshold: -Infinity,
-        }, }),
+        allowPublishToZeroTopicPeers: true, emitSelf: true,
+        canRelayMessage:true, }),
       dht: kadDHT({
         clientMode: false,
-        peerInfoMapper: removePrivateAddressesMapper,
       }),
     }
   }
