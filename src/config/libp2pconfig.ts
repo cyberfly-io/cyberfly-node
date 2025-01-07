@@ -34,7 +34,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
         topics: ["cyberfly._peer-discovery._p2p._pubsub"],
         listenOnly: false,
       }),
-      bootstrap({list:filteredBS, tagName:"KEEP_ALIVE", })
+      bootstrap({list:filteredBS, tagName:"keep-alive", })
       ],
       connectionProtector: preSharedKey({
         psk: Buffer.from(swarmKey)
