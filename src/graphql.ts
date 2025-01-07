@@ -350,7 +350,6 @@ export const resolvers = {
     catch(e){
       console.error("Error fetching sorted set" ,e)
       throw new Error('Failed to fetch sorted set');
-
     }
   },
   readLastNStreams: async (params:any)=>{

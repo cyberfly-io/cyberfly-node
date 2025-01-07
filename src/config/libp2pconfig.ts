@@ -10,9 +10,6 @@ import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { kadDHT } from "@libp2p/kad-dht";
 import { preSharedKey } from '@libp2p/pnet'
-
-
-
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -37,7 +34,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
         topics: ["cyberfly._peer-discovery._p2p._pubsub"],
         listenOnly: false,
       }),
-      bootstrap({list:filteredBS})
+      bootstrap({list:filteredBS, tagName:"KEEP_ALIVE"})
       ],
       connectionProtector: preSharedKey({
         psk: Buffer.from(swarmKey)
@@ -49,7 +46,9 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
     connectionManager: {
-            maxConnections: Infinity,
+            maxConnections: 1500,
+            allow:filteredBS,
+            reconnectRetries: 10,
     },
     transports: [
     tcp(),

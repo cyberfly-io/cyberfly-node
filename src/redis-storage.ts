@@ -90,7 +90,6 @@ console.log(error)
   }
 
   const get = async (hash:string) => {
-    return null
   }
 
   const del = async (hash:string) => {
