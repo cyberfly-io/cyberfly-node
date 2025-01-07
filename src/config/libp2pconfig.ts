@@ -7,7 +7,7 @@ import { bootstrap } from '@libp2p/bootstrap'
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { webSockets } from '@libp2p/websockets'
 import * as filters from '@libp2p/websockets/filters'
-import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import { kadDHT } from "@libp2p/kad-dht";
 import { preSharedKey } from '@libp2p/pnet'
 import fs from 'fs'
@@ -54,7 +54,6 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
     webSockets({
       filter: filters.all,
     }),
-    circuitRelayTransport()
     ],
     connectionEncrypters: [noise()],
     streamMuxers: [yamux()],
@@ -69,6 +68,11 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       dht: kadDHT({
         clientMode: false,
       }),
+      circuitRelay: circuitRelayServer({
+        reservations:{
+          maxReservations: 1000
+        }
+      })
     }
   }
   
