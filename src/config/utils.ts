@@ -55,6 +55,7 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
       return json.query
     }
     catch(e){
+      console.log(e)
       throw new Error("check your internet connection and try again")
       
     }
