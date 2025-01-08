@@ -29,6 +29,7 @@ import { getStreamName, verifyMsg } from './utils.js';
 import { getMultiAddr } from './config/utils.js';
 import { nanoid } from 'nanoid'
 import { peerIdFromString } from '@libp2p/peer-id'
+import { VERSION } from './version.js';
 
 
 
@@ -226,7 +227,7 @@ app.get("/api", async(req, res)=>{
   const conn = libp2p.getConnections()
   let con = conn.filter(obj => obj.status==="open")
   const filteredConn = removeDuplicateConnections(con);
-  const info = {peerId:peerId, health:"ok", version:"0.2.3", 
+  const info = {peerId:peerId, health:"ok", version:VERSION, 
   multiAddr:multiAddr, 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
   connected:filteredConn.length, peers:peers, account:account, 
@@ -703,7 +704,7 @@ pubsub.addEventListener("message", async(message:any)=>{
     if(typeof dat == "string"){
       dat = JSON.parse(dat)
     }
-    const addr = OrbitDBAddress(dat.dbAddr)
+    const addr = OrbitDBAddress(dat.dbaddr)
     const manifest = await manifestStore.get(addr.hash)
     if(manifest.accessController.includes('cyberfly')){
     await orbitdb.open(dat.dbaddr, {entryStorage})

@@ -5,6 +5,7 @@ import { RedisJSONFilter, RedisSortedSetFilter, RedisStreamFilter, RedisTimeSeri
 import { updateData, nodeConfig, discovered, entryStorage } from './custom-entry-storage.js';
 import { removeDuplicateConnections, extractFields, getDevice, verify, getMultiAddr } from './config/utils.js';
 import si from 'systeminformation'
+import { VERSION } from './version.js';
 
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
@@ -371,7 +372,7 @@ export const resolvers = {
     const conn = libp2p.getConnections()
     let con = conn.filter(obj => obj.status==="open")
     const filteredConn = removeDuplicateConnections(con);
-    const info = {peerId:peerId, health:"ok", version:"0.2.3", 
+    const info = {peerId:peerId, health:"ok", version:VERSION, 
     multiAddr: await getMultiAddr(peerId.toString()), 
     publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
     connected:filteredConn.length, peers:peers, account:account, 
