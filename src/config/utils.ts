@@ -87,12 +87,6 @@ const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testn
   }
 }
 
-export const getMultiAddr = async (peerId:any)=>{  
-  const ip = await getIp()
-return `/ip4/${ip}/tcp/31001/p2p/${peerId}`
-}
-
-
   export const addNodeToContract = async (peerId:string, multiaddr:string, account:string, pubkey:string, seckey:string)=>{
     console.log(multiaddr)
   

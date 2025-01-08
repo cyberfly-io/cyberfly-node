@@ -26,10 +26,10 @@ import { ruruHTML, defaultHTMLParts } from 'ruru/server';
 import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry-storage.js';
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 import { getStreamName, verifyMsg } from './utils.js';
-import { getMultiAddr } from './config/utils.js';
 import { nanoid } from 'nanoid'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { VERSION } from './version.js';
+import { isPrivate } from '@libp2p/utils/multiaddr/is-private'
 
 
 
@@ -69,9 +69,14 @@ const manifestStore = await ManifestStore({ ipfs })
 const pubsub = libp2p.services.pubsub
 const account = process.env.KADENA_ACCOUNT
 // Print out listening addresses
+let maddr:any;
 console.log('libp2p listening on addresses:');
 libp2p.getMultiaddrs().forEach((addr:any) => {
-  console.log(addr.toString());
+  if(!isPrivate(addr) && addr.toString().includes('31001')){
+    console.log(addr.toString());
+    maddr = addr.toString()
+  }
+
 });
 if(!account){
   console.log("KADENA_ACCOUNT environment variable is required")
@@ -111,7 +116,7 @@ libp2p.addEventListener('peer:connect', async(evt) => {
 })
 
 const port = 31003;
-addNodeToContract(clientId,await getMultiAddr(clientId),account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
+addNodeToContract(clientId, maddr, account,nodeConfig.kadenaPub, nodeConfig.kadenaSec)
 
 
 const newDb = async (name:string, pubkey:string)=>{
@@ -223,12 +228,12 @@ const io = new Server(server, {
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
   const peers = libp2p.getPeers()
-  const multiAddr = await getMultiAddr(clientId)
+
   const conn = libp2p.getConnections()
   let con = conn.filter(obj => obj.status==="open")
   const filteredConn = removeDuplicateConnections(con);
   const info = {peerId:peerId, health:"ok", version:VERSION, 
-  multiAddr:multiAddr, 
+  multiAddr:maddr, 
   publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
   connected:filteredConn.length, peers:peers, account:account, 
   connections:extractFields(filteredConn, 'remotePeer', 'remoteAddr')
