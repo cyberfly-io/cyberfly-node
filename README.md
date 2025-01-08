@@ -1,6 +1,8 @@
 # cyberfly-node
 Storage node for cyberfly IoT platform
 
+GRAPHQL - https://node.cyberfly.io/graphql
+
 
 ### Create DB address
 

@@ -27,6 +27,12 @@ const filePath = path.join(__dirname, "swarm.key")
 
 const swarmKey = fs.readFileSync(filePath, 'utf8')
 
+let scoreThresholds = {
+	gossipThreshold: -Infinity,
+	publishThreshold: -Infinity,
+	graylistThreshold: -Infinity,
+}
+
   return {
     peerDiscovery: [
       pubsubPeerDiscovery({
@@ -64,7 +70,7 @@ const swarmKey = fs.readFileSync(filePath, 'utf8')
       identify: identify(),
       pubsub: gossipsub({
         allowPublishToZeroTopicPeers: true, emitSelf: true,
-        canRelayMessage:true, }),
+        canRelayMessage:true, doPX:true, scoreThresholds }),
       dht: kadDHT({
         clientMode: false,
       }),

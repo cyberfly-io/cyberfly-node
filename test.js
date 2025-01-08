@@ -1,5 +1,10 @@
 import { getSig } from "./utils.js"
+import { io } from "socket.io-client";
 
+const socket = io("https://node.cyberfly.io");
+socket.on("connect",()=>{
+console.log("Socket Connected")
+})
 function randomIntFromInterval(min, max) { 
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
@@ -11,7 +16,7 @@ function randomIntFromInterval(min, max) {
       const longitude = (Math.random() * 360 - 180).toFixed(6); // Longitude ranges from -180 to 180
       return { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
   }
-
+const dbaddr = "/orbitdb/zdpuB3V6MRsZb7KaP8qXpjD1mumGVTWQ6yV4ZCn3SEMTtbG1Q"
 //going to test data replication across nodes
 //store data to localnode and check on other nodes
 const postdata = async (i)=>{
@@ -32,8 +37,7 @@ const sig = getSig(sortedJsondata, keypair);
 
 console.log(sig)
 console.log(data)
-
-const body = {dbaddr:"/orbitdb/zdpuB3V6MRsZb7KaP8qXpjD1mumGVTWQ6yV4ZCn3SEMTtbG1Q", objectType:"sortedset" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
+const body = {dbaddr: dbaddr, objectType:"sortedset" ,sig:sig, data:sortedJsondata, publicKey:keypair['publicKey']}
 
 const remote = "https://node.cyberfly.io/api/data"
 const local = "http://localhost:31003/api/data"
@@ -49,7 +53,7 @@ const d = await fetch(remote, {method:'POST', body:JSON.stringify(body), headers
 }
 
 await postdata(1)
-var c = 0
+/*var c = 0
 while(c<100){
   const start = Date.now();
 
@@ -57,4 +61,6 @@ await postdata(c+1);
 const end = Date.now();
 console.log(`Execution time: ${end - start} ms`);
 c++
-}
+}*/
+
+socket.emit("publish",{topic:"dbupdate", message:JSON.stringify({dbaddr})})
