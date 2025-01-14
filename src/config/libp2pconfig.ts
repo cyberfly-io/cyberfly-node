@@ -54,6 +54,10 @@ let scoreThresholds = {
     connectionManager: {
             maxConnections: 1500,
             reconnectRetries: 10,
+            maxPeerAddrsToDial: 1500,
+            maxParallelReconnects: 10,
+            maxIncomingPendingConnections: 1500,
+            inboundConnectionThreshold: 1500
     },
     transports: [
     tcp(),
