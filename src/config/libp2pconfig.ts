@@ -56,8 +56,8 @@ let scoreThresholds = {
             reconnectRetries: 10,
             maxPeerAddrsToDial: 1500,
             maxParallelReconnects: 10,
-            maxIncomingPendingConnections: 1500,
-            inboundConnectionThreshold: 1500
+            maxIncomingPendingConnections: 500,
+            inboundConnectionThreshold: 500
     },
     transports: [
     tcp(),
@@ -80,7 +80,7 @@ let scoreThresholds = {
       }),
       circuitRelay: circuitRelayServer({
         reservations:{
-          maxReservations: 1000
+          maxReservations: 500
         }
       })
     }
