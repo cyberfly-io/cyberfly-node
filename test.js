@@ -16,7 +16,7 @@ function randomIntFromInterval(min, max) {
       const longitude = (Math.random() * 360 - 180).toFixed(6); // Longitude ranges from -180 to 180
       return { latitude: parseFloat(latitude), longitude: parseFloat(longitude) };
   }
-const dbaddr = "/orbitdb/zdpuAsc2X8x8YTh6aEy9HUcRxjNdFHG2mEzDrWMjK6AgTHjja"
+const dbaddr = "/orbitdb/zdpuAyBgp2MYritN8ebpmsaXk2sF4oYgYNrqRzMSRWN7BpfVL"
 //going to test data replication across nodes
 //store data to localnode and check on other nodes
 const postdata = async (i)=>{
