@@ -5,8 +5,9 @@ import { genKeyPair} from '@kadena/cryptography-utils';
 import { createClient, Pact, createSignWithKeypair } from '@kadena/client';
 import pact from 'pact-lang-api'
 
+const kadenaUrl = 'https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact'
 
-const client = createClient('https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact',)
+const client = createClient(kadenaUrl,)
 
   export  const loadOrCreatePeerIdAndKeyPair:any = async(filePath:string, sk:string)=> {
     try {
