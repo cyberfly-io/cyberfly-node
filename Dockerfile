@@ -23,6 +23,7 @@ FROM node:22-slim
 
 # Set the working directory
 WORKDIR /usr/src/app
+RUN npm install -g pnpm
 
 # Copy compiled dependencies
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
