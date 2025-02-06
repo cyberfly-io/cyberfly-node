@@ -5,7 +5,7 @@ FROM node:22-alpine AS builder
 WORKDIR /usr/src/app
 
 
-COPY package.json ./
+COPY package.json package-lock.json ./
 
 # Install all dependencies
 RUN npm install
