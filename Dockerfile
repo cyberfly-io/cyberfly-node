@@ -1,8 +1,8 @@
 # Stage 1: Build Stage
-FROM node:22-slim AS builder
+FROM node:22-alpine AS builder
 
-# Install required system dependencies for native modules
-RUN apt-get update && apt-get install -y cmake make g++ python3 && rm -rf /var/lib/apt/lists/*
+# Install system dependencies required for compiling native modules
+RUN apk add --no-cache cmake make g++ python3
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -13,8 +13,10 @@ RUN npm install -g pnpm
 # Copy package.json and pnpm-lock.yaml to leverage Docker cache for dependencies
 COPY package.json pnpm-lock.yaml ./
 
-# Install all dependencies (including native modules)
-RUN pnpm install --frozen-lockfile
+# Install all dependencies (including node-datachannel with native compilation)
+RUN pnpm install --ignore-scripts && \
+    pnpm rebuild node-datachannel && \
+    pnpm exec node-gyp rebuild
 
 # Copy the rest of the application code to the working directory
 COPY . .
@@ -23,16 +25,16 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production Stage
-FROM node:22-slim
+FROM node:22-alpine
 
 # Install runtime dependencies for native modules
-RUN apt-get update && apt-get install -y libc6 && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache libc6-compat
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Copy pnpm from builder stage instead of reinstalling
-COPY --from=builder /usr/local/bin/pnpm /usr/local/bin/pnpm
+# Install pnpm globally in the final stage if needed
+RUN npm install -g pnpm
 
 # Copy only the production dependencies and built files from the builder stage
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
