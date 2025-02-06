@@ -28,7 +28,7 @@ RUN npm run build
 RUN ls -l /usr/src/app/node_modules/node-datachannel/build/Release/
 
 # Stage 2: Production Stage
-FROM node:22-slim  # ✅ Ensure FROM is correct
+FROM node:22-slim
 
 # Set the working directory
 WORKDIR /usr/src/app
