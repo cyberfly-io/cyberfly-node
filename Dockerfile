@@ -6,6 +6,8 @@ WORKDIR /usr/src/app
 
 # Install pnpm globally
 RUN npm install -g pnpm
+RUN pnpm rebuild node-datachannel
+
 
 # Copy package.json and pnpm-lock.yaml to leverage Docker cache for dependencies
 COPY package.json pnpm-lock.yaml ./
@@ -27,6 +29,9 @@ WORKDIR /usr/src/app
 
 # Install pnpm globally in the final stage if needed
 RUN npm install -g pnpm
+
+RUN pnpm rebuild node-datachannel
+
 
 # Copy only the production dependencies and built files from the builder stage
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
