@@ -1,5 +1,5 @@
 # Stage 1: Build Stage
-FROM node:22-alpine AS builder
+FROM node:22-slim AS builder
 
 # Install required system dependencies for native modules
 RUN apk add --no-cache cmake make g++ python3
@@ -23,7 +23,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production Stage
-FROM node:22-alpine
+FROM node:22-slim
 
 # Install runtime dependencies for native modules
 RUN apk add --no-cache libc6-compat
