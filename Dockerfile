@@ -1,18 +1,11 @@
 # Stage 1: Build Stage
-FROM node:20-alpine AS builder
+FROM node:22 AS builder
 
 # Set the working directory
 WORKDIR /usr/src/app
 
 # Install pnpm globally
 RUN npm install -g pnpm
-
-# Install build tools for native modules
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    cmake
 
 # Copy package.json and pnpm-lock.yaml to leverage Docker cache for dependencies
 COPY package.json pnpm-lock.yaml ./
@@ -27,14 +20,10 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production Stage
-FROM node:20-alpine
+FROM node:22
 
 # Set the working directory
 WORKDIR /usr/src/app
-
-# Install runtime dependencies for native modules (if needed)
-RUN apk add --no-cache \
-    libstdc++
 
 # Copy only the production dependencies and built files from the builder stage
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
