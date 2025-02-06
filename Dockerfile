@@ -1,8 +1,9 @@
 # Stage 1: Build Stage
 FROM node:22-alpine AS builder
 
-# Install system dependencies required for compiling native modules
-RUN apk add --no-cache cmake make g++ python3
+# Install glibc, cmake, make, g++, and Python
+RUN apk add --no-cache \
+    libc6-compat cmake make g++ python3
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -13,10 +14,8 @@ RUN npm install -g pnpm
 # Copy package.json and pnpm-lock.yaml to leverage Docker cache for dependencies
 COPY package.json pnpm-lock.yaml ./
 
-# Install all dependencies (including node-datachannel with native compilation)
-RUN pnpm install --ignore-scripts && \
-    pnpm rebuild node-datachannel && \
-    pnpm exec node-gyp rebuild
+# Install all dependencies
+RUN pnpm install
 
 # Copy the rest of the application code to the working directory
 COPY . .
@@ -27,7 +26,7 @@ RUN npm run build
 # Stage 2: Production Stage
 FROM node:22-alpine
 
-# Install runtime dependencies for native modules
+# Install runtime dependencies
 RUN apk add --no-cache libc6-compat
 
 # Set the working directory
