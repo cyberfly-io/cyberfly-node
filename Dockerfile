@@ -1,17 +1,14 @@
 # Stage 1: Build Stage
-FROM node:22 AS builder
+FROM node:22-alpine AS builder
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install pnpm globally
-RUN npm install -g pnpm
 
-# Copy package.json and pnpm-lock.yaml to leverage Docker cache for dependencies
-COPY package.json pnpm-lock.yaml ./
+COPY package.json ./
 
 # Install all dependencies
-RUN pnpm install
+RUN npm install
 
 # Copy the rest of the application code to the working directory
 COPY . .
@@ -20,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production Stage
-FROM node:22
+FROM node:22-alpine
 
 # Set the working directory
 WORKDIR /usr/src/app
