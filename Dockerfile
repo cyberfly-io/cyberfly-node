@@ -1,5 +1,5 @@
 # Stage 1: Build Stage
-FROM node:22-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -20,13 +20,11 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production Stage
-FROM node:22-alpine
+FROM node:20-alpine
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install pnpm globally in the final stage if needed
-RUN npm install -g pnpm
 
 # Copy only the production dependencies and built files from the builder stage
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
