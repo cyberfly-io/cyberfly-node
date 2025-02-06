@@ -2,7 +2,7 @@
 FROM node:22-slim AS builder
 
 # Install required system dependencies for native modules
-RUN apk add --no-cache cmake make g++ python3
+RUN apt-get update && apt-get install -y cmake make g++ python3 && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -14,7 +14,7 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 
 # Install all dependencies (including native modules)
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the application code to the working directory
 COPY . .
@@ -26,13 +26,13 @@ RUN npm run build
 FROM node:22-slim
 
 # Install runtime dependencies for native modules
-RUN apk add --no-cache libc6-compat
+RUN apt-get update && apt-get install -y libc6 && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install pnpm globally in the final stage if needed
-RUN npm install -g pnpm
+# Copy pnpm from builder stage instead of reinstalling
+COPY --from=builder /usr/local/bin/pnpm /usr/local/bin/pnpm
 
 # Copy only the production dependencies and built files from the builder stage
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
