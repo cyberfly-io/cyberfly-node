@@ -7,6 +7,7 @@ WORKDIR /usr/src/app
 
 # Install pnpm globally
 RUN npm install -g pnpm
+RUN npm install -g tsup
 
 # Copy package.json and pnpm-lock.yaml to leverage Docker cache for dependencies
 COPY package.json pnpm-lock.yaml ./
@@ -24,6 +25,7 @@ FROM node:22-slim
 # Set the working directory
 WORKDIR /usr/src/app
 RUN npm install -g pnpm
+RUN npm install -g tsup
 
 # Copy compiled dependencies
 COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
