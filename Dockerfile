@@ -1,5 +1,5 @@
 # Stage 1: Build Stage
-FROM node:22-slim AS builder  # Using Debian-based image
+FROM node:22-slim AS builder
 
 # Install system dependencies required for native module compilation
 RUN apt-get update && apt-get install -y cmake make g++ python3
