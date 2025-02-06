@@ -5,7 +5,7 @@ import { genKeyPair} from '@kadena/cryptography-utils';
 import { createClient, Pact, createSignWithKeypair } from '@kadena/client';
 import pact from 'pact-lang-api'
 
-const kadenaUrl = 'https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact'
+const kadenaUrl = 'https://api.chainweb.com/chainweb/0.0/mainnet01/chain/1/pact'
 
 const client = createClient(kadenaUrl,)
 
@@ -77,7 +77,7 @@ const client = createClient(kadenaUrl,)
     withCapability('free.cyberfly_node.NEW_NODE')
   ])
   .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001})
-  .setNetworkId("testnet04")
+  .setNetworkId("mainnet01")
   .createTransaction();
   const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
   const signedTx:any = await signTransaction(utxn)
@@ -111,7 +111,7 @@ const client = createClient(kadenaUrl,)
       gasPrice: 0.0000001
     })
     // set networkId
-    .setNetworkId('testnet04')
+    .setNetworkId('mainnet01')
     // create transaction with hash
     .createTransaction();
     
@@ -137,7 +137,7 @@ const client = createClient(kadenaUrl,)
       gasPrice: 0.0000001
     })
     // set networkId
-    .setNetworkId('testnet04')
+    .setNetworkId('mainnet01')
     // create transaction with hash
     .createTransaction();
     
@@ -157,7 +157,7 @@ const client = createClient(kadenaUrl,)
       gasPrice: 0.0000001
     })
     // set networkId
-    .setNetworkId('testnet04')
+    .setNetworkId('mainnet01')
     // create transaction with hash
     .createTransaction();
 
@@ -184,7 +184,7 @@ const client = createClient(kadenaUrl,)
       withCapability("free.cyberfly_node.NODE_GUARD", peerId)
     ])
     .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001})
-    .setNetworkId("testnet04")
+    .setNetworkId("mainnet01")
     .createTransaction();
     const  signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
     const signedTx:any = await signTransaction(utxn)
