@@ -89,10 +89,9 @@ const client = createClient(kadenaUrl,)
 }
 
   export const addNodeToContract = async (peerId:string, multiaddr:string, account:string, pubkey:string, seckey:string)=>{
-    console.log(multiaddr)
   
     const nodeinfo:any = await getNodeInfo(peerId)
-    if(nodeinfo &&nodeinfo.result.status == "failure" && nodeinfo.result.error.message.includes("row not found")){
+    if(nodeinfo &&nodeinfo.result.status == "failure" && nodeinfo.result.error.message.includes("No value found")){
       await createNode(peerId, multiaddr, account, pubkey, seckey)
     }
     
