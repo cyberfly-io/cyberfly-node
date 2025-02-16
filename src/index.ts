@@ -679,7 +679,16 @@ app.post('/api/dial', async(req, res)=>{
     }
     })
 
-  
+  app.post('/api/pindb', async(req, res)=>{
+    const dbaddr =  req.body.dbaddr
+    if(dbaddr){
+      await pubsub.publish("pindb", fromString(JSON.stringify({dbaddr})))
+      await orbitdb.open(dbaddr, {entryStorage})
+    }
+    else{
+      res.json({"info":"dbaddr is required"})
+    }
+  })
 
 app.post("/api/dbinfo", async(req, res)=>{
   if(!req.body.dbaddr || !isValidAddress(req.body.dbaddr)){
@@ -697,12 +706,12 @@ app.post("/api/dbinfo", async(req, res)=>{
 })
 
 
-await pubsub.subscribe("dbupdate");
-console.log("Subscribed to dbupdate")
+await pubsub.subscribe("pindb");
+console.log("Subscribed to pindb")
 pubsub.addEventListener("message", async(message:any)=>{
   const { topic, data, from } = message.detail
 
-  if(topic=='dbupdate' && from.toString()!==libp2p.peerId.toString()){
+  if(topic=='pindb' && from.toString()!==libp2p.peerId.toString()){
     try{
     let dat = JSON.parse(toString(data))
     if(typeof dat == "string"){
