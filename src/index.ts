@@ -684,6 +684,7 @@ app.post('/api/dial', async(req, res)=>{
     if(dbaddr){
       await pubsub.publish("pindb", fromString(JSON.stringify({dbaddr})))
       await orbitdb.open(dbaddr, {entryStorage})
+      res.json({"info":"success"})
     }
     else{
       res.json({"info":"dbaddr is required"})
