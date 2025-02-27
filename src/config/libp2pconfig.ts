@@ -11,23 +11,17 @@ import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import { kadDHT } from "@libp2p/kad-dht";
 import { preSharedKey } from '@libp2p/pnet'
 
-
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
 let bsNodes = ["/dns4/node2.cyberfly.io/tcp/31001/p2p/12D3KooWSfGgUaeogSZuRPa4mhsAU41qJH5EpmwKg9wGVzUwFGth", 
   "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
 
 export const getLibp2pOptions:any = (ip:string, peerId:string)=> {
 
 let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
-const filePath = path.join(__dirname, "swarm.key")
 
-const swarmKey = fs.readFileSync(filePath, 'utf8')
+const swarmKey = `/key/swarm/psk/1.0.0/
+/base16/
+8463a7707bad09f63538d273aa769cbdd732e43b07f207d88faa323566168ad3
+`
 
 let scoreThresholds = {
 	gossipThreshold: -Infinity,

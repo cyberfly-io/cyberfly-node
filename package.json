@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsup src/index.ts",
-    "dev": "tsup src/index.ts --watch --onSuccess 'cp src/config/swarm.key dist/ && node dist/index.js'"
+    "dev": "tsup src/index.ts --watch --onSuccess 'node dist/index.js'"
   },
   "author": "",
   "license": "ISC",

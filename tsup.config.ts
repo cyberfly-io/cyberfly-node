@@ -8,5 +8,5 @@ export default defineConfig({
   clean: true, // Clean output folder before build
   sourcemap: false, // Disable sourcemaps for production
   minify: true, // Minify the output
-  onSuccess: 'cp src/config/swarm.key dist/', // Command to copy files post-build
+  //onSuccess: 'cp src/config/swarm.key dist/', // Command to copy files post-build
 });
