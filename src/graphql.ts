@@ -1,7 +1,7 @@
 import { buildSchema } from 'graphql';
 import { createClient } from 'redis';
 import CyberflyAccessController from './cyberfly-access-controller.js'
-import { RedisJSONFilter, RedisSortedSetFilter, RedisStreamFilter, RedisTimeSeriesFilter } from './filters.js';
+import { RedisJSONFilter, RedisSortedSetFilter, RedisStreamFilter, RedisTimeSeriesFilter, RedisGeospatialFilter } from './filters.js';
 import { updateData, nodeConfig, discovered, entryStorage } from './custom-entry-storage.js';
 import { removeDuplicateConnections, extractFields, getDevice, verify } from './config/utils.js';
 import si from 'systeminformation'
@@ -18,7 +18,6 @@ redis.connect();
 export const schema = buildSchema(`
  scalar JSON
  scalar Timestamp
-
 
 type Data {
   _id: String!
@@ -155,8 +154,6 @@ type IPLocation {
   query: String
 }
 
-
-
 type Device {
   status: String
   device_id: ID
@@ -212,6 +209,15 @@ type CPU {
   message: JSON!
   }
 
+type GeoSearchResult {
+  member: String!
+}
+
+type GeoPosition {
+  longitude: Float!
+  latitude: Float!
+}
+
 type Query {
   sysInfo: SystemInfo
   dbInfo(dbaddr: String!) : DBInfo
@@ -223,14 +229,11 @@ type Query {
     ip: String
     ): IPLocation
 
-
   readJSONDB(
     dbaddr: String!, 
     filters: JSON, 
     options: FilterOptionsInput
   ): [Data]
-
-
 
   readStream(
   dbaddr: String!,
@@ -256,6 +259,43 @@ type Query {
   toTimestamp: String,
   options: TimeSeriesOptions
   ):[TimeSeries]
+
+  getDistance(
+    dbaddr: String!,
+    locationLabel: String!,
+    member1: String!,
+    member2: String!,
+    unit: String!
+  ): Float
+
+  getPosition(
+    dbaddr: String!,
+    locationLabel: String!,
+    member: String!
+  ): [GeoPosition]
+
+  getGeoHash(
+    dbaddr: String!,
+    locationLabel: String!,
+    member: String!
+  ): [String]
+
+  geoSearch(
+    dbaddr: String!
+    locationLabel: String!
+    longitude: Float!
+    latitude: Float!
+    radius: Float!
+    unit: String!
+  ): [GeoSearchResult]
+
+    geoSearchWith(
+    dbaddr: String!
+    locationLabel: String!
+    member: String!
+    radius: Float!
+    unit: String!
+  ): [GeoSearchResult]
 }
   # Types for the schema
 type DatabaseAddress {
@@ -273,8 +313,6 @@ union CreateDatabaseResult = DatabaseAddress | ErrorResponse
 input DatabaseInfo {
   name: String!
 }
-
-
 
 input CreateDatabaseInput {
   dbinfo: DatabaseInfo!
@@ -309,7 +347,6 @@ type Mutation {
   updateData(input: UpdateDataInput!): UpdateDataResponse!
 }
   `);
-
 
 const orbitdb = nodeConfig.orbitdb
 const libp2p = orbitdb.ipfs.libp2p
@@ -366,6 +403,138 @@ export const resolvers = {
    const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
    const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
    return result
+  },
+  getDistance: async (params:any) => {
+    try {
+      const { dbaddr, locationLabel, member1, member2, unit } = params;
+
+      // Validate required parameters
+      if (!dbaddr || !locationLabel || !member1 || !member2 || !unit) {
+        throw new Error('Missing required parameters');
+      }
+
+      const db = await orbitdb.open(dbaddr, { entryStorage });
+      const geoFilters = new RedisGeospatialFilter(redis);
+      const result = await geoFilters.getDistance(dbaddr, locationLabel, member1, member2, unit);
+      return result;
+    } catch (error) {
+      console.error('Error fetching distance:', error);
+      throw new Error('Failed to fetch distance');
+    }
+  },
+  getPosition: async (params:any) => {
+    try {
+      const { dbaddr, locationLabel, member } = params;
+
+      // Validate required parameters
+      if (!dbaddr || !locationLabel || !member) {
+        throw new Error('Missing required parameters');
+      }
+
+      const db = await orbitdb.open(dbaddr, { entryStorage });
+      const geoFilters = new RedisGeospatialFilter(redis);
+      const result = await geoFilters.getPosition(dbaddr, locationLabel, member);
+      
+      // Transform the result to match the GeoPosition type
+      return result.map((pos: any) => ({
+        longitude: parseFloat(pos.longitude),
+        latitude: parseFloat(pos.latitude)
+      }));
+    } catch (error) {
+      console.error('Error fetching position:', error);
+      throw new Error('Failed to fetch position');
+    }
+  },
+  getGeoHash: async (params:any) => {
+    try {
+      const { dbaddr, locationLabel, member } = params;
+
+      // Validate required parameters
+      if (!dbaddr || !locationLabel || !member) {
+        throw new Error('Missing required parameters');
+      }
+
+      const db = await orbitdb.open(dbaddr, { entryStorage });
+      const geoFilters = new RedisGeospatialFilter(redis);
+      const result = await geoFilters.getGeoHash(dbaddr, locationLabel, member);
+      return result;
+    } catch (error) {
+      console.error('Error fetching geohash:', error);
+      throw new Error('Failed to fetch geohash');
+    }
+  },
+  geoSearch: async (params: any) => {
+    try {
+      const { dbaddr, locationLabel, longitude, latitude, radius, unit } = params;
+
+      // Validate required parameters
+      if (!dbaddr || !locationLabel || longitude === undefined || 
+          latitude === undefined || radius === undefined || !unit) {
+        throw new Error('Missing required parameters');
+      }
+
+      // Validate unit (m, km, mi, ft)
+      const validUnits = ['m', 'km', 'mi', 'ft'];
+      if (!validUnits.includes(unit)) {
+        throw new Error('Invalid unit. Must be one of: m, km, mi, ft');
+      }
+
+      const db = await orbitdb.open(dbaddr, { entryStorage });
+      const geoFilters = new RedisGeospatialFilter(redis);
+      
+      const results = await geoFilters.geoSearch(
+        dbaddr,
+        locationLabel,
+        longitude,
+        latitude,
+        radius,
+        unit
+      );
+
+
+      // Transform string array to array of objects
+      return results.map((member: string) => ({
+        member
+      }));
+    } catch (error) {
+      console.error('Error performing geo search:', error);
+      throw new Error('Failed to perform geo search');
+    }
+  },
+  geoSearchWith: async (params: any) => {
+    try {
+      const { dbaddr, locationLabel, member, radius, unit } = params;
+
+      // Validate required parameters
+      if (!dbaddr || !locationLabel || !member || radius === undefined || !unit) {
+        throw new Error('Missing required parameters');
+      }
+
+      // Validate unit (m, km, mi, ft)
+      const validUnits = ['m', 'km', 'mi', 'ft'];
+      if (!validUnits.includes(unit)) {
+        throw new Error('Invalid unit. Must be one of: m, km, mi, ft');
+      }
+
+      const db = await orbitdb.open(dbaddr, { entryStorage });
+      const geoFilters = new RedisGeospatialFilter(redis);
+      
+      const results = await geoFilters.geoSearchWith(
+        dbaddr,
+        locationLabel,
+        member,
+        radius,
+        unit
+      );
+
+      // Transform string array to array of objects
+      return results.map((member: string) => ({
+        member
+      }));
+    } catch (error) {
+      console.error('Error performing geo search:', error);
+      throw new Error('Failed to perform geo search');
+    }
   },
   nodeInfo: async ()=>{
     const peerId = libp2p.peerId
@@ -504,4 +673,4 @@ export const resolvers = {
       dbaddr: updatedDbaddr
     };
   }
-  };
+};

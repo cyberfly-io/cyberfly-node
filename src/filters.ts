@@ -221,3 +221,63 @@ export class RedisTimeSeriesFilter {
 
 
 }
+
+export class RedisGeospatialFilter {
+  redis: any;
+  
+  constructor(redisClient: any) {
+    this.redis = redisClient;
+  }
+
+  /**
+   * Get the distance between two members
+   * @param {string} key - Redis key
+   * @param {string} member1 - First member
+   * @param {string} member2 - Second member
+   * @param {string} unit - Unit of measurement (m, km, mi, ft)
+   */
+  async getDistance(dbaddr: string,key: string, member1: string, member2: string, unit: string) {
+    return await this.redis.geoDist(`${dbaddr}:${key}`, member1, member2, unit);
+  }
+
+  /**
+   * Get the geospatial position of a member
+   * @param {string} key - Redis key
+   * @param {string} member - Member name
+   */
+  async getPosition(dbaddr: string,key: string, member: string) {
+    const result = await this.redis.geoPos(`${dbaddr}:${key}`, member);
+    return result
+  }
+
+  /**
+   * Get the geohash of a member
+   * @param {string} key - Redis key
+   * @param {string} member - Member name
+   */
+  async getGeoHash(dbaddr: string,key: string, member: string) {
+    return await this.redis.geoHash(`${dbaddr}:${key}`, member);
+  }
+
+  async geoSearch(dbaddr:string,key:string, longitude:any, latitude:any, radius:number, unit:string ){
+  return await this.redis.geoSearch(`${dbaddr}:${key}`,
+    {
+      longitude: longitude,
+      latitude: latitude,
+    },
+    { radius: radius,
+      unit: unit,
+    }
+  )
+  }
+
+
+  async geoSearchWith(dbaddr:string,key:string, member:string, radius:number, unit:string ){
+    const result = await this.redis.geoSearch(`${dbaddr}:${key}`,member,
+      { radius: radius,
+        unit: unit,
+      }
+    )
+    return result
+    }
+}
