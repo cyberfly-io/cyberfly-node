@@ -635,12 +635,12 @@ export const resolvers = {
         break;
 
       case 'geo':
-        const requiredGeoFields = ["latitude", "longitude", "member"];
+        const requiredGeoFields = ["latitude", "longitude", "member", "locationLabel"];
         const hasAllGeoFields = requiredGeoFields.every(field => 
           field in data
         );
         if (!hasAllGeoFields) {
-          throw new Error("data should contains longitude, latitude, member");
+          throw new Error("data should contains longitude, latitude, member, locationLabel");
         }
         break;
 

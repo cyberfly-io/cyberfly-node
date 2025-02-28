@@ -24,7 +24,7 @@ const postdata = async (i)=>{
 
 const randomCoordinates = generateRandomCoordinates();
 const data = {locationLabel:"mylands", longitude:randomCoordinates.longitude,
-               latitude:randomCoordinates.latitude, member:"abu house2"
+               latitude:randomCoordinates.latitude, member:"abu house"
 }
 
 
@@ -46,7 +46,7 @@ const local = "http://localhost:31003/api/data"
 const remote2 = "https://node2.cyberfly.io/api/data"
 
 console.log(body)
-const d = await fetch(local, {method:'POST', body:JSON.stringify(body), headers: {
+const d = await fetch(remote, {method:'POST', body:JSON.stringify(body), headers: {
     'Content-Type': 'application/json',
     'Accept':'application/json'
   },});
