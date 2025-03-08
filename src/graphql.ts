@@ -7,12 +7,15 @@ import { removeDuplicateConnections, extractFields, getDevice, verify } from './
 import si from 'systeminformation'
 import { VERSION } from './version.js';
 import { isPrivate } from '@libp2p/utils/multiaddr/is-private'
+import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
+import { useAccessController  } from '@orbitdb/core'
 
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
 const redis_host = `${redis_ip}:${redis_port}`
 let redis =  createClient({url:`redis://${redis_host}`});
 const account = process.env.KADENA_ACCOUNT
+useAccessController(CyberflyChatAccessController)
 
 redis.connect();
 export const schema = buildSchema(`
@@ -242,6 +245,12 @@ type Query {
   to: String
   ):[Message]
 
+  readChatHistory(
+  streamName: String!,
+  from: String,
+  to: String
+  ):[Message]
+
   readLastNStreams(
   dbaddr: String!,
   streamName: String!,
@@ -320,6 +329,10 @@ input CreateDatabaseInput {
   pubkey: String!
 }
 
+input CreateChatDatabaseInput {
+  stream: String!
+}
+
  enum ObjectType {
     stream
     geo
@@ -344,6 +357,7 @@ input CreateDatabaseInput {
 
 type Mutation {
   createDatabase(input: CreateDatabaseInput!): CreateDatabaseResult!
+  createChatDatabase(input: CreateChatDatabaseInput!): CreateDatabaseResult!
   updateData(input: UpdateDataInput!): UpdateDataResponse!
 }
   `);
@@ -376,6 +390,20 @@ export const resolvers = {
     catch(e){
       console.error("Error fetching stream" ,e)
       throw new Error('Failed to fetch streams');
+
+    }
+  },
+  readChatHistory: async (params:any)=>{
+    try{
+    const db = await orbitdb.open(`cyberfly-chat-${params.streamName}`, {type:"documents",AccessController:CyberflyChatAccessController(),entryStorage}) 
+    console.log(db.address)
+    const streamFilters = new RedisStreamFilter(redis)
+    const result = await streamFilters.getEntries(db.address, params.streamName, params.from, params.to)
+    return result
+    }
+    catch(e){
+      console.error("Error fetching chat history" ,e)
+      throw new Error('Failed to fetch chat history');
 
     }
   },
@@ -610,6 +638,22 @@ export const resolvers = {
       } else {
         return { __typename: 'ErrorResponse', info: 'Verification failed' };
       }
+    } catch (e) {
+      console.log(e)
+      return { __typename: 'ErrorResponse', info: 'Something went wrong' };
+    }
+  },
+  createChatDatabase: async ({input}) => {
+    const { stream } = input;
+
+    if (!stream) {
+      return { __typename: 'ErrorResponse', info: 'stream is required' };
+    }
+
+    try {
+        const db = await orbitdb.open(`cyberfly-chat-${stream}`, {type:"documents", AccessController:CyberflyChatAccessController(), entryStorage})
+        return { __typename: 'DatabaseAddress', dbaddr: db.address };
+    
     } catch (e) {
       console.log(e)
       return { __typename: 'ErrorResponse', info: 'Something went wrong' };

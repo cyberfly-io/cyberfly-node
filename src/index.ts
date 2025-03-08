@@ -600,6 +600,20 @@ app.post("/api/createdb", async(req, res)=>{
   }
 })
 
+app.post("/api/createchatdb", async(req, res)=>{
+  try{
+      if(req.body.stream == null){
+        res.json({info:"stream is required"})
+      }
+      const address = await orbitdb.open(`cyberfly-chat-${req.body.stream}`, {type:"documents", AccessController:CyberflyChatAccessController(),entryStorage})
+      res.json({dbaddr:address})
+  }
+  catch(e){
+    console.log(e)
+    res.json({info:"something went wrong"})
+  }
+})
+
 app.post("/api/getdata", async(req, res)=>{
   if(req.body.dbaddr==null || req.body.id==null ){
     res.json({"error":"dbaddr and id are required"})
@@ -808,7 +822,7 @@ io.on("connection", (socket) => {
     const {receiver,stream, message} = data
     const msg = JSON.parse(message)
     const from_account = msg.data['fromAccount']
-    const public_key = from_account.split(':')[1]
+    const public_key = from_account.slice(2)
     if(stream===getStreamName(public_key, receiver) && public_key===msg.publicKey && verifyMsg(msg)){
       const db = await orbitdb.open(`cyberfly-chat-${stream}`, {type:"documents", AccessController:CyberflyChatAccessController(),entryStorage})
       await db.put({_id:nanoid(), data:msg.data, sig:msg.sig,publicKey:msg.publicKey, timestamp: Date.now(), objectType:"stream"})
