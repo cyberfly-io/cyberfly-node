@@ -803,15 +803,16 @@ io.on("connection", (socket) => {
     }
   })
 
-  socket.on("send message", async(receiver: string, stream:string ,message: string)=>{
+  socket.on("send message", async(data)=>{
     try{
+    const {receiver,stream, message} = data
     const msg = JSON.parse(message)
     const from_account = msg.data['fromAccount']
     const public_key = from_account.split(':')[1]
     if(stream===getStreamName(public_key, receiver) && public_key===msg.publicKey && verifyMsg(msg)){
       const db = await orbitdb.open(`cyberfly-chat-${stream}`, {type:"documents", AccessController:CyberflyChatAccessController(),entryStorage})
       await db.put({_id:nanoid(), data:msg.data, sig:msg.sig,publicKey:msg.publicKey, timestamp: Date.now(), objectType:"stream"})
-      await libp2p.publish(receiver, JSON.stringify(msg))
+      await pubsub.publish(receiver, fromString(JSON.stringify(msg)))
     }
     }
 catch(err){console.log(err)}
