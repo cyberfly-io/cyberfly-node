@@ -216,7 +216,7 @@ const client = createClient(kadenaUrl,)
     const claimable = await isClaimable(peerId)
    if(claimable){
     const utxn = Pact.builder.execution(`(free.cyberfly_node.claim-reward "${account}" "${peerId}")`)
-    .addSigner(account.slice(2), (withCapability)=>[
+    .addSigner(pubkey, (withCapability)=>[
       withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
       withCapability('free.cyberfly_node.NODE_GUARD', peerId),
     ])
