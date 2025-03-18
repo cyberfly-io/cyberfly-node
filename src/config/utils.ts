@@ -220,6 +220,7 @@ const client = createClient(kadenaUrl,)
       withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
       withCapability('free.cyberfly_node.NODE_GUARD', peerId),
     ])
+    .addData("note","Auto claim node reward")
     .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001,ttl: 28000})
     .setNetworkId("mainnet01")
     .createTransaction();
