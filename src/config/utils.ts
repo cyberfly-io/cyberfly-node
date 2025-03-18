@@ -95,7 +95,7 @@ const client = createClient(kadenaUrl,)
       await createNode(peerId, multiaddr, account, pubkey, seckey)
     }
     
-    setInterval(()=>{checkNodeStatus(peerId, multiaddr, pubkey, seckey)}, 100000)
+    setInterval(()=>{checkNodeStatus(peerId, multiaddr, pubkey, seckey, account)}, 600000)
 
   }
 
@@ -196,7 +196,7 @@ const client = createClient(kadenaUrl,)
      
   }
 
-  const checkNodeStatus = async (peerId:string, multiaddr:string, pubkey:string, seckey:string)=>{
+  const checkNodeStatus = async (peerId:string, multiaddr:string, pubkey:string, seckey:string, account:string)=>{
     try{
 
      const result:any = await getNodeInfo(peerId)
@@ -205,10 +205,58 @@ const client = createClient(kadenaUrl,)
          activateNode(peerId, multiaddr, pubkey, seckey)
       }
      }
+     await claimReward(account, peerId, pubkey, seckey)
     }
     catch(e){
      console.log(e)
     }
+  }
+
+  const claimReward = async(account:string, peerId:string, pubkey:string, seckey:string)=>{
+    const claimable = await isClaimable(peerId)
+   if(claimable){
+    const utxn = Pact.builder.execution(`(free.cyberfly_node.claim-reward "${account}" "${peerId}")`)
+    .addSigner(account.slice(2), (withCapability)=>[
+      withCapability('free.cyberfly-account-gas-station.GAS_PAYER', 'cyberfly-account-gas', { int: 1 }, 1.0),
+      withCapability('free.cyberfly_node.NODE_GUARD', peerId),
+    ])
+    .setMeta({chainId:"1",senderAccount:"cyberfly-account-gas", gasLimit:2000, gasPrice:0.0000001,ttl: 28000})
+    .setNetworkId("mainnet01")
+    .createTransaction();
+    const signTransaction = createSignWithKeypair({publicKey:pubkey, secretKey:seckey})
+    const signedTx:any = await signTransaction(utxn)
+    const res = await client.local(signedTx)
+    if(res.result.status=="success"){
+      const txn = await client.submit(signedTx)
+      console.log("Claim reward:",txn)
+    }
+   }
+   
+  }
+
+  const isClaimable = async(peerId:string)=>{
+    const unsignedTransaction = Pact.builder
+    .execution(`(free.cyberfly_node.calculate-days-and-reward "${peerId}")`)
+    .setMeta({
+      chainId: '1',
+      senderAccount: 'cyberfly-account-gas',
+      gasLimit: 2000,
+      gasPrice: 0.0000001
+    })
+    // set networkId
+    .setNetworkId('mainnet01')
+    // create transaction with hash
+    .createTransaction();
+    
+  // Send it or local it
+  try{
+    const res = await client.local(unsignedTransaction, { signatureVerification:false, preflight:false});
+    return res.result.status=="success" && res.result.data?.reward > 0
+
+  }
+  catch(e){
+  return false
+  }
   }
 
   export function extractFields(array:any, field1:any, field2:any) {
