@@ -669,6 +669,7 @@ app.post('/api/dial', async(req, res)=>{
     res.json({"info":"success"})
    }
    catch(e){
+    console.log(e.stack)
     res.json({"info":e.toString()})
    }
   }
