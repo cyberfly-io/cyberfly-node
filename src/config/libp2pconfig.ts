@@ -10,6 +10,7 @@ import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import { kadDHT } from "@libp2p/kad-dht";
 import { preSharedKey } from '@libp2p/pnet'
+import { ping } from '@libp2p/ping'
 
 let bsNodes = ["/dns4/node2.cyberfly.io/tcp/31001/p2p/12D3KooWSfGgUaeogSZuRPa4mhsAU41qJH5EpmwKg9wGVzUwFGth", 
   "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
@@ -74,6 +75,7 @@ let scoreThresholds = {
       dht: kadDHT({
         clientMode: false,
       }),
+      ping: ping(),
       circuitRelay: circuitRelayServer({
         reservations:{
           maxReservations: 500
