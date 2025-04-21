@@ -46,7 +46,7 @@ let scoreThresholds = {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/ws',
     ],
-    appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
+    appendAnnounceMultiaddrs: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
     connectionManager: {
             maxConnections: 1500,
