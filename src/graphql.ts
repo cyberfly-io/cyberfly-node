@@ -9,6 +9,7 @@ import { VERSION } from './version.js';
 import { isPrivate } from '@libp2p/utils/multiaddr/is-private'
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 import { useAccessController  } from '@orbitdb/core'
+import { listDirectories } from './utils.js';
 
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
@@ -221,8 +222,10 @@ type GeoPosition {
   latitude: Float!
 }
 
+
 type Query {
   sysInfo: SystemInfo
+  getAllDB: [String!]!
   dbInfo(dbaddr: String!) : DBInfo
 
   nodeInfo: NodeInfo
@@ -368,6 +371,15 @@ export const resolvers = {
   dbInfo: async(params:any)=>{
     const db = await orbitdb.open(params.dbaddr, {entryStorage})
   return {dbaddr:db.address, name:db.name};
+  },
+  getAllDB: async () => {
+    try {
+     const dbaddrs = await listDirectories('./data/orbitdb')
+     return dbaddrs
+    } catch (error) {
+      console.error('Error fetching all items:', error);
+      throw new Error('Failed to fetch items');
+    }
   }
   ,
   readJSONDB: async (params:any) => {
@@ -420,7 +432,6 @@ export const resolvers = {
     }
   },
   readLastNStreams: async (params:any)=>{
-
     const db = await orbitdb.open(params.dbaddr,{entryStorage}) 
     const streamFilters = new RedisStreamFilter(redis)
     const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName,params.count)

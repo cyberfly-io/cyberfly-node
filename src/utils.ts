@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { verify } from './config/utils.js';
 
 export function isFlatJson(obj:any) {
@@ -44,3 +45,33 @@ export const getStreamName = (senderKey: string, receiverKey: string)=>{
     const sortedJson = toSortJson(msg)
     return verify(sortedJson, data.sig, data.publicKey)
   }
+
+/**
+ * Lists all directories in the specified path
+ * @param {string} directoryPath - The path to list directories from
+ * @returns {Promise<string[]>} - Array of directory names
+ */
+export function listDirectories(directoryPath) {
+  return new Promise((resolve, reject) => {
+    // Check if the provided path exists
+    fs.access(directoryPath, fs.constants.F_OK, (err) => {
+      if (err) {
+        return reject(`Directory path does not exist: ${directoryPath}`);
+      }
+      
+      // Read the directory contents
+      fs.readdir(directoryPath, { withFileTypes: true }, (err, files) => {
+        if (err) {
+          return reject(`Error reading directory: ${err.message}`);
+        }
+        
+        // Filter only directories
+        const directories = files
+          .filter(dirent => dirent.isDirectory())
+          .map(dirent => dirent.name);
+        
+        resolve(directories);
+      });
+    });
+  });
+}
