@@ -368,364 +368,335 @@ type Mutation {
 const orbitdb = nodeConfig.orbitdb
 const libp2p = orbitdb.ipfs.libp2p
 export const resolvers = {
-  dbInfo: async(params:any)=>{
-    const db = await orbitdb.open(params.dbaddr, {entryStorage})
-  return {dbaddr:db.address, name:db.name};
+  dbInfo: async (params: any) => {
+    try {
+      const db = await orbitdb.open(params.dbaddr, { entryStorage });
+      return { dbaddr: db.address, name: db.name };
+    } catch (error) {
+      console.error('Error in dbInfo:', error);
+      throw new Error('Failed to fetch database info');
+    }
   },
   getAllDB: async () => {
     try {
-     const dbaddrs = await listDirectories('./data/orbitdb')
-     return dbaddrs
+      const dbaddrs = await listDirectories('./data/orbitdb');
+      return dbaddrs;
     } catch (error) {
-      console.error('Error fetching all items:', error);
+      console.error('Error in getAllDB:', error);
       throw new Error('Failed to fetch items');
     }
-  }
-  ,
-  readJSONDB: async (params:any) => {
+  },
+  readJSONDB: async (params: any) => {
     try {
-      const db = await orbitdb.open(params.dbaddr, {entryStorage}) //ensure db is open and sync
-      const filters = new RedisJSONFilter(redis)
-      return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options)
+      const db = await orbitdb.open(params.dbaddr, { entryStorage });
+      const filters = new RedisJSONFilter(redis);
+      return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options);
     } catch (error) {
-      console.error('Error fetching all items:', error);
+      console.error('Error in readJSONDB:', error);
       throw new Error('Failed to fetch items');
     }
   },
-  readStream: async (params:any)=>{
-    try{
-      const db = await orbitdb.open(params.dbaddr, {entryStorage}) 
-    const streamFilters = new RedisStreamFilter(redis)
-    const result = await streamFilters.getEntries(params.dbaddr, params.streamName, params.from, params.to)
-    return result
-    }
-    catch(e){
-      console.error("Error fetching stream" ,e)
+  readStream: async (params: any) => {
+    try {
+      const db = await orbitdb.open(params.dbaddr, { entryStorage });
+      const streamFilters = new RedisStreamFilter(redis);
+      const result = await streamFilters.getEntries(params.dbaddr, params.streamName, params.from, params.to);
+      return result;
+    } catch (error) {
+      console.error('Error in readStream:', error);
       throw new Error('Failed to fetch streams');
-
     }
   },
-  readChatHistory: async (params:any)=>{
-    try{
-    const db = await orbitdb.open(`cyberfly-chat-${params.streamName}`, {type:"documents",AccessController:CyberflyChatAccessController(),entryStorage}) 
-    console.log(db.address)
-    const streamFilters = new RedisStreamFilter(redis)
-    const result = await streamFilters.getEntries(db.address, params.streamName, params.from, params.to)
-    return result
-    }
-    catch(e){
-      console.error("Error fetching chat history" ,e)
+  readChatHistory: async (params: any) => {
+    try {
+      const db = await orbitdb.open(`cyberfly-chat-${params.streamName}`, { type: "documents", AccessController: CyberflyChatAccessController(), entryStorage });
+      console.log(db.address);
+      const streamFilters = new RedisStreamFilter(redis);
+      const result = await streamFilters.getEntries(db.address, params.streamName, params.from, params.to);
+      return result;
+    } catch (error) {
+      console.error('Error in readChatHistory:', error);
       throw new Error('Failed to fetch chat history');
-
     }
   },
-  readSortedSet: async (params:any)=>{
-    try{
-      const db = await orbitdb.open(params.dbaddr, {entryStorage}) 
-    const sortedSetFilters = new RedisSortedSetFilter(redis)
-    const result = await sortedSetFilters.getEntries(params.dbaddr, params.min, params.max)
-    return result
-    }
-    catch(e){
-      console.error("Error fetching sorted set" ,e)
+  readSortedSet: async (params: any) => {
+    try {
+      const db = await orbitdb.open(params.dbaddr, { entryStorage });
+      const sortedSetFilters = new RedisSortedSetFilter(redis);
+      const result = await sortedSetFilters.getEntries(params.dbaddr, params.min, params.max);
+      return result;
+    } catch (error) {
+      console.error('Error in readSortedSet:', error);
       throw new Error('Failed to fetch sorted set');
     }
   },
-  readLastNStreams: async (params:any)=>{
-    const db = await orbitdb.open(params.dbaddr,{entryStorage}) 
-    const streamFilters = new RedisStreamFilter(redis)
-    const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName,params.count)
-    return result
+  readLastNStreams: async (params: any) => {
+    try {
+      const db = await orbitdb.open(params.dbaddr, { entryStorage });
+      const streamFilters = new RedisStreamFilter(redis);
+      const result = await streamFilters.getLastNEntries(params.dbaddr, params.streamName, params.count);
+      return result;
+    } catch (error) {
+      console.error('Error in readLastNStreams:', error);
+      throw new Error('Failed to fetch last N streams');
+    }
   },
-  readTimeSeries : async(params:any)=>{
-    const db = await orbitdb.open(params.dbaddr, {entryStorage}) 
-   const timeSeriesFilter = new RedisTimeSeriesFilter(redis)
-   const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options)
-   return result
+  readTimeSeries: async (params: any) => {
+    try {
+      const db = await orbitdb.open(params.dbaddr, { entryStorage });
+      const timeSeriesFilter = new RedisTimeSeriesFilter(redis);
+      const result = await timeSeriesFilter.query(params.dbaddr, params.fromTimestamp, params.toTimestamp, params.options);
+      return result;
+    } catch (error) {
+      console.error('Error in readTimeSeries:', error);
+      throw new Error('Failed to fetch time series');
+    }
   },
-  getDistance: async (params:any) => {
+  getDistance: async (params: any) => {
     try {
       const { dbaddr, locationLabel, member1, member2, unit } = params;
-
-      // Validate required parameters
       if (!dbaddr || !locationLabel || !member1 || !member2 || !unit) {
         throw new Error('Missing required parameters');
       }
-
       const db = await orbitdb.open(dbaddr, { entryStorage });
       const geoFilters = new RedisGeospatialFilter(redis);
       const result = await geoFilters.getDistance(dbaddr, locationLabel, member1, member2, unit);
       return result;
     } catch (error) {
-      console.error('Error fetching distance:', error);
+      console.error('Error in getDistance:', error);
       throw new Error('Failed to fetch distance');
     }
   },
-  getPosition: async (params:any) => {
+  getPosition: async (params: any) => {
     try {
       const { dbaddr, locationLabel, member } = params;
-
-      // Validate required parameters
       if (!dbaddr || !locationLabel || !member) {
         throw new Error('Missing required parameters');
       }
-
       const db = await orbitdb.open(dbaddr, { entryStorage });
       const geoFilters = new RedisGeospatialFilter(redis);
       const result = await geoFilters.getPosition(dbaddr, locationLabel, member);
-      
-      // Transform the result to match the GeoPosition type
       return result.map((pos: any) => ({
         longitude: parseFloat(pos.longitude),
         latitude: parseFloat(pos.latitude)
       }));
     } catch (error) {
-      console.error('Error fetching position:', error);
+      console.error('Error in getPosition:', error);
       throw new Error('Failed to fetch position');
     }
   },
-  getGeoHash: async (params:any) => {
+  getGeoHash: async (params: any) => {
     try {
       const { dbaddr, locationLabel, member } = params;
-
-      // Validate required parameters
       if (!dbaddr || !locationLabel || !member) {
         throw new Error('Missing required parameters');
       }
-
       const db = await orbitdb.open(dbaddr, { entryStorage });
       const geoFilters = new RedisGeospatialFilter(redis);
       const result = await geoFilters.getGeoHash(dbaddr, locationLabel, member);
       return result;
     } catch (error) {
-      console.error('Error fetching geohash:', error);
+      console.error('Error in getGeoHash:', error);
       throw new Error('Failed to fetch geohash');
     }
   },
   geoSearch: async (params: any) => {
     try {
       const { dbaddr, locationLabel, longitude, latitude, radius, unit } = params;
-
-      // Validate required parameters
-      if (!dbaddr || !locationLabel || longitude === undefined || 
-          latitude === undefined || radius === undefined || !unit) {
+      if (!dbaddr || !locationLabel || longitude === undefined || latitude === undefined || radius === undefined || !unit) {
         throw new Error('Missing required parameters');
       }
-
-      // Validate unit (m, km, mi, ft)
       const validUnits = ['m', 'km', 'mi', 'ft'];
       if (!validUnits.includes(unit)) {
         throw new Error('Invalid unit. Must be one of: m, km, mi, ft');
       }
-
       const db = await orbitdb.open(dbaddr, { entryStorage });
       const geoFilters = new RedisGeospatialFilter(redis);
-      
-      const results = await geoFilters.geoSearch(
-        dbaddr,
-        locationLabel,
-        longitude,
-        latitude,
-        radius,
-        unit
-      );
-
-
-      // Transform string array to array of objects
-      return results.map((member: string) => ({
-        member
-      }));
+      const results = await geoFilters.geoSearch(dbaddr, locationLabel, longitude, latitude, radius, unit);
+      return results.map((member: string) => ({ member }));
     } catch (error) {
-      console.error('Error performing geo search:', error);
+      console.error('Error in geoSearch:', error);
       throw new Error('Failed to perform geo search');
     }
   },
   geoSearchWith: async (params: any) => {
     try {
       const { dbaddr, locationLabel, member, radius, unit } = params;
-
-      // Validate required parameters
       if (!dbaddr || !locationLabel || !member || radius === undefined || !unit) {
         throw new Error('Missing required parameters');
       }
-
-      // Validate unit (m, km, mi, ft)
       const validUnits = ['m', 'km', 'mi', 'ft'];
       if (!validUnits.includes(unit)) {
         throw new Error('Invalid unit. Must be one of: m, km, mi, ft');
       }
-
       const db = await orbitdb.open(dbaddr, { entryStorage });
       const geoFilters = new RedisGeospatialFilter(redis);
-      
-      const results = await geoFilters.geoSearchWith(
-        dbaddr,
-        locationLabel,
-        member,
-        radius,
-        unit
-      );
-
-      // Transform string array to array of objects
-      return results.map((member: string) => ({
-        member
-      }));
+      const results = await geoFilters.geoSearchWith(dbaddr, locationLabel, member, radius, unit);
+      return results.map((member: string) => ({ member }));
     } catch (error) {
-      console.error('Error performing geo search:', error);
+      console.error('Error in geoSearchWith:', error);
       throw new Error('Failed to perform geo search');
     }
   },
-  nodeInfo: async ()=>{
-    const peerId = libp2p.peerId
-    const peers = libp2p.getPeers()
-    const conn = libp2p.getConnections()
-    let maddr
-    libp2p.getMultiaddrs().forEach((addr:any) => {
-      if(!isPrivate(addr) && addr.toString().includes('31001')){
-        console.log(addr.toString());
-        maddr = addr.toString()
-      }
-    
-    });
-    let con = conn.filter(obj => obj.status==="open")
-    const filteredConn = removeDuplicateConnections(con);
-    const info = {peerId:peerId, health:"ok", version:VERSION, 
-    multiAddr: maddr, 
-    publicKey:nodeConfig.kadenaPub,discovered:discovered.length, 
-    connected:filteredConn.length, peers:peers, account:account, 
-    connections:extractFields(filteredConn, 'remotePeer', 'remoteAddr')
-  }
-  return info
-  },
-  getIPLocation: async (input:any)=>{
-    try{
-      if(input.ip){
-        const loc = await fetch(`http://ip-api.com/json/${input.ip}`)
-      return await loc.json()
-      }
-      else{
-        const loc = await fetch(`http://ip-api.com/json/`)
-        return await loc.json()
-      }
-    }
-    catch{
-    return {info:"Something went wrong"}
+  nodeInfo: async () => {
+    try {
+      const peerId = libp2p.peerId;
+      const peers = libp2p.getPeers();
+      const conn = libp2p.getConnections();
+      let maddr;
+      libp2p.getMultiaddrs().forEach((addr: any) => {
+        if (!isPrivate(addr) && addr.toString().includes('31001')) {
+          console.log(addr.toString());
+          maddr = addr.toString();
+        }
+      });
+      let con = conn.filter(obj => obj.status === "open");
+      const filteredConn = removeDuplicateConnections(con);
+      const info = {
+        peerId: peerId,
+        health: "ok",
+        version: VERSION,
+        multiAddr: maddr,
+        publicKey: nodeConfig.kadenaPub,
+        discovered: discovered.length,
+        connected: filteredConn.length,
+        peers: peers,
+        account: account,
+        connections: extractFields(filteredConn, 'remotePeer', 'remoteAddr')
+      };
+      return info;
+    } catch (error) {
+      console.error('Error in nodeInfo:', error);
+      throw new Error('Failed to fetch node info');
     }
   },
-  getDevice: async (input:any)=>{
-    const data = await getDevice(input.deviceId)
-    const result:any = data.result
-    return result
+  getIPLocation: async (input: any) => {
+    try {
+      if (input.ip) {
+        const loc = await fetch(`http://ip-api.com/json/${input.ip}`);
+        return await loc.json();
+      } else {
+        const loc = await fetch(`http://ip-api.com/json/`);
+        return await loc.json();
+      }
+    } catch (error) {
+      console.error('Error in getIPLocation:', error);
+      return { info: "Something went wrong" };
+    }
+  },
+  getDevice: async (input: any) => {
+    try {
+      const data = await getDevice(input.deviceId);
+      const result: any = data.result;
+      return result;
+    } catch (error) {
+      console.error('Error in getDevice:', error);
+      throw new Error('Failed to fetch device');
+    }
   },
   sysInfo: async () => {
-    const cpu = await si.cpu();
-    const os = await si.osInfo();
-    const memory = await si.mem();
-    const storage = await si.diskLayout();
-
-    return {
-      cpu,
-      memory,
-      os,
-      storage,
-    };
-  } 
-  ,
-  createDatabase: async ({input}) => {
-    const { dbinfo, sig, pubkey } = input;
-
-    if (!dbinfo) {
-      return { __typename: 'ErrorResponse', info: 'dbinfo is required' };
-    }
-
     try {
+      const cpu = await si.cpu();
+      const os = await si.osInfo();
+      const memory = await si.mem();
+      const storage = await si.diskLayout();
+      return {
+        cpu,
+        memory,
+        os,
+        storage,
+      };
+    } catch (error) {
+      console.error('Error in sysInfo:', error);
+      throw new Error('Failed to fetch system info');
+    }
+  },
+  createDatabase: async ({ input }) => {
+    try {
+      const { dbinfo, sig, pubkey } = input;
+      if (!dbinfo) {
+        return { __typename: 'ErrorResponse', info: 'dbinfo is required' };
+      }
       if (verify(dbinfo, sig, pubkey)) {
         if (!dbinfo.name) {
           return { __typename: 'ErrorResponse', info: 'name is required' };
         }
-
-        const db = await orbitdb.open(`${dbinfo.name}-${pubkey}`, {type:"documents", AccessController:CyberflyAccessController(), entryStorage})
+        const db = await orbitdb.open(`${dbinfo.name}-${pubkey}`, { type: "documents", AccessController: CyberflyAccessController(), entryStorage });
         return { __typename: 'DatabaseAddress', dbaddr: db.address };
       } else {
         return { __typename: 'ErrorResponse', info: 'Verification failed' };
       }
     } catch (e) {
-      console.log(e)
+      console.error('Error in createDatabase:', e);
       return { __typename: 'ErrorResponse', info: 'Something went wrong' };
     }
   },
-  createChatDatabase: async ({input}) => {
-    const { stream } = input;
-
-    if (!stream) {
-      return { __typename: 'ErrorResponse', info: 'stream is required' };
-    }
-
+  createChatDatabase: async ({ input }) => {
     try {
-        const db = await orbitdb.open(`cyberfly-chat-${stream}`, {type:"documents", AccessController:CyberflyChatAccessController(), entryStorage})
-        return { __typename: 'DatabaseAddress', dbaddr: db.address };
-    
+      const { stream } = input;
+      if (!stream) {
+        return { __typename: 'ErrorResponse', info: 'stream is required' };
+      }
+      const db = await orbitdb.open(`cyberfly-chat-${stream}`, { type: "documents", AccessController: CyberflyChatAccessController(), entryStorage });
+      return { __typename: 'DatabaseAddress', dbaddr: db.address };
     } catch (e) {
-      console.log(e)
+      console.error('Error in createChatDatabase:', e);
       return { __typename: 'ErrorResponse', info: 'Something went wrong' };
     }
   },
   updateData: async ({ input }) => {
-    const {
-      dbaddr,
-      dbtype = 'documents',
-      data,
-      objectType,
-      sig,
-      publicKey,
-      _id
-    } = input;
-
-    // Object type specific validations
-    switch (objectType) {
-      case 'stream':
-        if (!data.streamName) {
-          throw new Error("streamName in data is required");
-        }
-        break;
-
-      case 'geo':
-        const requiredGeoFields = ["latitude", "longitude", "member", "locationLabel"];
-        const hasAllGeoFields = requiredGeoFields.every(field => 
-          field in data
-        );
-        if (!hasAllGeoFields) {
-          throw new Error("data should contains longitude, latitude, member, locationLabel");
-        }
-        break;
-
-      case 'ts':
-        if (!('value' in data)) {
-          throw new Error("data should contains value");
-        }
-        if (!data.labels) {
-          throw new Error("data should contains labels");
-        }
-        break;
+    try {
+      const {
+        dbaddr,
+        dbtype = 'documents',
+        data,
+        objectType,
+        sig,
+        publicKey,
+        _id
+      } = input;
+      switch (objectType) {
+        case 'stream':
+          if (!data.streamName) {
+            throw new Error("streamName in data is required");
+          }
+          break;
+        case 'geo':
+          const requiredGeoFields = ["latitude", "longitude", "member", "locationLabel"];
+          const hasAllGeoFields = requiredGeoFields.every(field =>
+            field in data
+          );
+          if (!hasAllGeoFields) {
+            throw new Error("data should contains longitude, latitude, member, locationLabel");
+          }
+          break;
+        case 'ts':
+          if (!('value' in data)) {
+            throw new Error("data should contains value");
+          }
+          if (!data.labels) {
+            throw new Error("data should contains labels");
+          }
+          break;
+      }
+      const timestamp = Date.now();
+      const updatedDbaddr = await updateData(
+        dbaddr,
+        objectType,
+        data,
+        sig,
+        publicKey,
+        timestamp,
+        dbtype,
+        _id
+      );
+      return {
+        info: "success",
+        dbaddr: updatedDbaddr
+      };
+    } catch (error) {
+      console.error('Error in updateData:', error);
+      throw new Error('Failed to update data');
     }
-
-    const timestamp = Date.now();
-    
-    // Call the existing updateData function
-    const updatedDbaddr = await updateData(
-      dbaddr,
-      objectType,
-      data,
-      sig,
-      publicKey,
-      timestamp,
-      dbtype,
-      _id
-    );
-
-    return {
-      info: "success",
-      dbaddr: updatedDbaddr
-    };
   }
 };
