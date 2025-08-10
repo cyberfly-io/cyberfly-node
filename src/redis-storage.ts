@@ -17,6 +17,43 @@ console.log(error)
     console.log("Redis disconnected")
   })
 
+  // Helpers: remove prior entries that have the same _id
+  const deleteJsonDocsById = async (prefixKey: string, targetId: any) => {
+    if (!targetId) return;
+    try {
+      for await (const key of redis.scanIterator({ MATCH: `${prefixKey}:*`, COUNT: 100 })) {
+        try {
+          const doc: any = await redis.json.get(key as string);
+          if (doc && doc._id === targetId) {
+            await redis.del(key as string);
+          }
+        } catch { /* ignore per-key errors */ }
+      }
+    } catch (e) {
+      console.log(`deleteJsonDocsById error: ${e}`);
+    }
+  };
+
+  const deleteFromSortedSetById = async (zkey: string, targetId: any) => {
+    if (!targetId) return;
+    try {
+      const members = await redis.zRange(zkey, 0, -1); // returns values only
+      if (!members?.length) return;
+      const toRemove: string[] = [];
+      for (const m of members) {
+        try {
+          const obj = JSON.parse(m);
+          if (obj && obj._id === targetId) toRemove.push(m);
+        } catch { /* ignore bad JSON */ }
+      }
+      if (toRemove.length) {
+        await redis.zRem(zkey, toRemove);
+      }
+    } catch (e) {
+      console.log(`deleteFromSortedSetById error: ${e}`);
+    }
+  };
+
   const put = async (hash:any, data:any) => {
     const hashexist = await redis.get(hash)
     if (hashexist){
@@ -76,7 +113,10 @@ console.log(error)
     else if(objectType === 'sortedset'){
       const data = decoded.payload.value
       try{
-        await redis.zAdd(decoded.id.split("/")[2], [{score:decoded.payload.value.timestamp, value:JSON.stringify(data)}])
+        // dedupe by _id in the ZSET before adding
+        const zkey = decoded.id.split("/")[2]
+        await deleteFromSortedSetById(zkey, data?._id)
+        await redis.zAdd(zkey, [{score:decoded.payload.value.timestamp, value:JSON.stringify(data)}])
         await redis.set(hash, "true")
       }
       catch(e){
@@ -84,8 +124,15 @@ console.log(error)
       }
     }
     else {
-      await redis.json.set(`${decoded.id}:${hash}`, '$',decoded.payload.value);
-      await redis.set(hash, "true")
+      // Default JSON object: delete any prior docs with same _id under this prefix
+      const newDoc = decoded.payload.value
+      try {
+        await deleteJsonDocsById(decoded.id, newDoc?._id)
+        await redis.json.set(`${decoded.id}:${hash}`, '$', newDoc);
+        await redis.set(hash, "true")
+      } catch(e) {
+        console.log(`json set error: ${e}`)
+      }
     }
   }
 
