@@ -113,7 +113,6 @@ console.log(error)
     else if(objectType === 'sortedset'){
       const data = decoded.payload.value
       try{
-        // dedupe by _id in the ZSET before adding
         const zkey = decoded.id.split("/")[2]
         await deleteFromSortedSetById(zkey, data?._id)
         await redis.zAdd(zkey, [{score:decoded.payload.value.timestamp, value:JSON.stringify(data)}])
@@ -124,7 +123,6 @@ console.log(error)
       }
     }
     else {
-      // Default JSON object: delete any prior docs with same _id under this prefix
       const newDoc = decoded.payload.value
       try {
         await deleteJsonDocsById(decoded.id, newDoc?._id)

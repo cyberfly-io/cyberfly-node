@@ -3,79 +3,98 @@ export class RedisJSONFilter {
     constructor(redisClient:any) {
       this.redis = redisClient;
     }
-  
-  
-  
+
     /**
-     * Filter JSON data across multiple keys using pattern
-     * @param {string} pattern - Redis key pattern (e.g., "user:*")
-     * @param {string} path - JSONPath expression
-     * @param {Object} conditions - Filter conditions
-     * @param {Object} options - Additional options (pagination, sorting)
+     * Filter JSON data across multiple keys using pattern (non-blocking SCAN)
+     * Applies optional sort + pagination after collecting results.
      */
-    async filterAcrossKeys(pattern:any, path:any, conditions:any, options:any = {}) {
+    async filterAcrossKeys(pattern:string, path:string, conditions:any, options:any = {}) {
       try {
-        // Get all keys matching the pattern
-        const keys = await this.redis.keys(pattern);
-        if (!keys.length) {
-          return [];
-        }
-  
-        // Set default options
         const {
           limit = Infinity,
           offset = 0,
           sortBy,
           sortOrder = 'asc'
         } = options;
-  
-        // Build filter expression
+
         const jsonPath = path || '.';
         const filterExpr = this.buildFilterExpression(conditions);
         const fullPath = filterExpr ? `${jsonPath}[?(${filterExpr})]` : jsonPath;
-        // Fetch and filter data from all matching keys
-        const results = await Promise.all(
-          keys.map(async (key) => {
-            try {
-              const data = await this.redis.json.get(key, {path:[fullPath]});
-              if (!data) return null;
-              const full_data = await this.redis.json.get(key)
-              return Array.isArray(full_data) 
-                ? full_data.map(item => ({ ...item, _key: key }))
-                : full_data;
-            } catch (error) {
-              //console.error(`Error processing key ${key}:`, error);
-              return null;
+
+        // Collect keys using SCAN (non-blocking)
+        const keys:string[] = [];
+        for await (const key of this.redis.scanIterator({ MATCH: pattern, COUNT: 500 })) {
+          keys.push(key as string);
+        }
+        if (!keys.length) return [];
+
+        // Process in batches to limit memory usage
+        const BATCH = 200;
+        const collected:any[] = [];
+        for (let i = 0; i < keys.length; i += BATCH) {
+          const batch = keys.slice(i, i + BATCH);
+
+          // First, run server-side JSONPath filter to check match presence
+          const filtered = await Promise.all(
+            batch.map(k => this.redis.json.get(k, { path: [fullPath] }).catch(() => null))
+          );
+
+          // Keys that matched (non-null and non-empty result)
+          const matchedKeys:string[] = [];
+          filtered.forEach((val, idx) => {
+            if (val === null || val === undefined) return;
+            // JSON.GET with a path returns either a value or an array of values
+            const hasMatch =
+              (Array.isArray(val) && val.length > 0) ||
+              (!Array.isArray(val) && val !== null);
+            if (hasMatch) matchedKeys.push(batch[idx]);
+          });
+
+          if (!matchedKeys.length) continue;
+
+          // Fetch full docs only for matched keys
+          const fullDocs = await Promise.all(
+            matchedKeys.map(k => this.redis.json.get(k).then(d => ({ d, k })).catch(() => null))
+          );
+
+          for (const item of fullDocs) {
+            if (!item || item.d === null || item.d === undefined) continue;
+            const { d, k } = item;
+            if (Array.isArray(d)) {
+              for (const el of d) collected.push({ ...el, _key: k });
+            } else if (typeof d === 'object') {
+              collected.push({ ...d, _key: k });
+            } else {
+              // Non-object JSON value
+              collected.push({ value: d, _key: k });
             }
-          })
-        );
-  
-        // Flatten and filter out null results
-        let flatResults = results
-          .filter(result => result !== null)
-          .flat()
-          .filter(item => item !== null);
-  
-        // Apply sorting if specified
+          }
+
+          // Early stop if not sorting and we have enough items past offset
+          if (!sortBy && collected.length >= offset + limit) break;
+        }
+
+        // Sort if required
         if (sortBy) {
-          flatResults.sort((a, b) => {
-            const aVal = a[sortBy];
-            const bVal = b[sortBy];
-            
-            if (typeof aVal === 'string') {
-              return sortOrder === 'asc' 
-                ? aVal.localeCompare(bVal)
-                : bVal.localeCompare(aVal);
+          const dir = sortOrder === 'desc' ? -1 : 1;
+          collected.sort((a, b) => {
+            const av = a?.[sortBy];
+            const bv = b?.[sortBy];
+            if (av == null && bv == null) return 0;
+            if (av == null) return 1;
+            if (bv == null) return -1;
+            if (typeof av === 'string' && typeof bv === 'string') {
+              return dir * av.localeCompare(bv);
             }
-            
-            return sortOrder === 'asc' 
-              ? aVal - bVal 
-              : bVal - aVal;
+            const na = Number(av), nb = Number(bv);
+            if (Number.isFinite(na) && Number.isFinite(nb)) {
+              return dir * (na - nb);
+            }
+            return dir * String(av).localeCompare(String(bv));
           });
         }
-  
-        // Apply pagination
-        return flatResults.slice(offset, offset + limit)
+
+        return collected.slice(offset, offset + limit);
       } catch (error) {
         console.error('Error filtering across keys:', error);
         throw error;
@@ -186,33 +205,40 @@ export class RedisTimeSeriesFilter {
     }
 
     async query(dbaddr:string, fromTimestamp="-", toTimestamp="+", options:any = {}) {
+        // Support correct TS.RANGE options; ignore unknown label filters
         const {
-            aggregation = '',
-            filterByLabels = {},
-            count = ''
-        } = options;
+            aggregation,
+            count,
+            filterByTs,       // number[] of specific timestamps
+            filterByValue     // { min: number, max: number }
+        } = options || {};
 
         const queryOptions:any = {};
 
-        // Add aggregation if specified
-        if (aggregation) {
+        if (aggregation?.type && aggregation?.time) {
             queryOptions.AGGREGATION = {
                 type: aggregation.type,
                 timeBucket: aggregation.time
             };
         }
 
-
-        // Add count if specified
-        if (count) {
+        if (typeof count === 'number' && count > 0) {
             queryOptions.COUNT = count;
         }
 
-        // Add filters if specified
-        if (Object.keys(filterByLabels).length > 0) {
-            queryOptions.FILTER_BY_TS = filterByLabels;
+        if (Array.isArray(filterByTs) && filterByTs.length > 0) {
+            queryOptions.FILTER_BY_TS = filterByTs;
         }
-        const result = await this.redis.ts.range(dbaddr.split("/")[2], fromTimestamp, toTimestamp, queryOptions);
+
+        if (filterByValue && Number.isFinite(filterByValue.min) && Number.isFinite(filterByValue.max)) {
+            queryOptions.FILTER_BY_VALUE = {
+              min: filterByValue.min,
+              max: filterByValue.max
+            };
+        }
+
+        const key = dbaddr.split("/")[2];
+        const result = await this.redis.ts.range(key, fromTimestamp, toTimestamp, queryOptions);
         return result.map(({ timestamp, value }) => ({
             timestamp: Number(timestamp),
             value: Number(value)
@@ -224,7 +250,6 @@ export class RedisTimeSeriesFilter {
 
 export class RedisGeospatialFilter {
   redis: any;
-  
   constructor(redisClient: any) {
     this.redis = redisClient;
   }
@@ -259,25 +284,32 @@ export class RedisGeospatialFilter {
     return await this.redis.geoHash(`${dbaddr}:${key}`, member);
   }
 
-  async geoSearch(dbaddr:string,key:string, longitude:any, latitude:any, radius:number, unit:string ){
-  return await this.redis.geoSearch(`${dbaddr}:${key}`,
-    {
-      longitude: longitude,
-      latitude: latitude,
-    },
-    { radius: radius,
-      unit: unit,
-    }
-  )
+  async geoSearch(dbaddr:string, key:string, longitude:number, latitude:number, radius:number, unit:string ){
+    // Keep simple member-only search; callers can use geoSearchWith for coords/dist
+    return await this.redis.geoSearch(`${dbaddr}:${key}`,
+      { longitude, latitude },
+      { radius, unit }
+    );
   }
 
+  async geoSearchWith(dbaddr:string, key:string, memberOrLngLat: string | { longitude:number, latitude:number }, radius:number, unit:string ){
+    // Use Redis GEOSEARCH WITHCOORD to get coordinates efficiently
+    // Accept FROMMEMBER (string) or FROMLONLAT ({longitude, latitude})
+    const results = await this.redis.geoSearchWith(
+      `${dbaddr}:${key}`,
+      memberOrLngLat,
+      { radius, unit },
+      ['WITHCOORD'] // add 'WITHDIST' or 'WITHHASH' if needed
+    );
 
-  async geoSearchWith(dbaddr:string,key:string, member:string, radius:number, unit:string ){
-    const result = await this.redis.geoSearch(`${dbaddr}:${key}`,member,
-      { radius: radius,
-        unit: unit,
-      }
-    )
-    return result
-    }
+    // Normalize to a clean shape
+    // node-redis returns: [{ member, coordinates: { longitude, latitude }, ... }]
+    return results.map((r:any) => ({
+      member: r.member,
+      coordinates: r.coordinates ? {
+        longitude: Number(r.coordinates.longitude),
+        latitude: Number(r.coordinates.latitude)
+      } : undefined
+    }));
+  }
 }
