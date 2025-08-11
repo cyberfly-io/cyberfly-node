@@ -96,11 +96,48 @@ mqtt_client.on('connect', () => {
   mqtt_client.subscribe('#')
 })
 
-mqtt_client.on('message', async(topic, payload) => {
 
-  if(!payload.toString().startsWith('"'))
-     {
-    await pubsub.publish(topic, fromString(JSON.stringify(payload.toString())))
+// Envelope helpers
+type Envelope = {
+  origin: 'mqtt' | 'p2p' | 'socket';
+  topic: string;
+  ts: number;
+  data: any;
+};
+
+function encodeEnvelope(env: Envelope): Uint8Array {
+  return fromString(JSON.stringify(env));
+}
+
+function tryParseJSON(txt: string): any {
+  try { return JSON.parse(txt); } catch { return txt; }
+}
+
+function decodeEnvelope(bytes: Uint8Array, topic: string): Envelope | null {
+  try {
+    const parsed = JSON.parse(toString(bytes));
+    // If it looks like an envelope, return it; otherwise wrap it
+    if (parsed && parsed.origin && parsed.topic && parsed.ts !== undefined) {
+      return parsed as Envelope;
+    }
+    return { origin: 'p2p', topic, ts: Date.now(), data: parsed };
+  } catch {
+    return null;
+  }
+}
+
+mqtt_client.on('message', async (topic, payload) => {
+  try {
+    const body = tryParseJSON(payload.toString());
+    const env: Envelope = {
+      origin: 'mqtt',
+      topic,
+      ts: Date.now(),
+      data: body
+    };
+    await pubsub.publish(topic, encodeEnvelope(env));
+  } catch (e) {
+    console.log('MQTT->P2P bridge error:', e);
   }
 })
 
@@ -724,33 +761,45 @@ app.post("/api/dbinfo", async(req, res)=>{
 
 await pubsub.subscribe("pindb");
 console.log("Subscribed to pindb")
-pubsub.addEventListener("message", async(message:any)=>{
+pubsub.addEventListener("message", async (message: any) => {
   const { topic, data, from } = message.detail
 
-  if(topic=='pindb' && from.toString()!==libp2p.peerId.toString()){
-    try{
-    let dat = JSON.parse(toString(data))
-    if(typeof dat == "string"){
-      dat = JSON.parse(dat)
-    }
-    const addr = OrbitDBAddress(dat.dbaddr)
-    const manifest = await manifestStore.get(addr.hash)
-    if(manifest.accessController.includes('cyberfly')){
-    await orbitdb.open(dat.dbaddr, {entryStorage})
-    }
-  }
-  catch(e) {
-   console.log(e)
-  }
-  }
-  if(!topic.includes("_peer-discovery") && !topic.includes("dbupdate") && !isValidAddress(topic)){
-    mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
-      if(error){
-        console.log("mqtt_error")
-        console.log(error)
+  // existing pindb handling remains the same
+  if (topic == 'pindb' && from.toString() !== libp2p.peerId.toString()) {
+    try {
+      let dat = JSON.parse(toString(data))
+      if (typeof dat == "string") {
+        dat = JSON.parse(dat)
       }
-    })
+      const addr = OrbitDBAddress(dat.dbaddr)
+      const manifest = await manifestStore.get(addr.hash)
+      if (manifest.accessController.includes('cyberfly')) {
+        await orbitdb.open(dat.dbaddr, { entryStorage })
+      }
+    }
+    catch (e) {
+      console.log(e)
+    }
+  }
 
+  // Forward to MQTT as the same envelope (avoid internal topics)
+  if (!topic.includes("_peer-discovery") && !topic.includes("dbupdate") && !isValidAddress(topic)) {
+    try {
+      const env = decodeEnvelope(data, topic) || {
+        origin: 'p2p',
+        topic,
+        ts: Date.now(),
+        data: tryParseJSON(toString(data))
+      };
+      mqtt_client.publish(topic, JSON.stringify(env), { qos: 0, retain: false }, (error) => {
+        if (error) {
+          console.log("mqtt_error")
+          console.log(error)
+        }
+      })
+    } catch (e) {
+      console.log('P2P->MQTT bridge error:', e)
+    }
   }
 })
 
@@ -773,47 +822,49 @@ io.on("connection", (socket) => {
   });
 
   socket.on("subscribe", async (topic) => {
-    try{
+    try {
       if (!subscribedSockets[socket.id]) {
         subscribedSockets[socket.id] = new Set();
       }
       subscribedSockets[socket.id].add(topic);
-      
+
+      // Keep the handler but emit the envelope to clients
       pubsub.addEventListener('message', async (message) => {
-        const { topic, data } = message.detail
-        if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
-          io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
+        const { topic: t, data } = message.detail
+        if (subscribedSockets[socket.id]?.has(t)) {
+          const env = decodeEnvelope(data, t) || {
+            origin: 'p2p',
+            topic: t,
+            ts: Date.now(),
+            data: tryParseJSON(toString(data))
+          };
+          // Clients receive the same envelope shape
+          io.to(socket.id).emit("onmessage", env);
         }
       })
+
       await pubsub.subscribe(topic)
-      mqtt_client.subscribe([topic], ()=>{
+      mqtt_client.subscribe([topic], () => {
         console.log(`Subscribed to topic '${topic}'`)
       })
     }
-    catch(e){
+    catch (e) {
       console.log(e)
     }
   });
 
-  socket.on("unsubscribe", async (topic) => {
-  try{
-    if (subscribedSockets[socket.id]) {
-      subscribedSockets[socket.id].delete(topic);
-      if (subscribedSockets[socket.id].size === 0) {
-        delete subscribedSockets[socket.id];
-      }
-    }
-  }
-  catch(e){
-    console.log(e)
-  }
-  });
-  socket.on("publish", async(data)=>{
-    try{
+  socket.on("publish", async (data) => {
+    try {
       const { topic, message } = data
-      await pubsub.publish(topic, fromString(JSON.stringify(message)));
+      const env: Envelope = {
+        origin: 'socket',
+        topic,
+        ts: Date.now(),
+        data: message
+      };
+      await pubsub.publish(topic, encodeEnvelope(env));
     }
-    catch(e){
+    catch (e) {
       console.log(e)
     }
   })
