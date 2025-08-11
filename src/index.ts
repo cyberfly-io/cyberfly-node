@@ -84,6 +84,7 @@ if(!account){
 }
 
 const clientId = `${libp2p.peerId.toString()}`
+const BRIDGE_ID = `bridge:${clientId}` // unique to this node
 console.log(`MQTT client id: ${clientId}`)
 const mqtt_client = mqtt.connect(mqtt_host, {
   clientId,
@@ -93,9 +94,13 @@ const mqtt_client = mqtt.connect(mqtt_host, {
 })
 mqtt_client.on('connect', () => {
   console.log('Mqtt connection Established')
-  mqtt_client.subscribe('#')
+  // MQTT v5 noLocal to avoid receiving own publishes (broker-dependent)
+  try {
+    mqtt_client.subscribe('#', { nl: true } as any)
+  } catch {
+    mqtt_client.subscribe('#')
+  }
 })
-
 
 // Envelope helpers
 type Envelope = {
@@ -103,6 +108,7 @@ type Envelope = {
   topic: string;
   ts: number;
   data: any;
+  bridgeId?: string; // used for loop prevention
 };
 
 function encodeEnvelope(env: Envelope): Uint8Array {
@@ -113,29 +119,51 @@ function tryParseJSON(txt: string): any {
   try { return JSON.parse(txt); } catch { return txt; }
 }
 
+function isEnvelope(obj: any): obj is Envelope {
+  return obj && typeof obj === 'object' && obj.origin && obj.topic && typeof obj.ts === 'number';
+}
+
 function decodeEnvelope(bytes: Uint8Array, topic: string): Envelope | null {
   try {
     const parsed = JSON.parse(toString(bytes));
-    // If it looks like an envelope, return it; otherwise wrap it
-    if (parsed && parsed.origin && parsed.topic && parsed.ts !== undefined) {
-      return parsed as Envelope;
-    }
+    if (isEnvelope(parsed)) return parsed as Envelope;
     return { origin: 'p2p', topic, ts: Date.now(), data: parsed };
   } catch {
     return null;
   }
 }
 
+// Drop topics we shouldn't bridge
+function isInternalTopic(topic: string) {
+  return topic.includes('_peer-discovery') || topic.includes('dbupdate') || isValidAddress(topic);
+}
+
+// Track P2P subscriptions to avoid duplicates
+const p2pSubscribed = new Set<string>();
+async function ensureP2PSubscribed(topic: string) {
+  if (!p2pSubscribed.has(topic)) {
+    await pubsub.subscribe(topic);
+    p2pSubscribed.add(topic);
+  }
+}
+
 mqtt_client.on('message', async (topic, payload) => {
   try {
     const body = tryParseJSON(payload.toString());
-    const env: Envelope = {
-      origin: 'mqtt',
-      topic,
-      ts: Date.now(),
-      data: body
-    };
-    await pubsub.publish(topic, encodeEnvelope(env));
+
+    // If payload already carries our bridgeId, it's an echo -> drop
+    if (body && typeof body === 'object' && body.bridgeId === BRIDGE_ID) return;
+
+    // Forward as envelope; if already envelope, reuse it
+    const env: Envelope = isEnvelope(body)
+      ? { ...body, topic: body.topic || topic }
+      : { origin: 'mqtt', topic, ts: Date.now(), data: body };
+
+    // Tag with our bridgeId to prevent echo loops
+    env.bridgeId = BRIDGE_ID;
+
+    await ensureP2PSubscribed(env.topic);
+    await pubsub.publish(env.topic, encodeEnvelope(env));
   } catch (e) {
     console.log('MQTT->P2P bridge error:', e);
   }
@@ -764,7 +792,7 @@ console.log("Subscribed to pindb")
 pubsub.addEventListener("message", async (message: any) => {
   const { topic, data, from } = message.detail
 
-  // existing pindb handling remains the same
+  // Handle pindb as-is
   if (topic == 'pindb' && from.toString() !== libp2p.peerId.toString()) {
     try {
       let dat = JSON.parse(toString(data))
@@ -780,18 +808,18 @@ pubsub.addEventListener("message", async (message: any) => {
     catch (e) {
       console.log(e)
     }
+    return; // do not forward pindb
   }
 
-  // Forward to MQTT as the same envelope (avoid internal topics)
-  if (!topic.includes("_peer-discovery") && !topic.includes("dbupdate") && !isValidAddress(topic)) {
+  // Decode to envelope (or wrap)
+  const env = decodeEnvelope(data, topic) || { origin: 'p2p', topic, ts: Date.now(), data: tryParseJSON(toString(data)) };
+
+  // Loop prevention:
+  // 1) Do not send back to MQTT if it already originated from MQTT
+  // 2) Do not re-publish messages we ourselves bridged (bridgeId check)
+  if (!isInternalTopic(topic) && env.origin !== 'mqtt' && env.bridgeId !== BRIDGE_ID) {
     try {
-      const env = decodeEnvelope(data, topic) || {
-        origin: 'p2p',
-        topic,
-        ts: Date.now(),
-        data: tryParseJSON(toString(data))
-      };
-      mqtt_client.publish(topic, JSON.stringify(env), { qos: 0, retain: false }, (error) => {
+      mqtt_client.publish(topic, JSON.stringify({ ...env, bridgeId: BRIDGE_ID }), { qos: 0, retain: false }, (error) => {
         if (error) {
           console.log("mqtt_error")
           console.log(error)
@@ -801,56 +829,43 @@ pubsub.addEventListener("message", async (message: any) => {
       console.log('P2P->MQTT bridge error:', e)
     }
   }
+
+  // Fan-out to sockets that subscribed to this topic
+  const subs = subscribedSockets; // map: socketId -> Set<string>
+  for (const [sid, topics] of Object.entries(subs)) {
+    if ((topics as Set<string>).has(topic)) {
+      // Emit the same envelope
+      io.to(sid).emit("onmessage", env);
+    }
+  }
 })
 
-const subscribedSockets = {}; // Keep track of subscribed channels for each socket
-const deviceSockets = {}; // Store user sockets
+// Keep track of subscribed channels for each socket
+const subscribedSockets: Record<string, Set<string>> = {};
+const deviceSockets: Record<string, any> = {};
 
-app.get('/api/onlinedevices', async(req, res)=>{
-  const onlineusers = Object.keys(deviceSockets)
-   res.json(onlineusers)
-});
 io.on("connection", (socket) => {
   socket.on('online', (account) => {
     try{
-      deviceSockets[account] = socket; // Associate the socket with the account
-    io.emit('onlineDevices', Object.keys(deviceSockets));
-    }
-    catch(e){
-      console.log(e)
-    }
+      deviceSockets[account] = socket;
+      io.emit('onlineDevices', Object.keys(deviceSockets));
+    } catch(e){ console.log(e) }
   });
 
   socket.on("subscribe", async (topic) => {
     try {
-      if (!subscribedSockets[socket.id]) {
-        subscribedSockets[socket.id] = new Set();
-      }
+      if (!subscribedSockets[socket.id]) subscribedSockets[socket.id] = new Set();
       subscribedSockets[socket.id].add(topic);
 
-      // Keep the handler but emit the envelope to clients
-      pubsub.addEventListener('message', async (message) => {
-        const { topic: t, data } = message.detail
-        if (subscribedSockets[socket.id]?.has(t)) {
-          const env = decodeEnvelope(data, t) || {
-            origin: 'p2p',
-            topic: t,
-            ts: Date.now(),
-            data: tryParseJSON(toString(data))
-          };
-          // Clients receive the same envelope shape
-          io.to(socket.id).emit("onmessage", env);
-        }
-      })
+      await ensureP2PSubscribed(topic);
+      mqtt_client.subscribe([topic], () => console.log(`Subscribed to topic '${topic}'`));
+    } catch (e) { console.log(e) }
+  });
 
-      await pubsub.subscribe(topic)
-      mqtt_client.subscribe([topic], () => {
-        console.log(`Subscribed to topic '${topic}'`)
-      })
-    }
-    catch (e) {
-      console.log(e)
-    }
+  socket.on("unsubscribe", async (topic) => {
+    try {
+      subscribedSockets[socket.id]?.delete(topic);
+    } catch (e) { console.log(e) }
   });
 
   socket.on("publish", async (data) => {
@@ -860,14 +875,13 @@ io.on("connection", (socket) => {
         origin: 'socket',
         topic,
         ts: Date.now(),
-        data: message
+        data: message,
+        bridgeId: BRIDGE_ID
       };
+      await ensureP2PSubscribed(topic);
       await pubsub.publish(topic, encodeEnvelope(env));
-    }
-    catch (e) {
-      console.log(e)
-    }
-  })
+    } catch (e) { console.log(e) }
+  });
 
   socket.on("send message", async(data)=>{
     try{
@@ -885,14 +899,8 @@ catch(err){console.log(err)}
   })
 
   socket.on("disconnect", () => {
-
-    if (subscribedSockets[socket.id]) {
-      delete subscribedSockets[socket.id];
-    }
-
-    const disconnectedAccount = Object.keys(deviceSockets).find(
-      (account) => deviceSockets[account] === socket
-    );
+    if (subscribedSockets[socket.id]) delete subscribedSockets[socket.id];
+    const disconnectedAccount = Object.keys(deviceSockets).find((account) => deviceSockets[account] === socket);
     if (disconnectedAccount) {
       delete deviceSockets[disconnectedAccount];
       io.emit('onlineDevices', Object.keys(deviceSockets));
