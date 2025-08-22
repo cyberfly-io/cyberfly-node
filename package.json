@@ -36,7 +36,7 @@
     "@libp2p/utils": "6.6.6",
     "@libp2p/websockets": "9.2.14",
     "@multiformats/multiaddr": "^12.3.1",
-    "@orbitdb/core": "2.5.0",
+    "@orbitdb/core": "3.0.2",
     "@redis/time-series": "^1.1.0",
     "blockstore-level": "^2.0.1",
     "cors": "^2.8.5",
