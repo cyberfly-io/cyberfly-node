@@ -308,6 +308,8 @@ type Query {
     radius: Float!
     unit: String!
   ): [GeoSearchResult]
+
+  getMyChats(publicKey: String!): [String!]!
 }
   # Types for the schema
 type DatabaseAddress {
@@ -698,5 +700,26 @@ export const resolvers = {
       console.error('Error in updateData:', error);
       throw new Error('Failed to update data');
     }
-  }
+  },
+  getMyChats: async ({ publicKey }: { publicKey: string }) => {
+    try {
+      // Match keys where publicKey is anywhere after a colon, or at the end
+      const patterns = [`*:${publicKey}*`, `*:*${publicKey}`];
+      const matchingKeys: Set<string> = new Set();
+
+      for (const pattern of patterns) {
+        for await (const key of redis.scanIterator({ MATCH: pattern })) {
+          // Extract streamName (right of last colon)
+          const parts = key.split(':');
+          if (parts.length > 1) {
+            matchingKeys.add(parts[parts.length - 1]);
+          }
+        }
+      }
+      return Array.from(matchingKeys);
+    } catch (error) {
+      console.error('Error in getMyChats:', error);
+      throw new Error('Failed to fetch chat keys');
+    }
+  },
 };
