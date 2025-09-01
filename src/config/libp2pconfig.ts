@@ -31,16 +31,22 @@ let scoreThresholds = {
 	publishThreshold: -Infinity,
 	graylistThreshold: -Infinity,
 }
+// Build peerDiscovery array conditionally
+  const peerDiscovery: any[] = [
+    pubsubPeerDiscovery({
+      interval: 10000,
+      topics: ["cyberfly._peer-discovery._p2p._pubsub"],
+      listenOnly: false,
+    })
+  ];
+  if (filteredBS.length > 0) {
+    peerDiscovery.push(
+      bootstrap({ list: filteredBS, tagName: "keep-alive" })
+    );
+  }
 
   return {
-    peerDiscovery: [
-      pubsubPeerDiscovery({
-        interval: 10000,
-        topics: ["cyberfly._peer-discovery._p2p._pubsub"],
-        listenOnly: false,
-      }),
-      bootstrap({list:filteredBS, tagName:"keep-alive", })
-      ],
+    peerDiscovery,
       connectionProtector: preSharedKey({
         psk: Buffer.from(swarmKey)
       }),
