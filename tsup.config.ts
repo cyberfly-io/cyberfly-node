@@ -2,11 +2,16 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["esm"], // Build for ESmodules
-  dts: false, // Generate declaration file (.d.ts)
-  splitting: false, // Disable code splitting if unnecessary
-  clean: true, // Clean output folder before build
-  sourcemap: false, // Disable sourcemaps for production
-  minify: true, // Minify the output
-  //onSuccess: 'cp src/config/swarm.key dist/', // Command to copy files post-build
+  format: ["esm"], // ensure CommonJS for native addons
+  dts: false,
+  splitting: false,
+  sourcemap: true,
+  clean: true,
+  shims: false,
+  bundle: true,
+  skipNodeModulesBundle: true, // do not bundle deps
+  external: [
+    "node-datachannel", // keep native addon external
+    "wrtc", // (add any other native modules)
+  ],
 });

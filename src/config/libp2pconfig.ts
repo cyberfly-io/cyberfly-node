@@ -11,9 +11,11 @@ import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import { kadDHT } from "@libp2p/kad-dht";
 import { preSharedKey } from '@libp2p/pnet'
 import { ping } from '@libp2p/ping'
+import { webRTC, webRTCDirect } from '@libp2p/webrtc'
+import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { quic } from '@chainsafe/libp2p-quic'
 
-let bsNodes = ["/dns4/node2.cyberfly.io/tcp/31001/p2p/12D3KooWSfGgUaeogSZuRPa4mhsAU41qJH5EpmwKg9wGVzUwFGth", 
-  "/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
+let bsNodes = ["/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
 
 export const getLibp2pOptions:any = (ip:string, peerId:string)=> {
 
@@ -45,6 +47,8 @@ let scoreThresholds = {
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/ws',
+      '/webrtc-direct',
+      '/ip4/0.0.0.0/udp/0/quic-v1'
     ],
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
     },
@@ -58,6 +62,10 @@ let scoreThresholds = {
     },
     transports: [
     tcp(),
+    webRTC(),
+    webRTCDirect(),
+    circuitRelayTransport(),
+    quic(),
     webSockets({
       filter: filters.all,
     }),

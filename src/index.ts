@@ -22,7 +22,6 @@ import { CID } from 'multiformats/cid'
 import path from 'path';
 import { graphqlHTTP } from 'express-graphql';
 import { schema, resolvers } from './graphql.js';
-import { ruruHTML, defaultHTMLParts } from 'ruru/server';
 import { nodeConfig, entryStorage, updateData, discovered } from './custom-entry-storage.js';
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 import { getStreamName, verifyMsg } from './utils.js';
@@ -30,6 +29,8 @@ import { nanoid } from 'nanoid'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { VERSION } from './version.js';
 import { isPrivate } from '@libp2p/utils/multiaddr/is-private'
+import pkg from "ruru/server";
+const { ruruHTML, defaultHTMLParts } = pkg;
 
 
 
