@@ -242,6 +242,12 @@ app.get("/api", async(req, res)=>{
   res.json(info)
 });
 
+app.get("/api/multiaddrs", async(req, res)=>{
+const maddrs = libp2p.getMultiaddrs();
+res.json(maddrs);
+});
+
+
 // Chunk upload endpoint
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
