@@ -14,6 +14,7 @@ import { ping } from '@libp2p/ping'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { quic } from '@chainsafe/libp2p-quic'
+import { webTransport } from "@libp2p/webtransport";
 
 let bsNodes = ["/dns4/node.cyberfly.io/tcp/31001/p2p/12D3KooWA8mwP9wGUc65abVDMuYccaAMAkXhKUqpwKUZSN5McDrw"]
 
@@ -73,6 +74,7 @@ let scoreThresholds = {
     tcp(),
     webRTC(),
     webRTCDirect(),
+    webTransport(),
     circuitRelayTransport(),
     quic(),
     webSockets({
@@ -93,7 +95,7 @@ let scoreThresholds = {
         clientMode: false,
       }),
       ping: ping(),
-      circuitRelay: circuitRelayServer({
+      relay: circuitRelayServer({
         reservations:{
           maxReservations: 500
         }
