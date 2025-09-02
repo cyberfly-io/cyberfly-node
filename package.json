@@ -36,6 +36,7 @@
     "@libp2p/tcp": "10.1.14",
     "@libp2p/utils": "6.6.6",
     "@libp2p/websockets": "9.2.14",
+    "@libp2p/webtransport": "^5.0.51",
     "@multiformats/multiaddr": "^12.3.1",
     "@orbitdb/core": "3.0.2",
     "@redis/time-series": "^1.1.0",

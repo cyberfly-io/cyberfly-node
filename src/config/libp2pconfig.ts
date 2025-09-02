@@ -54,6 +54,9 @@ let scoreThresholds = {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/ws',
       '/webrtc-direct',
+      "/webrtc",
+      "/webtransport",
+      "/p2p-circuit",
       '/ip4/0.0.0.0/udp/0/quic-v1'
     ],
     appendAnnounce: [`/ip4/${ip}/tcp/31001/p2p/${peerId}`,`/ip4/${ip}/tcp/31002/wss/p2p/${peerId}`, `/ip4/${ip}/tcp/31002/ws/p2p/${peerId}`]
