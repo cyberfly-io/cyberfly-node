@@ -1,41 +1,34 @@
-# Stage 1: Build
+# Stage 1: Build Stage
 FROM node:22-alpine AS builder
+
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Only dependency manifests first (better layer cache)
-COPY package.json package-lock.json ./
-RUN npm ci
 
-# Copy source
+COPY package.json package-lock.json ./
+
+# Install all dependencies
+RUN npm install
+
+# Copy the rest of the application code to the working directory
 COPY . .
 
-# Build (outputs to dist/)
+# Build the project
 RUN npm run build
 
-# Stage 2: Production runtime (minimal)
-FROM node:22-alpine AS runtime
+# Stage 2: Production Stage
+FROM node:22-alpine
+
+# Set the working directory
 WORKDIR /usr/src/app
 
-ENV NODE_ENV=production
+# Copy only the production dependencies and built files from the builder stage
+COPY --from=builder /usr/src/app/node_modules /usr/src/app/node_modules
+COPY --from=builder /usr/src/app/dist /usr/src/app/dist
+COPY --from=builder /usr/src/app/package.json /usr/src/app/package.json
 
-# Copy only package manifests, install prod deps
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
-
-# Copy built app
-COPY --from=builder /usr/src/app/dist ./dist
-
-# (Optional) create non-root user
-RUN addgroup -S app && adduser -S app -G app
-USER app
-
+# Expose the necessary ports
 EXPOSE 31001 31002 31003
-CMD ["node", "dist/index.js"]
 
-# --- Optional Distroless final stage (uncomment to use) ---
-# FROM gcr.io/distroless/nodejs22-debian12 AS distroless
-# WORKDIR /app
-# COPY --from=runtime /usr/src/app /app
-# USER 1000
-# EXPOSE 31001 31002 31003
-# CMD ["dist/index.js"]
+# Command to run the application
+CMD ["node", "dist/index.js"]
