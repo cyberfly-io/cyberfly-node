@@ -857,6 +857,46 @@ catch(err){console.log(err)}
 });
 
 
+// Proxy balance endpoint
+app.get('/api/balance/:account', async (req, res) => {
+  const account = req.params.account;
+  if (!account) {
+    return res.status(400).json({ error: 'account is required' });
+  }
+
+  // Keep colon unencoded to match upstream path format (encode other chars)
+  const safeAccount = encodeURIComponent(account).replace(/%3A/g, ':');
+  const url = `https://backend-kda.euclabs.net/indexer/v1/account/${safeAccount}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const upstream = await fetch(url, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+
+    if (!upstream.ok) {
+      return res.status(upstream.status).json({
+        error: 'Upstream error',
+        status: upstream.status,
+      });
+    }
+
+    const data = await upstream.json();
+    return res.json(data);
+  } catch (err: any) {
+    clearTimeout(timer);
+    const aborted = err?.name === 'AbortError';
+    return res.status(502).json({
+      error: aborted ? 'Upstream timeout' : 'Failed to fetch upstream',
+      detail: String(err)
+    });
+  }
+});
 
 server.listen(port,()=>{
     console.log(`OrbitDb node api on port ${port}`)
