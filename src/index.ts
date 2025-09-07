@@ -158,7 +158,7 @@ const getData = async (dbaddr:string, key:string)=>{
 const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   optionsSuccessStatus: 204
 };
 const app = express();
