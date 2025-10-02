@@ -9,7 +9,7 @@ import { VERSION } from './version.js';
 import { isPrivate } from '@libp2p/utils/multiaddr/is-private'
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 import { useAccessController  } from '@orbitdb/core'
-import { listDirectories } from './utils.js';
+import { getAddress, listDirectories } from './utils.js';
 
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
@@ -236,7 +236,8 @@ type Query {
     ): IPLocation
 
   readJSONDB(
-    dbaddr: String!, 
+    dbaddr: String, 
+    dbname: String,
     filters: JSON, 
     options: FilterOptionsInput
   ): [Data]
@@ -390,9 +391,11 @@ export const resolvers = {
   },
   readJSONDB: async (params: any) => {
     try {
-      const db = await orbitdb.open(params.dbaddr, { entryStorage });
+      const dbaddr = params.dbname? await getAddress(orbitdb, params.dbname) :  params.dbaddr;
+      console.log(dbaddr)
+      const db = await orbitdb.open(dbaddr, { entryStorage });
       const filters = new RedisJSONFilter(redis);
-      return filters.filterAcrossKeys(`${params.dbaddr}:*`, ".", params.filters, params.options);
+      return filters.filterAcrossKeys(`${dbaddr}:*`, ".", params.filters, params.options);
     } catch (error) {
       console.error('Error in readJSONDB:', error);
       throw new Error('Failed to fetch items');

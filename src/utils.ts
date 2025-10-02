@@ -1,4 +1,6 @@
 import fs from 'fs';
+import ManifestStore from '@orbitdb/core/src/manifest-store.js'
+
 import { verify } from './config/utils.js';
 
 export function isFlatJson(obj:any) {
@@ -75,3 +77,10 @@ export function listDirectories(directoryPath) {
     });
   });
 }
+
+export const getAddress = async (orbitdb:any, name:any) => {
+    const manifestStore = await ManifestStore({ ipfs:orbitdb.ipfs })
+
+    const db = await manifestStore.create({name, type: 'documents', accessController:'/cyberfly/access-controller' });
+    return "/orbitdb/"+db.hash
+  }
