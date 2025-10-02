@@ -399,8 +399,7 @@ export const resolvers = {
       // Resolve dbaddr from dbname if provided, otherwise use dbaddr directly
       const dbaddr = params.dbname ? await getAddress(orbitdb, params.dbname) : params.dbaddr;
       console.log('Resolved dbaddr:', dbaddr);
-      
-      const db = await orbitdb.open(dbaddr, { entryStorage });
+      const db = await orbitdb.open(dbaddr, {AccessController: CyberflyAccessController(), entryStorage });
       const filters = new RedisJSONFilter(redis);
       return filters.filterAcrossKeys(`${dbaddr}:*`, ".", params.filters, params.options);
     } catch (error) {
