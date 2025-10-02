@@ -391,14 +391,21 @@ export const resolvers = {
   },
   readJSONDB: async (params: any) => {
     try {
-      const dbaddr = params.dbname? await getAddress(orbitdb, params.dbname) :  params.dbaddr;
-      console.log(dbaddr)
+      // Require either dbaddr or dbname
+      if (!params.dbaddr && !params.dbname) {
+        throw new Error('Either dbaddr or dbname is required');
+      }
+      
+      // Resolve dbaddr from dbname if provided, otherwise use dbaddr directly
+      const dbaddr = params.dbname ? await getAddress(orbitdb, params.dbname) : params.dbaddr;
+      console.log('Resolved dbaddr:', dbaddr);
+      
       const db = await orbitdb.open(dbaddr, { entryStorage });
       const filters = new RedisJSONFilter(redis);
       return filters.filterAcrossKeys(`${dbaddr}:*`, ".", params.filters, params.options);
     } catch (error) {
       console.error('Error in readJSONDB:', error);
-      throw new Error('Failed to fetch items');
+      throw new Error(`Failed to fetch items: ${error.message}`);
     }
   },
   readStream: async (params: any) => {
