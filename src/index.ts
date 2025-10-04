@@ -117,6 +117,7 @@ mqtt_client.on('message', async(topic, payload) => {
     // Wrap client message with bridge metadata (transparent to client)
     const bridgeMessage = {
       __origin: 'mqtt',
+      __broker: libp2p.peerId.toString(),  // Use peerId as unique broker identifier
       __timestamp: Date.now(),
       data: parsedPayload
     };
@@ -790,8 +791,8 @@ pubsub.addEventListener("message", async(message:any)=>{
       let origin = 'unknown';
       
       if (messageData && typeof messageData === 'object' && messageData.__origin) {
-        // Skip if message came from MQTT (prevent loop)
-        if (messageData.__origin === 'mqtt') {
+        // Skip if message came from OUR node's MQTT broker (prevent loop)
+        if (messageData.__origin === 'mqtt' && messageData.__broker === libp2p.peerId.toString()) {
           return;
         }
         
