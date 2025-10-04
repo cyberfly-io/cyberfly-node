@@ -816,6 +816,40 @@ pubsub.addEventListener("message", async(message:any)=>{
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
 const deviceSockets = {}; // Store user sockets
 
+// Single global pubsub message listener (prevents duplicates)
+pubsub.addEventListener('message', async (message) => {
+  const { topic, data } = message.detail;
+  
+  try {
+    const messageStr = toString(data);
+    let messageData;
+    
+    try {
+      messageData = JSON.parse(messageStr);
+    } catch {
+      messageData = messageStr;
+    }
+    
+    // Extract actual data from bridge envelope if present
+    let actualData = messageData;
+    if (messageData && typeof messageData === 'object' && messageData.__origin) {
+      actualData = messageData.data;
+    }
+    
+    // Broadcast to all sockets subscribed to this topic
+    for (const [socketId, topics] of Object.entries(subscribedSockets)) {
+      if ((topics as Set<string>).has(topic)) {
+        io.to(socketId).emit("onmessage", { 
+          topic: topic, 
+          message: actualData
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error handling socket message:', error);
+  }
+});
+
 app.get('/api/onlinedevices', async(req, res)=>{
   const onlineusers = Object.keys(deviceSockets)
    res.json(onlineusers)
@@ -836,41 +870,29 @@ io.on("connection", (socket) => {
       if (!subscribedSockets[socket.id]) {
         subscribedSockets[socket.id] = new Set();
       }
+      
+      // Check if already subscribed
+      if (subscribedSockets[socket.id].has(topic)) {
+        console.log(`Socket ${socket.id} already subscribed to ${topic}`);
+        return;
+      }
+      
       subscribedSockets[socket.id].add(topic);
       
-      pubsub.addEventListener('message', async (message) => {
-        const { topic, data } = message.detail
-        if (subscribedSockets[socket.id]?.has(topic)) {
-          try {
-            const messageStr = toString(data);
-            let messageData;
-            
-            try {
-              messageData = JSON.parse(messageStr);
-            } catch {
-              messageData = messageStr;
-            }
-            
-            // Extract actual data from bridge envelope if present
-            let actualData = messageData;
-            if (messageData && typeof messageData === 'object' && messageData.__origin) {
-              actualData = messageData.data;
-            }
-            
-            // Send clean data to socket clients (no bridge metadata)
-            io.to(socket.id).emit("onmessage", { 
-              topic: topic, 
-              message: actualData
-            });
-          } catch (error) {
-            console.error('Error handling socket message:', error);
-          }
-        }
-      })
-      await pubsub.subscribe(topic)
-      mqtt_client.subscribe([topic], ()=>{
-        console.log(`Subscribed to topic '${topic}'`)
-      })
+      // Only subscribe to pubsub/mqtt if no other socket is subscribed to this topic
+      const isFirstSubscriber = !Object.values(subscribedSockets).some((topics, idx) => 
+        idx !== Object.keys(subscribedSockets).indexOf(socket.id) && 
+        (topics as Set<string>).has(topic)
+      );
+      
+      if (isFirstSubscriber) {
+        await pubsub.subscribe(topic);
+        mqtt_client.subscribe([topic], ()=>{
+          console.log(`Subscribed to topic '${topic}'`);
+        });
+      }
+      
+      console.log(`Socket ${socket.id} subscribed to ${topic}`);
     }
     catch(e){
       console.log(e)
@@ -878,17 +900,32 @@ io.on("connection", (socket) => {
   });
 
   socket.on("unsubscribe", async (topic) => {
-  try{
-    if (subscribedSockets[socket.id]) {
-      subscribedSockets[socket.id].delete(topic);
-      if (subscribedSockets[socket.id].size === 0) {
-        delete subscribedSockets[socket.id];
+    try{
+      if (subscribedSockets[socket.id]) {
+        subscribedSockets[socket.id].delete(topic);
+        if (subscribedSockets[socket.id].size === 0) {
+          delete subscribedSockets[socket.id];
+        }
+        
+        // Check if any other socket is still subscribed to this topic
+        const hasOtherSubscribers = Object.values(subscribedSockets).some(
+          (topics) => (topics as Set<string>).has(topic)
+        );
+        
+        // Only unsubscribe from pubsub/mqtt if no other socket is subscribed
+        if (!hasOtherSubscribers) {
+          pubsub.unsubscribe(topic);
+          mqtt_client.unsubscribe([topic], ()=>{
+            console.log(`Unsubscribed from topic '${topic}'`);
+          });
+        }
+        
+        console.log(`Socket ${socket.id} unsubscribed from ${topic}`);
       }
     }
-  }
-  catch(e){
-    console.log(e)
-  }
+    catch(e){
+      console.log(e)
+    }
   });
   socket.on("publish", async(data)=>{
     try{
