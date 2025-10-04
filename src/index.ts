@@ -108,9 +108,9 @@ mqtt_client.on('message', async(topic, payload) => {
       parsedPayload = payloadStr;
     }
     
-    // Check if this is already a bridge message (has __origin)
-    // If so, skip to prevent loop
-    if (parsedPayload && typeof parsedPayload === 'object' && parsedPayload.__origin === 'libp2p') {
+    // Check if this is a message we just published from libp2p bridge
+    // Skip it to prevent loop (message already came from libp2p network)
+    if (parsedPayload && typeof parsedPayload === 'object' && parsedPayload.__bridged) {
       return;
     }
     
@@ -791,17 +791,18 @@ pubsub.addEventListener("message", async(message:any)=>{
       let origin = 'unknown';
       
       if (messageData && typeof messageData === 'object' && messageData.__origin) {
-        // Skip if message came from OUR node's MQTT broker (prevent loop)
-        if (messageData.__origin === 'mqtt' && messageData.__broker === libp2p.peerId.toString()) {
-          return;
-        }
-        
         origin = messageData.__origin;
         actualData = messageData.data;
       }
       
-      // Send clean data to MQTT clients (no bridge metadata)
-      const mqttPayload = typeof actualData === 'object' ? JSON.stringify(actualData) : actualData;
+      // Tag the message so our MQTT listener knows to skip it (prevent loop)
+      const mqttMessage = {
+        __bridged: true,  // Mark as already bridged from libp2p
+        ...actualData
+      };
+      
+      // Send to MQTT clients with bridge tag
+      const mqttPayload = typeof mqttMessage === 'object' ? JSON.stringify(mqttMessage) : actualData;
       
       mqtt_client.publish(topic, mqttPayload, {qos:0, retain:false}, (error)=>{
         if(error){
