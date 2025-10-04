@@ -126,7 +126,10 @@ const client = createClient(kadenaUrl,)
   }
 
 
-  export const getDevice = async (deviceId:string) =>{
+  export const getDevice = async (deviceId:string, networkId:string) =>{
+    console.log("Fetching device info for:", deviceId, networkId)
+    const kadenaUrl = 'https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/1/pact'
+    const client = createClient(kadenaUrl,)
     const unsignedTransaction = Pact.builder
     .execution(`(free.cyberfly_devices.get-device "${deviceId}")`)
     .setMeta({
@@ -136,7 +139,7 @@ const client = createClient(kadenaUrl,)
       gasPrice: 0.0000001
     })
     // set networkId
-    .setNetworkId('mainnet01')
+    .setNetworkId(networkId)
     // create transaction with hash
     .createTransaction();
     

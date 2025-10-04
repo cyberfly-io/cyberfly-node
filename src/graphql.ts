@@ -229,7 +229,7 @@ type Query {
   dbInfo(dbaddr: String!) : DBInfo
 
   nodeInfo: NodeInfo
-    getDevice(deviceId: String!): Device
+    getDevice(deviceId: String!, networkId: String): Device
 
     getIPLocation(
     ip: String
@@ -597,8 +597,9 @@ export const resolvers = {
   },
   getDevice: async (input: any) => {
     try {
-      const data = await getDevice(input.deviceId);
-      const result: any = data.result;
+      const data = await getDevice(input.deviceId, input.networkId || "mainnet01");
+      console.log(data);
+      const result: any = data.result.data;
       return result;
     } catch (error) {
       console.error('Error in getDevice:', error);
