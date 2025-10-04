@@ -98,10 +98,32 @@ mqtt_client.on('connect', () => {
 })
 
 mqtt_client.on('message', async(topic, payload) => {
-
-  if(!payload.toString().startsWith('"'))
-     {
-    await pubsub.publish(topic, fromString(JSON.stringify(payload.toString())))
+  try {
+    const payloadStr = payload.toString();
+    let parsedPayload;
+    
+    try {
+      parsedPayload = JSON.parse(payloadStr);
+    } catch {
+      parsedPayload = payloadStr;
+    }
+    
+    // Check if this is already a bridge message (has __origin)
+    // If so, skip to prevent loop
+    if (parsedPayload && typeof parsedPayload === 'object' && parsedPayload.__origin === 'libp2p') {
+      return;
+    }
+    
+    // Wrap client message with bridge metadata (transparent to client)
+    const bridgeMessage = {
+      __origin: 'mqtt',
+      __timestamp: Date.now(),
+      data: parsedPayload
+    };
+    
+    await pubsub.publish(topic, fromString(JSON.stringify(bridgeMessage)));
+  } catch (error) {
+    console.error('Error bridging MQTT to libp2p:', error);
   }
 })
 
@@ -750,14 +772,44 @@ pubsub.addEventListener("message", async(message:any)=>{
    console.log(e)
   }
   }
+  
+  // Bridge libp2p messages to MQTT (with loop prevention)
   if(!topic.includes("_peer-discovery") && !topic.includes("dbupdate") && !isValidAddress(topic)){
-    mqtt_client.publish(topic, toString(data), {qos:0, retain:false}, (error)=>{
-      if(error){
-        console.log("mqtt_error")
-        console.log(error)
+    try {
+      const messageStr = toString(data);
+      let messageData;
+      
+      try {
+        messageData = JSON.parse(messageStr);
+      } catch {
+        messageData = messageStr;
       }
-    })
-
+      
+      // Check if this is a bridge message
+      let actualData = messageData;
+      let origin = 'unknown';
+      
+      if (messageData && typeof messageData === 'object' && messageData.__origin) {
+        // Skip if message came from MQTT (prevent loop)
+        if (messageData.__origin === 'mqtt') {
+          return;
+        }
+        
+        origin = messageData.__origin;
+        actualData = messageData.data;
+      }
+      
+      // Send clean data to MQTT clients (no bridge metadata)
+      const mqttPayload = typeof actualData === 'object' ? JSON.stringify(actualData) : actualData;
+      
+      mqtt_client.publish(topic, mqttPayload, {qos:0, retain:false}, (error)=>{
+        if(error){
+          console.error("MQTT bridge error:", error);
+        }
+      });
+    } catch (error) {
+      console.error('Error bridging libp2p to MQTT:', error);
+    }
   }
 })
 
@@ -788,8 +840,31 @@ io.on("connection", (socket) => {
       
       pubsub.addEventListener('message', async (message) => {
         const { topic, data } = message.detail
-        if (subscribedSockets[socket.id]?.has(topic)) { // Check if the socket is subscribed to the topic
-          io.to(socket.id).emit("onmessage", { topic: topic, message: toString(data) });
+        if (subscribedSockets[socket.id]?.has(topic)) {
+          try {
+            const messageStr = toString(data);
+            let messageData;
+            
+            try {
+              messageData = JSON.parse(messageStr);
+            } catch {
+              messageData = messageStr;
+            }
+            
+            // Extract actual data from bridge envelope if present
+            let actualData = messageData;
+            if (messageData && typeof messageData === 'object' && messageData.__origin) {
+              actualData = messageData.data;
+            }
+            
+            // Send clean data to socket clients (no bridge metadata)
+            io.to(socket.id).emit("onmessage", { 
+              topic: topic, 
+              message: actualData
+            });
+          } catch (error) {
+            console.error('Error handling socket message:', error);
+          }
         }
       })
       await pubsub.subscribe(topic)
@@ -818,7 +893,13 @@ io.on("connection", (socket) => {
   socket.on("publish", async(data)=>{
     try{
       const { topic, message } = data
-      await pubsub.publish(topic, fromString(JSON.stringify(message)));
+      // Wrap client message with bridge metadata (transparent to client)
+      const bridgeMessage = {
+        __origin: 'socket',
+        __timestamp: Date.now(),
+        data: message
+      };
+      await pubsub.publish(topic, fromString(JSON.stringify(bridgeMessage)));
     }
     catch(e){
       console.log(e)
