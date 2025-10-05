@@ -810,18 +810,22 @@ pubsub.addEventListener("message", async(message:any)=>{
       
       // Track this message hash to prevent loop
       const messageHash = getMessageHash(topic, actualData);
-      recentlyPublished.add(messageHash);
       
-      // Remove from tracking after TTL
-      setTimeout(() => {
-        recentlyPublished.delete(messageHash);
-      }, RECENT_MESSAGE_TTL);
-      
-      mqtt_client.publish(topic, mqttPayload, {qos:0, retain:false}, (error)=>{
-        if(error){
-          console.error("MQTT bridge error:", error);
-        }
-      });
+      // Only publish if we haven't recently published this exact message
+      if (!recentlyPublished.has(messageHash)) {
+        recentlyPublished.add(messageHash);
+        
+        // Remove from tracking after TTL
+        setTimeout(() => {
+          recentlyPublished.delete(messageHash);
+        }, RECENT_MESSAGE_TTL);
+        
+        mqtt_client.publish(topic, mqttPayload, {qos:0, retain:false}, (error)=>{
+          if(error){
+            console.error("MQTT bridge error:", error);
+          }
+        });
+      }
     } catch (error) {
       console.error('Error bridging libp2p to MQTT:', error);
     }
