@@ -58,9 +58,153 @@ const mqtt_port = 1883
 
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
 
+// ========== Bridge Configuration ==========
+const BRIDGE_CONFIG = {
+  RECENT_MESSAGE_TTL: parseInt(process.env.BRIDGE_MESSAGE_TTL || '5000'), // ms
+  MAX_MESSAGE_SIZE: parseInt(process.env.BRIDGE_MAX_MESSAGE_SIZE || '1048576'), // 1MB default
+  ENABLE_MQTT_BRIDGE: process.env.BRIDGE_ENABLE_MQTT !== 'false',
+  ENABLE_SOCKET_BRIDGE: process.env.BRIDGE_ENABLE_SOCKET !== 'false',
+  MQTT_QOS: parseInt(process.env.BRIDGE_MQTT_QOS || '0') as 0 | 1 | 2,
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info', // debug, info, warn, error
+  CIRCUIT_BREAKER_THRESHOLD: parseInt(process.env.BRIDGE_CIRCUIT_BREAKER_THRESHOLD || '10'),
+  CIRCUIT_BREAKER_TIMEOUT: parseInt(process.env.BRIDGE_CIRCUIT_BREAKER_TIMEOUT || '60000'), // 1 minute
+  TOPIC_BLACKLIST: (process.env.BRIDGE_TOPIC_BLACKLIST || '').split(',').filter(Boolean),
+};
+
+// ========== Bridge Metrics ==========
+interface BridgeMetrics {
+  mqtt: {
+    messagesReceived: number;
+    messagesPublished: number;
+    messagesFailed: number;
+    duplicatesDropped: number;
+    lastError: string | null;
+    lastErrorTime: number | null;
+  };
+  libp2p: {
+    messagesReceived: number;
+    messagesPublished: number;
+    messagesFailed: number;
+    duplicatesDropped: number;
+    lastError: string | null;
+    lastErrorTime: number | null;
+  };
+  socket: {
+    messagesReceived: number;
+    messagesBroadcast: number;
+    messagesFailed: number;
+    lastError: string | null;
+    lastErrorTime: number | null;
+  };
+  startTime: number;
+  loopsPrevented: number;
+}
+
+const bridgeMetrics: BridgeMetrics = {
+  mqtt: { messagesReceived: 0, messagesPublished: 0, messagesFailed: 0, duplicatesDropped: 0, lastError: null, lastErrorTime: null },
+  libp2p: { messagesReceived: 0, messagesPublished: 0, messagesFailed: 0, duplicatesDropped: 0, lastError: null, lastErrorTime: null },
+  socket: { messagesReceived: 0, messagesBroadcast: 0, messagesFailed: 0, lastError: null, lastErrorTime: null },
+  startTime: Date.now(),
+  loopsPrevented: 0
+};
+
+// ========== Circuit Breaker for Error Handling ==========
+type CircuitBreakerState = 'closed' | 'open' | 'half-open';
+
+interface CircuitBreaker {
+  failures: number;
+  lastFailureTime: number;
+  state: CircuitBreakerState;
+}
+
+const circuitBreakers: Record<'mqtt' | 'libp2p', CircuitBreaker> = {
+  mqtt: { failures: 0, lastFailureTime: 0, state: 'closed' },
+  libp2p: { failures: 0, lastFailureTime: 0, state: 'closed' }
+};
+
+function checkCircuitBreaker(name: 'mqtt' | 'libp2p'): boolean {
+  const breaker = circuitBreakers[name];
+  
+  if (breaker.state === 'open') {
+    const timeSinceLastFailure = Date.now() - breaker.lastFailureTime;
+    if (timeSinceLastFailure > BRIDGE_CONFIG.CIRCUIT_BREAKER_TIMEOUT) {
+      breaker.state = 'half-open';
+      logMessage('warn', `Circuit breaker for ${name} entering half-open state`);
+      return true;
+    }
+    return false;
+  }
+  
+  return true;
+}
+
+function recordCircuitBreakerFailure(name: 'mqtt' | 'libp2p') {
+  const breaker = circuitBreakers[name];
+  breaker.failures++;
+  breaker.lastFailureTime = Date.now();
+  
+  if (breaker.failures >= BRIDGE_CONFIG.CIRCUIT_BREAKER_THRESHOLD) {
+    breaker.state = 'open';
+    logMessage('error', `Circuit breaker for ${name} opened after ${breaker.failures} failures`);
+  }
+}
+
+function recordCircuitBreakerSuccess(name: 'mqtt' | 'libp2p') {
+  const breaker = circuitBreakers[name];
+  if (breaker.state === 'half-open') {
+    breaker.failures = 0;
+    breaker.state = 'closed';
+    logMessage('info', `Circuit breaker for ${name} closed - recovered`);
+  } else if (breaker.failures > 0) {
+    breaker.failures = Math.max(0, breaker.failures - 1);
+  }
+}
+
+// ========== Structured Logging ==========
+function logMessage(level: 'debug' | 'info' | 'warn' | 'error', message: string, context?: any) {
+  const levels = { debug: 0, info: 1, warn: 2, error: 3 };
+  const configLevel = BRIDGE_CONFIG.LOG_LEVEL as keyof typeof levels;
+  
+  if (levels[level] >= levels[configLevel]) {
+    const timestamp = new Date().toISOString();
+    const logData = {
+      timestamp,
+      level: level.toUpperCase(),
+      message,
+      ...(context && { context })
+    };
+    
+    const logString = `[${timestamp}] [${level.toUpperCase()}] ${message}${context ? ' ' + JSON.stringify(context) : ''}`;
+    
+    if (level === 'error') console.error(logString);
+    else if (level === 'warn') console.warn(logString);
+    else console.log(logString);
+  }
+}
+
+// ========== Message Validation ==========
+function validateMessage(topic: string, data: any): { valid: boolean; reason?: string } {
+  // Check topic blacklist
+  if (BRIDGE_CONFIG.TOPIC_BLACKLIST.some(pattern => topic.includes(pattern))) {
+    return { valid: false, reason: 'Topic blacklisted' };
+  }
+  
+  // Check message size
+  const messageStr = typeof data === 'object' ? JSON.stringify(data) : String(data);
+  if (Buffer.byteLength(messageStr, 'utf8') > BRIDGE_CONFIG.MAX_MESSAGE_SIZE) {
+    return { valid: false, reason: 'Message exceeds size limit' };
+  }
+  
+  // Validate topic format (basic check)
+  if (!topic || topic.trim() === '') {
+    return { valid: false, reason: 'Empty topic' };
+  }
+  
+  return { valid: true };
+}
+
 // Track recently published messages to MQTT to prevent loops
 const recentlyPublished = new Set<string>();
-const RECENT_MESSAGE_TTL = 5000; // 5 seconds
 
 // Helper to generate message hash
 function getMessageHash(topic: string, data: any): string {
@@ -108,7 +252,18 @@ mqtt_client.on('connect', () => {
 })
 
 mqtt_client.on('message', async(topic, payload) => {
+  if (!BRIDGE_CONFIG.ENABLE_MQTT_BRIDGE) return;
+  
   try {
+    bridgeMetrics.mqtt.messagesReceived++;
+    
+    // Check circuit breaker
+    if (!checkCircuitBreaker('mqtt')) {
+      logMessage('warn', 'MQTT bridge circuit breaker open, dropping message', { topic });
+      bridgeMetrics.mqtt.messagesFailed++;
+      return;
+    }
+    
     const payloadStr = payload.toString();
     let parsedPayload;
     
@@ -118,9 +273,20 @@ mqtt_client.on('message', async(topic, payload) => {
       parsedPayload = payloadStr;
     }
     
+    // Validate message
+    const validation = validateMessage(topic, parsedPayload);
+    if (!validation.valid) {
+      logMessage('debug', 'Message validation failed', { topic, reason: validation.reason });
+      bridgeMetrics.mqtt.messagesFailed++;
+      return;
+    }
+    
     // Check if we recently published this exact message (prevent loop)
     const messageHash = getMessageHash(topic, parsedPayload);
     if (recentlyPublished.has(messageHash)) {
+      bridgeMetrics.mqtt.duplicatesDropped++;
+      bridgeMetrics.loopsPrevented++;
+      logMessage('debug', 'Duplicate message dropped (loop prevention)', { topic });
       return; // Skip, this came from our libp2p bridge
     }
     
@@ -133,8 +299,17 @@ mqtt_client.on('message', async(topic, payload) => {
     };
     
     await pubsub.publish(topic, fromString(JSON.stringify(bridgeMessage)));
-  } catch (error) {
-    console.error('Error bridging MQTT to libp2p:', error);
+    bridgeMetrics.mqtt.messagesPublished++;
+    recordCircuitBreakerSuccess('mqtt');
+    
+    logMessage('debug', 'MQTT → libp2p bridged', { topic, size: Buffer.byteLength(JSON.stringify(bridgeMessage)) });
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    bridgeMetrics.mqtt.messagesFailed++;
+    bridgeMetrics.mqtt.lastError = errorMsg;
+    bridgeMetrics.mqtt.lastErrorTime = Date.now();
+    recordCircuitBreakerFailure('mqtt');
+    logMessage('error', 'Error bridging MQTT to libp2p', { topic, error: errorMsg });
   }
 })
 
@@ -258,6 +433,79 @@ const io = new Server(server, {
 
 
 
+
+// Bridge metrics endpoint
+app.get("/api/bridge/metrics", async(req, res)=>{
+  const uptime = Date.now() - bridgeMetrics.startTime;
+  const uptimeSeconds = Math.floor(uptime / 1000);
+  
+  const metrics = {
+    ...bridgeMetrics,
+    uptime: {
+      ms: uptime,
+      seconds: uptimeSeconds,
+      formatted: `${Math.floor(uptimeSeconds / 3600)}h ${Math.floor((uptimeSeconds % 3600) / 60)}m ${uptimeSeconds % 60}s`
+    },
+    rates: {
+      mqtt: {
+        publishRate: (bridgeMetrics.mqtt.messagesPublished / uptimeSeconds).toFixed(2),
+        receiveRate: (bridgeMetrics.mqtt.messagesReceived / uptimeSeconds).toFixed(2),
+        errorRate: (bridgeMetrics.mqtt.messagesFailed / Math.max(1, bridgeMetrics.mqtt.messagesReceived) * 100).toFixed(2) + '%'
+      },
+      libp2p: {
+        publishRate: (bridgeMetrics.libp2p.messagesPublished / uptimeSeconds).toFixed(2),
+        receiveRate: (bridgeMetrics.libp2p.messagesReceived / uptimeSeconds).toFixed(2),
+        errorRate: (bridgeMetrics.libp2p.messagesFailed / Math.max(1, bridgeMetrics.libp2p.messagesReceived) * 100).toFixed(2) + '%'
+      }
+    },
+    circuitBreakers: {
+      mqtt: circuitBreakers.mqtt,
+      libp2p: circuitBreakers.libp2p
+    },
+    config: BRIDGE_CONFIG
+  };
+  
+  res.json(metrics);
+});
+
+// Bridge health check endpoint
+app.get("/api/bridge/health", async(req, res)=>{
+  const mqttConnected = mqtt_client.connected;
+  const libp2pPeerCount = libp2p.getPeers().length;
+  
+  const mqttHealthy = mqttConnected && circuitBreakers.mqtt.state !== 'open';
+  const libp2pHealthy = libp2pPeerCount > 0 && circuitBreakers.libp2p.state !== 'open';
+  
+  const overall = mqttHealthy && libp2pHealthy;
+  
+  const health = {
+    status: overall ? 'healthy' : 'unhealthy',
+    components: {
+      mqtt: {
+        status: mqttHealthy ? 'healthy' : 'unhealthy',
+        connected: mqttConnected,
+        circuitBreaker: circuitBreakers.mqtt.state,
+        lastError: bridgeMetrics.mqtt.lastError,
+        lastErrorTime: bridgeMetrics.mqtt.lastErrorTime
+      },
+      libp2p: {
+        status: libp2pHealthy ? 'healthy' : 'unhealthy',
+        peerCount: libp2pPeerCount,
+        circuitBreaker: circuitBreakers.libp2p.state,
+        lastError: bridgeMetrics.libp2p.lastError,
+        lastErrorTime: bridgeMetrics.libp2p.lastErrorTime
+      },
+      socket: {
+        status: 'healthy',
+        lastError: bridgeMetrics.socket.lastError,
+        lastErrorTime: bridgeMetrics.socket.lastErrorTime
+      }
+    },
+    timestamp: Date.now()
+  };
+  
+  res.status(overall ? 200 : 503).json(health);
+});
 
 app.get("/api", async(req, res)=>{
   const peerId = libp2p.peerId
@@ -786,7 +1034,18 @@ pubsub.addEventListener("message", async(message:any)=>{
   
   // Bridge libp2p messages to MQTT (with loop prevention)
   if(!topic.includes("_peer-discovery") && !topic.includes("dbupdate") && !isValidAddress(topic)){
+    if (!BRIDGE_CONFIG.ENABLE_MQTT_BRIDGE) return;
+    
     try {
+      bridgeMetrics.libp2p.messagesReceived++;
+      
+      // Check circuit breaker
+      if (!checkCircuitBreaker('libp2p')) {
+        logMessage('warn', 'libp2p bridge circuit breaker open, dropping message', { topic });
+        bridgeMetrics.libp2p.messagesFailed++;
+        return;
+      }
+      
       const messageStr = toString(data);
       let messageData;
       
@@ -809,8 +1068,18 @@ pubsub.addEventListener("message", async(message:any)=>{
         // Skip if message originated from THIS node's MQTT broker
         // (prevents local MQTT clients from receiving duplicates)
         if (origin === 'mqtt' && broker === libp2p.peerId.toString()) {
+          bridgeMetrics.loopsPrevented++;
+          logMessage('debug', 'Skipped message from own MQTT broker', { topic, broker });
           return;
         }
+      }
+      
+      // Validate message
+      const validation = validateMessage(topic, actualData);
+      if (!validation.valid) {
+        logMessage('debug', 'Message validation failed', { topic, reason: validation.reason });
+        bridgeMetrics.libp2p.messagesFailed++;
+        return;
       }
       
       // Send clean data to MQTT clients (no bridge metadata)
@@ -826,16 +1095,34 @@ pubsub.addEventListener("message", async(message:any)=>{
         // Remove from tracking after TTL
         setTimeout(() => {
           recentlyPublished.delete(messageHash);
-        }, RECENT_MESSAGE_TTL);
+        }, BRIDGE_CONFIG.RECENT_MESSAGE_TTL);
         
-        mqtt_client.publish(topic, mqttPayload, {qos:0, retain:false}, (error)=>{
+        mqtt_client.publish(topic, mqttPayload, {qos: BRIDGE_CONFIG.MQTT_QOS, retain:false}, (error)=>{
           if(error){
-            console.error("MQTT bridge error:", error);
+            const errorMsg = error?.message || String(error);
+            bridgeMetrics.libp2p.messagesFailed++;
+            bridgeMetrics.libp2p.lastError = errorMsg;
+            bridgeMetrics.libp2p.lastErrorTime = Date.now();
+            recordCircuitBreakerFailure('libp2p');
+            logMessage('error', 'MQTT publish error', { topic, error: errorMsg });
+          } else {
+            bridgeMetrics.libp2p.messagesPublished++;
+            recordCircuitBreakerSuccess('libp2p');
+            logMessage('debug', 'libp2p → MQTT bridged', { topic, size: Buffer.byteLength(mqttPayload) });
           }
         });
+      } else {
+        bridgeMetrics.libp2p.duplicatesDropped++;
+        bridgeMetrics.loopsPrevented++;
+        logMessage('debug', 'Duplicate message dropped (loop prevention)', { topic });
       }
-    } catch (error) {
-      console.error('Error bridging libp2p to MQTT:', error);
+    } catch (error: any) {
+      const errorMsg = error?.message || String(error);
+      bridgeMetrics.libp2p.messagesFailed++;
+      bridgeMetrics.libp2p.lastError = errorMsg;
+      bridgeMetrics.libp2p.lastErrorTime = Date.now();
+      recordCircuitBreakerFailure('libp2p');
+      logMessage('error', 'Error bridging libp2p to MQTT', { topic, error: errorMsg });
     }
   }
 })
@@ -845,9 +1132,13 @@ const deviceSockets = {}; // Store user sockets
 
 // Single global pubsub message listener (prevents duplicates)
 pubsub.addEventListener('message', async (message) => {
+  if (!BRIDGE_CONFIG.ENABLE_SOCKET_BRIDGE) return;
+  
   const { topic, data } = message.detail;
   
   try {
+    bridgeMetrics.socket.messagesReceived++;
+    
     const messageStr = toString(data);
     let messageData;
     
@@ -863,17 +1154,36 @@ pubsub.addEventListener('message', async (message) => {
       actualData = messageData.data;
     }
     
+    // Validate message
+    const validation = validateMessage(topic, actualData);
+    if (!validation.valid) {
+      logMessage('debug', 'Socket message validation failed', { topic, reason: validation.reason });
+      bridgeMetrics.socket.messagesFailed++;
+      return;
+    }
+    
     // Broadcast to all sockets subscribed to this topic
+    let broadcastCount = 0;
     for (const [socketId, topics] of Object.entries(subscribedSockets)) {
       if ((topics as Set<string>).has(topic)) {
         io.to(socketId).emit("onmessage", { 
           topic: topic, 
           message: actualData
         });
+        broadcastCount++;
       }
     }
-  } catch (error) {
-    console.error('Error handling socket message:', error);
+    
+    if (broadcastCount > 0) {
+      bridgeMetrics.socket.messagesBroadcast += broadcastCount;
+      logMessage('debug', 'Message broadcast to sockets', { topic, recipients: broadcastCount });
+    }
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    bridgeMetrics.socket.messagesFailed++;
+    bridgeMetrics.socket.lastError = errorMsg;
+    bridgeMetrics.socket.lastErrorTime = Date.now();
+    logMessage('error', 'Error handling socket message', { topic, error: errorMsg });
   }
 });
 
