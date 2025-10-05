@@ -58,6 +58,16 @@ const mqtt_port = 1883
 
 const mqtt_host = `${mqttUrl}:${mqtt_port}`
 
+// Track recently published messages to MQTT to prevent loops
+const recentlyPublished = new Set<string>();
+const RECENT_MESSAGE_TTL = 5000; // 5 seconds
+
+// Helper to generate message hash
+function getMessageHash(topic: string, data: any): string {
+  const content = typeof data === 'object' ? JSON.stringify(data) : String(data);
+  return `${topic}:${content}`;
+}
+
 
 
 config();
@@ -108,10 +118,10 @@ mqtt_client.on('message', async(topic, payload) => {
       parsedPayload = payloadStr;
     }
     
-    // Check if this is a message we just published from libp2p bridge
-    // Skip it to prevent loop (message already came from libp2p network)
-    if (parsedPayload && typeof parsedPayload === 'object' && parsedPayload.__bridged) {
-      return;
+    // Check if we recently published this exact message (prevent loop)
+    const messageHash = getMessageHash(topic, parsedPayload);
+    if (recentlyPublished.has(messageHash)) {
+      return; // Skip, this came from our libp2p bridge
     }
     
     // Wrap client message with bridge metadata (transparent to client)
@@ -795,14 +805,17 @@ pubsub.addEventListener("message", async(message:any)=>{
         actualData = messageData.data;
       }
       
-      // Tag the message so our MQTT listener knows to skip it (prevent loop)
-      const mqttMessage = {
-        __bridged: true,  // Mark as already bridged from libp2p
-        ...actualData
-      };
+      // Send clean data to MQTT clients (no bridge metadata)
+      const mqttPayload = typeof actualData === 'object' ? JSON.stringify(actualData) : actualData;
       
-      // Send to MQTT clients with bridge tag
-      const mqttPayload = typeof mqttMessage === 'object' ? JSON.stringify(mqttMessage) : actualData;
+      // Track this message hash to prevent loop
+      const messageHash = getMessageHash(topic, actualData);
+      recentlyPublished.add(messageHash);
+      
+      // Remove from tracking after TTL
+      setTimeout(() => {
+        recentlyPublished.delete(messageHash);
+      }, RECENT_MESSAGE_TTL);
       
       mqtt_client.publish(topic, mqttPayload, {qos:0, retain:false}, (error)=>{
         if(error){
