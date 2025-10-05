@@ -1116,6 +1116,44 @@ pubsub.addEventListener("message", async(message:any)=>{
         bridgeMetrics.loopsPrevented++;
         logMessage('debug', 'Duplicate message dropped (loop prevention)', { topic });
       }
+      
+      // Bridge to Socket.io clients (integrated to avoid duplicate handlers)
+      if (BRIDGE_CONFIG.ENABLE_SOCKET_BRIDGE) {
+        try {
+          // Check if any Socket.io clients are subscribed to this topic
+          const hasSubscribers = Object.values(subscribedSockets).some(
+            (topics) => (topics as Set<string>).has(topic)
+          );
+          
+          if (hasSubscribers) {
+            bridgeMetrics.socket.messagesReceived++;
+            
+            // Broadcast to all sockets subscribed to this topic
+            let broadcastCount = 0;
+            for (const [socketId, topics] of Object.entries(subscribedSockets)) {
+              if ((topics as Set<string>).has(topic)) {
+                io.to(socketId).emit("onmessage", { 
+                  topic: topic, 
+                  message: actualData
+                });
+                broadcastCount++;
+              }
+            }
+            
+            if (broadcastCount > 0) {
+              bridgeMetrics.socket.messagesBroadcast += broadcastCount;
+              logMessage('debug', 'Message broadcast to sockets', { topic, recipients: broadcastCount });
+            }
+          }
+        } catch (error: any) {
+          const errorMsg = error?.message || String(error);
+          bridgeMetrics.socket.messagesFailed++;
+          bridgeMetrics.socket.lastError = errorMsg;
+          bridgeMetrics.socket.lastErrorTime = Date.now();
+          logMessage('error', 'Error broadcasting to sockets', { topic, error: errorMsg });
+        }
+      }
+      
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
       bridgeMetrics.libp2p.messagesFailed++;
@@ -1130,62 +1168,8 @@ pubsub.addEventListener("message", async(message:any)=>{
 const subscribedSockets = {}; // Keep track of subscribed channels for each socket
 const deviceSockets = {}; // Store user sockets
 
-// Single global pubsub message listener (prevents duplicates)
-pubsub.addEventListener('message', async (message) => {
-  if (!BRIDGE_CONFIG.ENABLE_SOCKET_BRIDGE) return;
-  
-  const { topic, data } = message.detail;
-  
-  try {
-    bridgeMetrics.socket.messagesReceived++;
-    
-    const messageStr = toString(data);
-    let messageData;
-    
-    try {
-      messageData = JSON.parse(messageStr);
-    } catch {
-      messageData = messageStr;
-    }
-    
-    // Extract actual data from bridge envelope if present
-    let actualData = messageData;
-    if (messageData && typeof messageData === 'object' && messageData.__origin) {
-      actualData = messageData.data;
-    }
-    
-    // Validate message
-    const validation = validateMessage(topic, actualData);
-    if (!validation.valid) {
-      logMessage('debug', 'Socket message validation failed', { topic, reason: validation.reason });
-      bridgeMetrics.socket.messagesFailed++;
-      return;
-    }
-    
-    // Broadcast to all sockets subscribed to this topic
-    let broadcastCount = 0;
-    for (const [socketId, topics] of Object.entries(subscribedSockets)) {
-      if ((topics as Set<string>).has(topic)) {
-        io.to(socketId).emit("onmessage", { 
-          topic: topic, 
-          message: actualData
-        });
-        broadcastCount++;
-      }
-    }
-    
-    if (broadcastCount > 0) {
-      bridgeMetrics.socket.messagesBroadcast += broadcastCount;
-      logMessage('debug', 'Message broadcast to sockets', { topic, recipients: broadcastCount });
-    }
-  } catch (error: any) {
-    const errorMsg = error?.message || String(error);
-    bridgeMetrics.socket.messagesFailed++;
-    bridgeMetrics.socket.lastError = errorMsg;
-    bridgeMetrics.socket.lastErrorTime = Date.now();
-    logMessage('error', 'Error handling socket message', { topic, error: errorMsg });
-  }
-});
+// NOTE: Socket.io broadcasting is integrated into the main pubsub listener above
+// to avoid duplicate event handlers and ensure metrics accuracy
 
 app.get('/api/onlinedevices', async(req, res)=>{
   const onlineusers = Object.keys(deviceSockets)
