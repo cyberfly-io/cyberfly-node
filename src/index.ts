@@ -799,10 +799,18 @@ pubsub.addEventListener("message", async(message:any)=>{
       // Check if this is a bridge message
       let actualData = messageData;
       let origin = 'unknown';
+      let broker = null;
       
       if (messageData && typeof messageData === 'object' && messageData.__origin) {
         origin = messageData.__origin;
+        broker = messageData.__broker;
         actualData = messageData.data;
+        
+        // Skip if message originated from THIS node's MQTT broker
+        // (prevents local MQTT clients from receiving duplicates)
+        if (origin === 'mqtt' && broker === libp2p.peerId.toString()) {
+          return;
+        }
       }
       
       // Send clean data to MQTT clients (no bridge metadata)
