@@ -583,13 +583,49 @@ export const resolvers = {
   },
   getIPLocation: async (input: any) => {
     try {
+      let data;
       if (input.ip) {
         const loc = await fetch(`http://ip-api.com/json/${input.ip}`);
-        return await loc.json();
+        data = await loc.json();
       } else {
         const loc = await fetch(`http://ip-api.com/json/`);
-        return await loc.json();
+        data = await loc.json();
       }
+      
+      // Map country code to AWS region format
+      const awsRegionMap: { [key: string]: string } = {
+        'US': 'us-east-1',      // United States (Virginia)
+        'CA': 'ca-central-1',   // Canada (Montreal)
+        'BR': 'sa-east-1',      // Brazil (São Paulo)
+        'IE': 'eu-west-1',      // Ireland
+        'GB': 'eu-west-2',      // United Kingdom (London)
+        'FR': 'eu-west-3',      // France (Paris)
+        'DE': 'eu-central-1',   // Germany (Frankfurt)
+        'IT': 'eu-south-1',     // Italy (Milan)
+        'ES': 'eu-south-2',     // Spain (Madrid)
+        'SE': 'eu-north-1',     // Sweden (Stockholm)
+        'CH': 'eu-central-2',   // Switzerland (Zurich)
+        'AE': 'me-south-1',     // UAE (Bahrain)
+        'IL': 'il-central-1',   // Israel (Tel Aviv)
+        'IN': 'ap-south-1',     // India (Mumbai)
+        'SG': 'ap-southeast-1', // Singapore
+        'ID': 'ap-southeast-3', // Indonesia (Jakarta)
+        'MY': 'ap-southeast-5', // Malaysia (Kuala Lumpur)
+        'TH': 'ap-southeast-2', // Thailand (Bangkok)
+        'JP': 'ap-northeast-1', // Japan (Tokyo)
+        'KR': 'ap-northeast-2', // South Korea (Seoul)
+        'CN': 'cn-north-1',     // China (Beijing)
+        'HK': 'ap-east-1',      // Hong Kong
+        'AU': 'ap-southeast-2', // Australia (Sydney)
+        'NZ': 'ap-southeast-4', // New Zealand (Auckland)
+        'ZA': 'af-south-1',     // South Africa (Cape Town)
+      };
+      
+      if (data.countryCode) {
+        data.regionName = awsRegionMap[data.countryCode] || data.regionName || `${data.countryCode.toLowerCase()}-region-1`;
+      }
+      
+      return data;
     } catch (error) {
       console.error('Error in getIPLocation:', error);
       return { info: "Something went wrong" };
