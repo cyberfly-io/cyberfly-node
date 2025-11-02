@@ -29,6 +29,7 @@ import { nanoid } from 'nanoid'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { VERSION } from './version.js';
 import { isPrivate } from '@libp2p/utils/multiaddr/is-private'
+import { fetchAndSetNodeRegion, getNodeRegion } from './node-region.js';
 import pkg from "ruru/server";
 const { ruruHTML, defaultHTMLParts } = pkg;
 
@@ -223,6 +224,10 @@ const libp2p = await orbitdb.ipfs.libp2p
 const manifestStore = await ManifestStore({ ipfs })
 const pubsub = libp2p.services.pubsub
 const account = process.env.KADENA_ACCOUNT
+
+// Fetch node region on startup
+await fetchAndSetNodeRegion();
+
 // Print out listening addresses
 let maddr:any;
 console.log('libp2p listening on addresses:');
@@ -1069,48 +1074,7 @@ pubsub.addEventListener("message", async(message:any)=>{
         return;
       }
       
-      // Get node region
-      let nodeRegion = 'unknown';
-      try {
-        const locResponse = await fetch(`http://ip-api.com/json/`);
-        const locData = await locResponse.json();
-        
-        const awsRegionMap: { [key: string]: string } = {
-          'US': 'us-east-1',
-          'CA': 'ca-central-1',
-          'BR': 'sa-east-1',
-          'IE': 'eu-west-1',
-          'GB': 'eu-west-2',
-          'FR': 'eu-west-3',
-          'DE': 'eu-central-1',
-          'IT': 'eu-south-1',
-          'ES': 'eu-south-2',
-          'SE': 'eu-north-1',
-          'CH': 'eu-central-2',
-          'AE': 'me-south-1',
-          'IL': 'il-central-1',
-          'IN': 'ap-south-1',
-          'SG': 'ap-southeast-1',
-          'ID': 'ap-southeast-3',
-          'MY': 'ap-southeast-5',
-          'TH': 'ap-southeast-2',
-          'JP': 'ap-northeast-1',
-          'KR': 'ap-northeast-2',
-          'CN': 'cn-north-1',
-          'HK': 'ap-east-1',
-          'AU': 'ap-southeast-2',
-          'NZ': 'ap-southeast-4',
-          'ZA': 'af-south-1',
-        };
-        
-        if (locData.countryCode) {
-          nodeRegion = awsRegionMap[locData.countryCode] || `${locData.countryCode.toLowerCase()}-region-1`;
-        }
-      } catch (locError) {
-        console.error('Error getting node location:', locError);
-      }
-      
-      // Perform the fetch
+      // Perform the fetch (use nodeRegion from startup)
       const method = fetchData.method.toUpperCase();
       const fetchOptions: RequestInit = {
         method: method,
@@ -1157,7 +1121,7 @@ pubsub.addEventListener("message", async(message:any)=>{
         statusText: response.statusText,
         data: responseData,
         latency: latency,
-        nodeRegion: nodeRegion,
+        nodeRegion: getNodeRegion(),
         nodeId: libp2p.peerId.toString(),
         error: null,
       };

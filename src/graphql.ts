@@ -10,6 +10,7 @@ import { isPrivate } from '@libp2p/utils/multiaddr/is-private'
 import CyberflyChatAccessController from './cyberfly-chat-access-control.js';
 import { useAccessController  } from '@orbitdb/core'
 import { getAddress, listDirectories } from './utils.js';
+import { getNodeRegion } from './node-region.js';
 
 const redis_port = 6379
 const redis_ip = process.env.REDIS_HOST || '127.0.0.1';
@@ -841,47 +842,8 @@ export const resolvers = {
         };
       }
 
-      // Get node region
-      let nodeRegion = 'unknown';
-      try {
-        const locResponse = await fetch(`http://ip-api.com/json/`);
-        const locData = await locResponse.json();
-        
-        // Map country code to AWS region format
-        const awsRegionMap: { [key: string]: string } = {
-          'US': 'us-east-1',
-          'CA': 'ca-central-1',
-          'BR': 'sa-east-1',
-          'IE': 'eu-west-1',
-          'GB': 'eu-west-2',
-          'FR': 'eu-west-3',
-          'DE': 'eu-central-1',
-          'IT': 'eu-south-1',
-          'ES': 'eu-south-2',
-          'SE': 'eu-north-1',
-          'CH': 'eu-central-2',
-          'AE': 'me-south-1',
-          'IL': 'il-central-1',
-          'IN': 'ap-south-1',
-          'SG': 'ap-southeast-1',
-          'ID': 'ap-southeast-3',
-          'MY': 'ap-southeast-5',
-          'TH': 'ap-southeast-2',
-          'JP': 'ap-northeast-1',
-          'KR': 'ap-northeast-2',
-          'CN': 'cn-north-1',
-          'HK': 'ap-east-1',
-          'AU': 'ap-southeast-2',
-          'NZ': 'ap-southeast-4',
-          'ZA': 'af-south-1',
-        };
-        
-        if (locData.countryCode) {
-          nodeRegion = awsRegionMap[locData.countryCode] || `${locData.countryCode.toLowerCase()}-region-1`;
-        }
-      } catch (locError) {
-        console.error('Error getting node location:', locError);
-      }
+      // Get node region (use cached value from startup)
+      const nodeRegion = getNodeRegion();
 
       // Prepare fetch options
       const method = data.method.toUpperCase();
