@@ -1019,12 +1019,16 @@ pubsub.addEventListener("message", async(message:any)=>{
 
   // Handle fetch latency requests
   if(topic === 'fetch-latency-request') {
+    let request_id;
     try {
       const requestData = JSON.parse(toString(data));
       console.log('Received fetch-latency-request:', requestData);
       
       // Extract data, sig, and pubkey
       const { data: fetchData, sig, pubkey } = requestData;
+      
+      // Extract request_id from fetchData
+      request_id = fetchData.request_id;
       
       // Whitelist of allowed public keys
       const WHITELISTED_KEYS = [
@@ -1036,6 +1040,7 @@ pubsub.addEventListener("message", async(message:any)=>{
       // Verify public key is whitelisted
       if (!pubkey || !WHITELISTED_KEYS.includes(pubkey)) {
         const result = {
+          request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
           data: null,
@@ -1051,6 +1056,7 @@ pubsub.addEventListener("message", async(message:any)=>{
       // Verify signature
       if (!verify(fetchData, sig, pubkey)) {
         const result = {
+          request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
           data: null,
@@ -1146,6 +1152,7 @@ pubsub.addEventListener("message", async(message:any)=>{
       
       // Publish result to api-latency topic
       const result = {
+        request_id: request_id,
         status: response.status,
         statusText: response.statusText,
         data: responseData,
@@ -1156,11 +1163,12 @@ pubsub.addEventListener("message", async(message:any)=>{
       };
       
       await pubsub.publish('api-latency', fromString(JSON.stringify(result)));
-      console.log('Published api-latency result:', { status: result.status, latency: result.latency, nodeRegion: result.nodeRegion });
+      console.log('Published api-latency result:', { request_id, status: result.status, latency: result.latency, nodeRegion: result.nodeRegion });
       
     } catch (error: any) {
       console.error('Error processing fetch-latency-request:', error);
       const result = {
+        request_id: request_id,
         status: 0,
         statusText: 'Error',
         data: null,

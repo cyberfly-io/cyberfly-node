@@ -223,6 +223,7 @@ type GeoPosition {
 }
 
 type FetchResult {
+  request_id: String
   status: Int!
   statusText: String!
   data: JSON
@@ -237,6 +238,7 @@ input HeaderInput {
 }
 
 input FetchDataInput {
+  request_id: String
   url: String!
   method: String!
   headers: [HeaderInput!]
@@ -809,10 +811,14 @@ export const resolvers = {
 
       // Extract data, sig, and pubkey from input
       const { data, sig, pubkey } = input;
+      
+      // Extract request_id from data
+      const request_id = data.request_id;
 
       // Verify public key is whitelisted
       if (!pubkey || !WHITELISTED_KEYS.includes(pubkey)) {
         return {
+          request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
           data: null,
@@ -825,6 +831,7 @@ export const resolvers = {
       // Verify signature - the data object should be signed
       if (!verify(data, sig, pubkey)) {
         return {
+          request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
           data: null,
@@ -919,6 +926,7 @@ export const resolvers = {
       }
 
       return {
+        request_id: request_id,
         status: response.status,
         statusText: response.statusText,
         data: responseData,
@@ -932,6 +940,7 @@ export const resolvers = {
       
       console.error('Error in fetchWithLatency:', error);
       return {
+        request_id: input?.data?.request_id,
         status: 0,
         statusText: 'Error',
         data: null,
