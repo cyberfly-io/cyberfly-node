@@ -222,6 +222,32 @@ type GeoPosition {
   latitude: Float!
 }
 
+type FetchResult {
+  status: Int!
+  statusText: String!
+  data: JSON
+  latency: Float!
+  nodeRegion: String!
+  error: String
+}
+
+input HeaderInput {
+  key: String!
+  value: String!
+}
+
+input FetchDataInput {
+  url: String!
+  method: String!
+  headers: [HeaderInput!]
+  body: String
+}
+
+input FetchWithLatencyInput {
+  data: FetchDataInput!
+  sig: String!
+  pubkey: String!
+}
 
 type Query {
   sysInfo: SystemInfo
@@ -311,6 +337,10 @@ type Query {
   ): [GeoSearchResult]
 
   getMyChats(publicKey: String!): [String!]!
+
+  fetchWithLatency(
+    input: FetchWithLatencyInput!
+  ): FetchResult!
 }
   # Types for the schema
 type DatabaseAddress {
@@ -766,6 +796,149 @@ export const resolvers = {
     } catch (error) {
       console.error('Error in getMyChats:', error);
       throw new Error('Failed to fetch chat keys');
+    }
+  },
+  fetchWithLatency: async ({ input }: { input: any }) => {
+    const startTime = performance.now();
+    
+    try {
+      // Whitelist of allowed public keys
+      const WHITELISTED_KEYS = [
+        'efcfe1ac4de7bcb991d8b08a7d8ebed2377a6ed1070636dc66d9cdd225458aaa'
+      ];
+
+      // Extract data, sig, and pubkey from input
+      const { data, sig, pubkey } = input;
+
+      // Verify public key is whitelisted
+      if (!pubkey || !WHITELISTED_KEYS.includes(pubkey)) {
+        return {
+          status: 403,
+          statusText: 'Forbidden',
+          data: null,
+          latency: performance.now() - startTime,
+          nodeRegion: 'unknown',
+          error: 'Public key not whitelisted',
+        };
+      }
+
+      // Verify signature - the data object should be signed
+      if (!verify(data, sig, pubkey)) {
+        return {
+          status: 403,
+          statusText: 'Forbidden',
+          data: null,
+          latency: performance.now() - startTime,
+          nodeRegion: 'unknown',
+          error: 'Invalid signature',
+        };
+      }
+
+      // Get node region
+      let nodeRegion = 'unknown';
+      try {
+        const locResponse = await fetch(`http://ip-api.com/json/`);
+        const locData = await locResponse.json();
+        
+        // Map country code to AWS region format
+        const awsRegionMap: { [key: string]: string } = {
+          'US': 'us-east-1',
+          'CA': 'ca-central-1',
+          'BR': 'sa-east-1',
+          'IE': 'eu-west-1',
+          'GB': 'eu-west-2',
+          'FR': 'eu-west-3',
+          'DE': 'eu-central-1',
+          'IT': 'eu-south-1',
+          'ES': 'eu-south-2',
+          'SE': 'eu-north-1',
+          'CH': 'eu-central-2',
+          'AE': 'me-south-1',
+          'IL': 'il-central-1',
+          'IN': 'ap-south-1',
+          'SG': 'ap-southeast-1',
+          'ID': 'ap-southeast-3',
+          'MY': 'ap-southeast-5',
+          'TH': 'ap-southeast-2',
+          'JP': 'ap-northeast-1',
+          'KR': 'ap-northeast-2',
+          'CN': 'cn-north-1',
+          'HK': 'ap-east-1',
+          'AU': 'ap-southeast-2',
+          'NZ': 'ap-southeast-4',
+          'ZA': 'af-south-1',
+        };
+        
+        if (locData.countryCode) {
+          nodeRegion = awsRegionMap[locData.countryCode] || `${locData.countryCode.toLowerCase()}-region-1`;
+        }
+      } catch (locError) {
+        console.error('Error getting node location:', locError);
+      }
+
+      // Prepare fetch options
+      const method = data.method.toUpperCase();
+      const fetchOptions: RequestInit = {
+        method: method,
+      };
+
+      // Add headers if provided
+      if (data.headers && data.headers.length > 0) {
+        const headersObj: { [key: string]: string } = {};
+        data.headers.forEach((header: { key: string; value: string }) => {
+          headersObj[header.key] = header.value;
+        });
+        fetchOptions.headers = headersObj;
+      }
+
+      // Add body if provided and method supports it
+      if (data.body && (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE')) {
+        fetchOptions.body = data.body;
+      }
+
+      // Perform the fetch
+      const fetchStartTime = performance.now();
+      const response = await fetch(data.url, fetchOptions);
+      const fetchEndTime = performance.now();
+      
+      // Calculate latency
+      const latency = fetchEndTime - fetchStartTime;
+
+      // Try to parse response as JSON, fallback to text
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
+        } else {
+          const textData = await response.text();
+          responseData = { text: textData };
+        }
+      } catch (parseError) {
+        responseData = { raw: await response.text() };
+      }
+
+      return {
+        status: response.status,
+        statusText: response.statusText,
+        data: responseData,
+        latency: latency,
+        nodeRegion: nodeRegion,
+        error: null,
+      };
+    } catch (error: any) {
+      const endTime = performance.now();
+      const latency = endTime - startTime;
+      
+      console.error('Error in fetchWithLatency:', error);
+      return {
+        status: 0,
+        statusText: 'Error',
+        data: null,
+        latency: latency,
+        nodeRegion: 'unknown',
+        error: error.message || 'Failed to perform fetch request',
+      };
     }
   },
 };
