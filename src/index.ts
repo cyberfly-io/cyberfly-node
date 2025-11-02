@@ -1012,8 +1012,167 @@ app.post("/api/dbinfo", async(req, res)=>{
 
 await pubsub.subscribe("pindb");
 console.log("Subscribed to pindb")
+await pubsub.subscribe("fetch-latency-request");
+console.log("Subscribed to fetch-latency-request")
 pubsub.addEventListener("message", async(message:any)=>{
   const { topic, data, from } = message.detail
+
+  // Handle fetch latency requests
+  if(topic === 'fetch-latency-request') {
+    try {
+      const requestData = JSON.parse(toString(data));
+      console.log('Received fetch-latency-request:', requestData);
+      
+      // Extract data, sig, and pubkey
+      const { data: fetchData, sig, pubkey } = requestData;
+      
+      // Whitelist of allowed public keys
+      const WHITELISTED_KEYS = [
+        'efcfe1ac4de7bcb991d8b08a7d8ebed2377a6ed1070636dc66d9cdd225458aaa'
+      ];
+      
+      const startTime = performance.now();
+      
+      // Verify public key is whitelisted
+      if (!pubkey || !WHITELISTED_KEYS.includes(pubkey)) {
+        const result = {
+          status: 403,
+          statusText: 'Forbidden',
+          data: null,
+          latency: performance.now() - startTime,
+          nodeRegion: 'unknown',
+          error: 'Public key not whitelisted',
+          nodeId: libp2p.peerId.toString(),
+        };
+        await pubsub.publish('api-latency', fromString(JSON.stringify(result)));
+        return;
+      }
+      
+      // Verify signature
+      if (!verify(fetchData, sig, pubkey)) {
+        const result = {
+          status: 403,
+          statusText: 'Forbidden',
+          data: null,
+          latency: performance.now() - startTime,
+          nodeRegion: 'unknown',
+          error: 'Invalid signature',
+          nodeId: libp2p.peerId.toString(),
+        };
+        await pubsub.publish('api-latency', fromString(JSON.stringify(result)));
+        return;
+      }
+      
+      // Get node region
+      let nodeRegion = 'unknown';
+      try {
+        const locResponse = await fetch(`http://ip-api.com/json/`);
+        const locData = await locResponse.json();
+        
+        const awsRegionMap: { [key: string]: string } = {
+          'US': 'us-east-1',
+          'CA': 'ca-central-1',
+          'BR': 'sa-east-1',
+          'IE': 'eu-west-1',
+          'GB': 'eu-west-2',
+          'FR': 'eu-west-3',
+          'DE': 'eu-central-1',
+          'IT': 'eu-south-1',
+          'ES': 'eu-south-2',
+          'SE': 'eu-north-1',
+          'CH': 'eu-central-2',
+          'AE': 'me-south-1',
+          'IL': 'il-central-1',
+          'IN': 'ap-south-1',
+          'SG': 'ap-southeast-1',
+          'ID': 'ap-southeast-3',
+          'MY': 'ap-southeast-5',
+          'TH': 'ap-southeast-2',
+          'JP': 'ap-northeast-1',
+          'KR': 'ap-northeast-2',
+          'CN': 'cn-north-1',
+          'HK': 'ap-east-1',
+          'AU': 'ap-southeast-2',
+          'NZ': 'ap-southeast-4',
+          'ZA': 'af-south-1',
+        };
+        
+        if (locData.countryCode) {
+          nodeRegion = awsRegionMap[locData.countryCode] || `${locData.countryCode.toLowerCase()}-region-1`;
+        }
+      } catch (locError) {
+        console.error('Error getting node location:', locError);
+      }
+      
+      // Perform the fetch
+      const method = fetchData.method.toUpperCase();
+      const fetchOptions: RequestInit = {
+        method: method,
+      };
+      
+      // Add headers if provided
+      if (fetchData.headers && fetchData.headers.length > 0) {
+        const headersObj: { [key: string]: string } = {};
+        fetchData.headers.forEach((header: { key: string; value: string }) => {
+          headersObj[header.key] = header.value;
+        });
+        fetchOptions.headers = headersObj;
+      }
+      
+      // Add body if provided
+      if (fetchData.body && (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE')) {
+        fetchOptions.body = fetchData.body;
+      }
+      
+      // Perform the fetch and measure latency
+      const fetchStartTime = performance.now();
+      const response = await fetch(fetchData.url, fetchOptions);
+      const fetchEndTime = performance.now();
+      const latency = fetchEndTime - fetchStartTime;
+      
+      // Parse response
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
+        } else {
+          const textData = await response.text();
+          responseData = { text: textData };
+        }
+      } catch (parseError) {
+        responseData = { raw: await response.text() };
+      }
+      
+      // Publish result to api-latency topic
+      const result = {
+        status: response.status,
+        statusText: response.statusText,
+        data: responseData,
+        latency: latency,
+        nodeRegion: nodeRegion,
+        nodeId: libp2p.peerId.toString(),
+        error: null,
+      };
+      
+      await pubsub.publish('api-latency', fromString(JSON.stringify(result)));
+      console.log('Published api-latency result:', { status: result.status, latency: result.latency, nodeRegion: result.nodeRegion });
+      
+    } catch (error: any) {
+      console.error('Error processing fetch-latency-request:', error);
+      const result = {
+        status: 0,
+        statusText: 'Error',
+        data: null,
+        latency: 0,
+        nodeRegion: 'unknown',
+        nodeId: libp2p.peerId.toString(),
+        error: error.message || 'Failed to process request',
+      };
+      await pubsub.publish('api-latency', fromString(JSON.stringify(result)));
+    }
+    return;
+  }
 
   if(topic=='pindb' && from.toString()!==libp2p.peerId.toString()){
     try{
