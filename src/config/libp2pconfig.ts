@@ -9,7 +9,6 @@ import { webSockets } from '@libp2p/websockets'
 import * as filters from '@libp2p/websockets/filters'
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import { kadDHT } from "@libp2p/kad-dht";
-import { preSharedKey } from '@libp2p/pnet'
 import { ping } from '@libp2p/ping'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
@@ -22,10 +21,7 @@ export const getLibp2pOptions:any = (ip:string, peerId:string)=> {
 
 let filteredBS = bsNodes.filter(element=> !element.includes(peerId));
 
-const swarmKey = `/key/swarm/psk/1.0.0/
-/base16/
-8463a7707bad09f63538d273aa769cbdd732e43b07f207d88faa323566168ad3
-`
+
 
 let scoreThresholds = {
 	gossipThreshold: -Infinity,
@@ -48,9 +44,6 @@ let scoreThresholds = {
 
   return {
     peerDiscovery,
-      connectionProtector: preSharedKey({
-        psk: Buffer.from(swarmKey)
-      }),
     addresses: {
       listen: ['/ip4/0.0.0.0/tcp/31001',
       '/ip4/0.0.0.0/tcp/31002/ws',
