@@ -227,7 +227,6 @@ type FetchResult {
   request_id: String
   status: Int!
   statusText: String!
-  data: JSON
   latency: Float!
   nodeRegion: String!
   error: String
@@ -822,7 +821,6 @@ export const resolvers = {
           request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
-          data: null,
           latency: performance.now() - startTime,
           nodeRegion: 'unknown',
           error: 'Public key not whitelisted',
@@ -835,7 +833,6 @@ export const resolvers = {
           request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
-          data: null,
           latency: performance.now() - startTime,
           nodeRegion: 'unknown',
           error: 'Invalid signature',
@@ -873,25 +870,17 @@ export const resolvers = {
       // Calculate latency
       const latency = fetchEndTime - fetchStartTime;
 
-      // Try to parse response as JSON, fallback to text
-      let responseData;
-      const contentType = response.headers.get('content-type');
+      // Consume the response body to complete the request, but don't return it
       try {
-        if (contentType && contentType.includes('application/json')) {
-          responseData = await response.json();
-        } else {
-          const textData = await response.text();
-          responseData = { text: textData };
-        }
-      } catch (parseError) {
-        responseData = { raw: await response.text() };
+        await response.text();
+      } catch (consumeError) {
+        console.error('Error consuming response body:', consumeError);
       }
 
       return {
         request_id: request_id,
         status: response.status,
         statusText: response.statusText,
-        data: responseData,
         latency: latency,
         nodeRegion: nodeRegion,
         error: null,
@@ -905,7 +894,6 @@ export const resolvers = {
         request_id: input?.data?.request_id,
         status: 0,
         statusText: 'Error',
-        data: null,
         latency: latency,
         nodeRegion: 'unknown',
         error: error.message || 'Failed to perform fetch request',

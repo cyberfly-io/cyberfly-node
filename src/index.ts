@@ -1048,7 +1048,6 @@ pubsub.addEventListener("message", async(message:any)=>{
           request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
-          data: null,
           latency: performance.now() - startTime,
           nodeRegion: 'unknown',
           error: 'Public key not whitelisted',
@@ -1064,7 +1063,6 @@ pubsub.addEventListener("message", async(message:any)=>{
           request_id: request_id,
           status: 403,
           statusText: 'Forbidden',
-          data: null,
           latency: performance.now() - startTime,
           nodeRegion: 'unknown',
           error: 'Invalid signature',
@@ -1100,34 +1098,44 @@ pubsub.addEventListener("message", async(message:any)=>{
       const fetchEndTime = performance.now();
       const latency = fetchEndTime - fetchStartTime;
       
-      // Parse response
-      let responseData;
-      const contentType = response.headers.get('content-type');
+      // Consume the response body to complete the request, but don't include it in the result
       try {
-        if (contentType && contentType.includes('application/json')) {
-          responseData = await response.json();
-        } else {
-          const textData = await response.text();
-          responseData = { text: textData };
-        }
-      } catch (parseError) {
-        responseData = { raw: await response.text() };
+        await response.text();
+      } catch (consumeError) {
+        console.error('Error consuming response body:', consumeError);
       }
       
-      // Publish result to api-latency topic
+      // Publish result to api-latency topic (without response data)
       const result = {
         request_id: request_id,
         status: response.status,
         statusText: response.statusText,
-        data: responseData,
         latency: latency,
         nodeRegion: getNodeRegion(),
         nodeId: libp2p.peerId.toString(),
         error: null,
       };
       
-      await pubsub.publish('api-latency', fromString(JSON.stringify(result)));
-      console.log('Published api-latency result:', { request_id, status: result.status, latency: result.latency, nodeRegion: result.nodeRegion });
+      try {
+        await pubsub.publish('api-latency', fromString(JSON.stringify(result)));
+        console.log('Published api-latency result:', { request_id, status: result.status, latency: result.latency, nodeRegion: result.nodeRegion });
+      } catch (publishError: any) {
+        console.error('Error publishing to api-latency:', publishError);
+        // Try to publish a minimal error response
+        try {
+          await pubsub.publish('api-latency', fromString(JSON.stringify({
+            request_id: request_id,
+            status: result.status,
+            statusText: result.statusText,
+            latency: result.latency,
+            nodeRegion: result.nodeRegion,
+            nodeId: result.nodeId,
+            error: 'Failed to publish response: ' + publishError.message,
+          })));
+        } catch (retryError) {
+          console.error('Failed to publish even minimal response:', retryError);
+        }
+      }
       
     } catch (error: any) {
       console.error('Error processing fetch-latency-request:', error);
@@ -1135,7 +1143,6 @@ pubsub.addEventListener("message", async(message:any)=>{
         request_id: request_id,
         status: 0,
         statusText: 'Error',
-        data: null,
         latency: 0,
         nodeRegion: 'unknown',
         nodeId: libp2p.peerId.toString(),
